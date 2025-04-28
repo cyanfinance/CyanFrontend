@@ -25,6 +25,7 @@ import {
 import { Edit as EditIcon, KeyboardArrowDown, KeyboardArrowUp } from '@mui/icons-material';
 import { RepaymentModal } from './dashboard';
 import { useAuth } from '../../context/AuthContext';
+import { API_URL } from '../../config.ts';
 
 interface GoldItem {
   description: string;
@@ -54,14 +55,150 @@ interface Loan {
   totalPayment: number;
   totalPaid: number;
   createdAt: string;
-  depositedBank?: string;
-  renewalDate?: string;
+  depositedBank: string;
+  depositedAccountNumber: string;
+  depositedAccountName: string;
+  depositedIfscCode: string;
+  renewalDate: string;
 }
 
 interface EditableLoan extends Loan {
   depositedBank: string;
   renewalDate: string;
 }
+
+interface PaymentHistoryModalProps {
+  loan: Loan;
+  onClose: () => void;
+}
+
+const PaymentHistoryModal: React.FC<PaymentHistoryModalProps> = ({ loan, onClose }) => {
+  const [payments, setPayments] = useState<any[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+  const { token } = useAuth();
+
+  useEffect(() => {
+    const fetchPaymentHistory = async () => {
+      try {
+        const response = await fetch(`${API_URL}/loans/${loan._id}/payments`, {
+          headers: {
+            'x-auth-token': token || ''
+          }
+        });
+        const data = await response.json();
+        if (!response.ok) {
+          throw new Error(data.message || 'Failed to fetch payment history');
+        }
+        setPayments(data.data);
+      } catch (err) {
+        console.error('Error fetching payment history:', err);
+        setError(err instanceof Error ? err.message : 'Failed to fetch payment history');
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchPaymentHistory();
+  }, [loan._id, token]);
+
+  const formatDate = (dateString: string) => {
+    return new Date(dateString).toLocaleDateString('en-IN', {
+      day: '2-digit',
+      month: 'short',
+      year: 'numeric',
+      hour: '2-digit',
+      minute: '2-digit'
+    });
+  };
+
+  const formatCurrency = (amount: number) => {
+    return new Intl.NumberFormat('en-IN', {
+      style: 'currency',
+      currency: 'INR',
+      maximumFractionDigits: 0
+    }).format(amount);
+  };
+
+  return (
+    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+      <div className="bg-white rounded-lg p-6 w-full max-w-4xl max-h-[80vh] overflow-y-auto">
+        <div className="flex justify-between items-center mb-4">
+          <h2 className="text-xl font-semibold">Payment History</h2>
+          <button
+            onClick={onClose}
+            className="text-gray-500 hover:text-gray-700"
+          >
+            <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+            </svg>
+          </button>
+        </div>
+
+        <div className="mb-4">
+          <h3 className="font-medium">Loan Details</h3>
+          <p>Customer: {loan.name}</p>
+          <p>Amount: {formatCurrency(loan.amount)}</p>
+          <p>Total Paid: {formatCurrency(loan.totalPaid || 0)}</p>
+          <p>Remaining: {formatCurrency((loan.totalPayment || 0) - (loan.totalPaid || 0))}</p>
+        </div>
+
+        {loading ? (
+          <div className="flex justify-center items-center h-32">
+            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-yellow-600"></div>
+          </div>
+        ) : error ? (
+          <div className="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded">
+            {error}
+          </div>
+        ) : payments.length === 0 ? (
+          <div className="text-center text-gray-500 py-4">
+            No payment history available
+          </div>
+        ) : (
+          <div className="overflow-x-auto">
+            <table className="min-w-full divide-y divide-gray-200">
+              <thead className="bg-gray-50">
+                <tr>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Date</th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Amount</th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Payment Method</th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Transaction ID</th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Status</th>
+                </tr>
+              </thead>
+              <tbody className="bg-white divide-y divide-gray-200">
+                {payments.map((payment) => (
+                  <tr key={payment._id || payment.date}>
+                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                      {formatDate(payment.date)}
+                    </td>
+                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                      {formatCurrency(payment.amount)}
+                    </td>
+                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                      {payment.method}
+                    </td>
+                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                      {payment.transactionId || '-'}
+                    </td>
+                    <td className="px-6 py-4 whitespace-nowrap">
+                      <span className={`px-2 inline-flex text-xs leading-5 font-semibold rounded-full ${
+                        payment.status === 'success' ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'
+                      }`}>
+                        {payment.status || '-'}
+                      </span>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        )}
+      </div>
+    </div>
+  );
+};
 
 const LoansPage = () => {
   const { user, token } = useAuth();
@@ -75,6 +212,7 @@ const LoansPage = () => {
   const [search, setSearch] = useState('');
   const [repayLoan, setRepayLoan] = useState<Loan | null>(null);
   const [showRepaymentModal, setShowRepaymentModal] = useState(false);
+  const [showPaymentHistoryModal, setShowPaymentHistoryModal] = useState(false);
 
   useEffect(() => {
     fetchLoans();
@@ -86,8 +224,8 @@ const LoansPage = () => {
         throw new Error('No authentication token found');
       }
       const url = user?.role === 'employee'
-        ? 'http://localhost:5001/api/employee/loans'
-        : 'http://localhost:5001/api/admin/loans';
+        ? `${API_URL}/employee/loans`
+        : `${API_URL}/admin/loans`;
       const response = await fetch(url, {
         headers: {
           'x-auth-token': token
@@ -136,8 +274,8 @@ const LoansPage = () => {
         throw new Error('All gold items must have a description and valid weights');
       }
       const endpoint = user?.role === 'employee'
-        ? `http://localhost:5001/api/employee/loans/${selectedLoan._id}`
-        : `http://localhost:5001/api/admin/loans/${selectedLoan._id}`;
+        ? `${API_URL}/employee/loans/${selectedLoan._id}`
+        : `${API_URL}/admin/loans/${selectedLoan._id}`;
       const response = await fetch(endpoint, {
         method: 'PUT',
         headers: {
@@ -245,8 +383,7 @@ const LoansPage = () => {
 
   const handleRepay = async (amount: number, paymentMethod: string, transactionId?: string) => {
     if (!repayLoan) return;
-    const token = localStorage.getItem('token');
-    const response = await fetch(`http://localhost:5001/api/loans/${repayLoan._id}/repay`, {
+    const response = await fetch(`${API_URL}/loans/${repayLoan._id}/repay`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
@@ -380,6 +517,17 @@ const LoansPage = () => {
                             Repay
                           </Button>
                         )}
+                        <Button
+                          color="info"
+                          size="small"
+                          onClick={() => {
+                            setSelectedLoan(loan);
+                            setShowPaymentHistoryModal(true);
+                          }}
+                          style={{ marginLeft: 8 }}
+                        >
+                          Payment History
+                        </Button>
                       </TableCell>
                     </TableRow>
                     <TableRow>
@@ -534,6 +682,17 @@ const LoansPage = () => {
               setRepayLoan(null);
             }}
             onRepay={handleRepay}
+          />
+        )}
+
+        {/* Add Payment History Modal */}
+        {showPaymentHistoryModal && selectedLoan && (
+          <PaymentHistoryModal
+            loan={selectedLoan}
+            onClose={() => {
+              setShowPaymentHistoryModal(false);
+              setSelectedLoan(null);
+            }}
           />
         )}
       </div>

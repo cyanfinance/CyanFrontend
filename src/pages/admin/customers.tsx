@@ -3,6 +3,7 @@ import AdminSidebar from '../../components/AdminSidebar';
 import EmployeeSidebar from '../../components/EmployeeSidebar';
 import { Dialog, DialogTitle, DialogContent, DialogActions, Button, TextField } from '@mui/material';
 import { useAuth } from '../../context/AuthContext';
+import { API_URL } from '../../config';
 
 interface GoldItem {
   description: string;
@@ -66,9 +67,9 @@ const CustomersPage = () => {
       if (!token) {
         throw new Error('No authentication token found');
       }
-      let endpoint = 'http://localhost:5001/api/admin/customers';
+      let endpoint = `${API_URL}/admin/customers`;
       if (user && user.role === 'employee') {
-        endpoint = 'http://localhost:5001/api/employee/customers';
+        endpoint = `${API_URL}/employee/customers`;
       }
       const response = await fetch(endpoint, {
         headers: {
@@ -122,18 +123,29 @@ const CustomersPage = () => {
     setSaving(true);
     try {
       if (!token) throw new Error('No authentication token found');
-      let endpoint = `http://localhost:5001/api/admin/customers/${selectedCustomer.mongoId}`;
+      let endpoint = `${API_URL}/admin/customers/${selectedCustomer.mongoId}`;
       if (user && user.role === 'employee') {
-        endpoint = `http://localhost:5001/api/employee/customers/${selectedCustomer.mongoId}`;
+        endpoint = `${API_URL}/employee/customers/${selectedCustomer.mongoId}`;
       }
       const safeToken = token || '';
+      // Only send updatable fields
+      const updateData = {
+        name: selectedCustomer.name,
+        email: selectedCustomer.email,
+        aadharNumber: selectedCustomer.aadharNumber,
+        primaryMobile: selectedCustomer.primaryMobile,
+        secondaryMobile: selectedCustomer.secondaryMobile,
+        presentAddress: selectedCustomer.presentAddress,
+        permanentAddress: selectedCustomer.permanentAddress,
+        emergencyContact: selectedCustomer.emergencyContact,
+      };
       let response = await fetch(endpoint, {
         method: 'PUT',
         headers: {
           'Content-Type': 'application/json',
           'x-auth-token': safeToken
         },
-        body: JSON.stringify(selectedCustomer)
+        body: JSON.stringify(updateData)
       });
       if (!response.ok) {
         const data = await response.json();
@@ -200,7 +212,7 @@ const CustomersPage = () => {
                 <tbody className="divide-y divide-gray-200">
                   {filteredCustomers.map((customer) => (
                     <React.Fragment key={customer.mongoId || customer.customerId}>
-                      <tr className="hover:bg-gray-50">
+                      <tr className="hover:bg-gray-50" key={`row-${customer.mongoId || customer.customerId}`}>
                         <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
                           {customer.customerId}
                           <div className="text-xs text-gray-500">Aadhar: {customer.aadharNumber}</div>
@@ -246,7 +258,7 @@ const CustomersPage = () => {
                                 if (!window.confirm('Are you sure you want to delete this customer?')) return;
                                 try {
                                   const safeToken = token || '';
-                                  const res = await fetch(`http://localhost:5001/api/admin/customers/${customer.mongoId}`, {
+                                  const res = await fetch(`${API_URL}/admin/customers/${customer.mongoId}`, {
                                     method: 'DELETE',
                                     headers: { 'x-auth-token': safeToken }
                                   });
@@ -269,7 +281,7 @@ const CustomersPage = () => {
                         </td>
                       </tr>
                       {expandedCustomer === customer.customerId && customer.latestLoan && (
-                        <tr className="bg-gray-50">
+                        <tr className="bg-gray-50" key={`expanded-${customer.mongoId || customer.customerId}`}>
                           <td colSpan={6} className="px-6 py-4">
                             <div className="grid grid-cols-2 gap-4">
                               <div>

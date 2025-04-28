@@ -20,7 +20,7 @@ const Login = () => {
     try {
       console.log('Attempting login with:', { email });
       
-      const response = await fetch(`${API_URL}/api/auth/login`, {
+      const response = await fetch(`${API_URL}/auth/login`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -49,6 +49,10 @@ const Login = () => {
         email: data.user.email,
         name: data.user.name
       });
+
+      // Store token and user in localStorage for use in ResetPassword.tsx
+      localStorage.setItem('token', data.token);
+      localStorage.setItem('user', JSON.stringify(data.user));
 
       // Redirect to reset password if required
       if (data.user.mustResetPassword) {

@@ -64,7 +64,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     if (!authState.token) return false;
 
     try {
-      const response = await fetch(`${API_URL}/api/auth/validate`, {
+      const response = await fetch(`${API_URL}/auth/validate`, {
         headers: {
           'x-auth-token': authState.token
         }

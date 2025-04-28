@@ -1,6 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import { Alert, CircularProgress } from '@mui/material';
 import AdminSidebar from '../../components/AdminSidebar';
+import { useAuth } from '../../context/AuthContext';
+import { API_URL } from '../../config';
 
 interface GoldItem {
   description: string;
@@ -194,7 +196,8 @@ const AdminDashboard = () => {
   const [checkingAadhar, setCheckingAadhar] = useState(false);
   const [selectedLoan, setSelectedLoan] = useState<Loan | null>(null);
   const [showRepaymentModal, setShowRepaymentModal] = useState(false);
-  const [token, setToken] = useState<string>(localStorage.getItem('token') || '');
+  const { token: rawToken, user } = useAuth();
+  const token = rawToken || '';
   const [search, setSearch] = useState('');
 
   useEffect(() => {
@@ -203,23 +206,15 @@ const AdminDashboard = () => {
 
   const fetchLoans = async () => {
     try {
-      const token = localStorage.getItem('token');
-      if (!token) {
-        throw new Error('No authentication token found');
-      }
-
-      const response = await fetch('http://localhost:5001/api/admin/loans', {
+      const response = await fetch(`${API_URL}/admin/loans`, {
         headers: {
           'x-auth-token': token
         }
       });
-
       const data = await response.json();
-      
       if (!response.ok) {
         throw new Error(data.message || 'Failed to fetch loans');
       }
-
       setLoans(data.data);
       setError(null);
     } catch (err) {
@@ -233,28 +228,14 @@ const AdminDashboard = () => {
   const checkAadharNumber = async (aadharNumber: string) => {
     try {
       setCheckingAadhar(true);
-      const token = localStorage.getItem('token');
-      if (!token) {
-        throw new Error('No authentication token found');
-      }
-
-      console.log('Checking Aadhar number:', aadharNumber);
-      console.log('Using token:', token);
-
-      const response = await fetch(`http://localhost:5001/api/admin/check-aadhar/${aadharNumber}`, {
+      const response = await fetch(`${API_URL}/admin/check-aadhar/${aadharNumber}`, {
         headers: {
           'x-auth-token': token
         }
       });
-
-      console.log('Response status:', response.status);
       const data = await response.json();
-      console.log('Response data:', data);
-      
       if (data.exists) {
-        console.log('Customer details found:', data.customerDetails);
         setCustomerDetails(data.customerDetails);
-        // Pre-fill the form with existing customer details
         setFormData(prev => ({
           ...prev,
           customerId: data.customerDetails.customerId,
@@ -270,18 +251,11 @@ const AdminDashboard = () => {
           }
         }));
       } else {
-        console.log('No existing customer found');
         setCustomerDetails(null);
       }
     } catch (err) {
       console.error('Error checking Aadhar:', err);
-      console.error('Full error details:', {
-        message: err instanceof Error ? err.message : 'Unknown error',
-        stack: err instanceof Error ? err.stack : undefined
-      });
       setError(err instanceof Error ? err.message : 'Failed to check Aadhar number');
-    } finally {
-      setCheckingAadhar(false);
     }
   };
 
@@ -376,20 +350,6 @@ const AdminDashboard = () => {
         throw new Error('Aadhar number must be exactly 12 digits');
       }
 
-      // Get token from localStorage
-      const token = localStorage.getItem('token');
-      if (!token) {
-        throw new Error('No authentication token found');
-      }
-
-      const userString = localStorage.getItem('user');
-      
-      if (!userString) {
-        throw new Error('No user information found. Please login again.');
-      }
-
-      const user = JSON.parse(userString);
-
       // Validate required fields
       if (!formData.aadharNumber || !formData.name || !formData.email || !formData.primaryMobile ||
           !formData.presentAddress || !formData.permanentAddress) {
@@ -450,7 +410,7 @@ const AdminDashboard = () => {
 
       console.log('Sending loan request with data:', JSON.stringify(requestData, null, 2));
 
-      const response = await fetch('http://localhost:5001/api/admin/loans', {
+      const response = await fetch(`${API_URL}/admin/loans`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -529,8 +489,7 @@ const AdminDashboard = () => {
 
   const handleRepay = async (amount: number, paymentMethod: string, transactionId?: string) => {
     if (!selectedLoan) return;
-
-    const response = await fetch(`http://localhost:5001/api/loans/${selectedLoan._id}/repay`, {
+    const response = await fetch(`${API_URL}/loans/${selectedLoan._id}/repay`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
@@ -538,14 +497,10 @@ const AdminDashboard = () => {
       },
       body: JSON.stringify({ amount, paymentMethod, transactionId })
     });
-
     const data = await response.json();
-    
     if (!response.ok) {
       throw new Error(data.message || 'Failed to process repayment');
     }
-
-    // Refresh the loans list
     await fetchLoans();
   };
 
@@ -844,7 +799,7 @@ const AdminDashboard = () => {
                   
                   <div className="space-y-1">
                     <label htmlFor="interestRate" className="block text-sm font-medium text-gray-700">
-                      Interest Rate (% per month)
+                      Interest Rate (% per year)
                     </label>
                     <input
                       id="interestRate"
@@ -852,13 +807,13 @@ const AdminDashboard = () => {
                       name="interestRate"
                       value={formData.interestRate}
                       onChange={handleInputChange}
-                      placeholder="Enter monthly interest rate"
+                      placeholder="Enter annual interest rate"
                       className="w-full p-2 border rounded"
                       required
                       min="0"
                       step="0.01"
                     />
-                    <p className="text-sm text-gray-500">Monthly interest rate as a percentage (e.g., 2 for 2% per month)</p>
+                    <p className="text-sm text-gray-500">Annual interest rate as a percentage (e.g., 12 for 12% per year)</p>
                   </div>
 
                   <div className="space-y-1">
@@ -940,7 +895,7 @@ const AdminDashboard = () => {
                   <div className="mt-2 p-3 bg-blue-50 rounded-md">
                     <p className="text-sm text-blue-600">
                       <strong>Note:</strong> The monthly payment and total amount are calculated using compound interest, 
-                      with interest being charged monthly. The interest rate you enter is the monthly rate (not annual rate).
+                      with interest being charged monthly. The interest rate you enter is the <b>annual rate</b> (not monthly rate).
                     </p>
                   </div>
                 </div>

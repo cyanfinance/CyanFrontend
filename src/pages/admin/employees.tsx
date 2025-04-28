@@ -1,10 +1,13 @@
 import React, { useState, useEffect } from 'react';
 import AdminSidebar from '../../components/AdminSidebar';
 import { Dialog, DialogTitle, DialogContent, DialogActions, Button, TextField, MenuItem } from '@mui/material';
+import { useAuth } from '../../context/AuthContext';
+import { API_URL } from '../../config';
 
 const EmployeesPage = () => {
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [addDialogOpen, setAddDialogOpen] = useState(false);
+  const [editDialogOpen, setEditDialogOpen] = useState(false);
   const [form, setForm] = useState({
     email: '',
     name: '',
@@ -13,10 +16,12 @@ const EmployeesPage = () => {
     role: 'employee',
     aadharNumber: ''
   });
+  const [selectedEmployee, setSelectedEmployee] = useState<any | null>(null);
   const [registering, setRegistering] = useState(false);
   const [employees, setEmployees] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const { token } = useAuth();
 
   useEffect(() => {
     fetchEmployees();
@@ -26,8 +31,7 @@ const EmployeesPage = () => {
     setLoading(true);
     setError(null);
     try {
-      const token = localStorage.getItem('token');
-      const response = await fetch('http://localhost:5001/api/admin/employees', {
+      const response = await fetch(`${API_URL}/admin/employees`, {
         headers: { 'x-auth-token': token || '' }
       });
       const data = await response.json();
@@ -43,8 +47,7 @@ const EmployeesPage = () => {
   const handleRegister = async () => {
     setRegistering(true);
     try {
-      const token = localStorage.getItem('token');
-      const response = await fetch('http://localhost:5001/api/admin/employees', {
+      const response = await fetch(`${API_URL}/admin/employees`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -75,8 +78,7 @@ const EmployeesPage = () => {
   const handleDelete = async (id: string, name: string) => {
     if (!window.confirm(`Are you sure you want to delete employee '${name}'? This action cannot be undone.`)) return;
     try {
-      const token = localStorage.getItem('token');
-      const response = await fetch(`http://localhost:5001/api/admin/employees/${id}`, {
+      const response = await fetch(`${API_URL}/admin/employees/${id}`, {
         method: 'DELETE',
         headers: { 'x-auth-token': token || '' }
       });
@@ -161,6 +163,48 @@ const EmployeesPage = () => {
               </Button>
             </DialogActions>
           </Dialog>
+          {/* Edit Employee Dialog */}
+          <Dialog open={editDialogOpen} onClose={() => setEditDialogOpen(false)} maxWidth="sm" fullWidth>
+            <DialogTitle>Edit Employee</DialogTitle>
+            <DialogContent>
+              {selectedEmployee && (
+                <>
+                  <TextField fullWidth label="Name" value={selectedEmployee.name} margin="normal" onChange={e => setSelectedEmployee({ ...selectedEmployee, name: e.target.value })} />
+                  <TextField fullWidth label="Email" value={selectedEmployee.email} margin="normal" InputProps={{ readOnly: true }} />
+                  <TextField fullWidth label="Aadhar Number" value={selectedEmployee.aadharNumber} margin="normal" InputProps={{ readOnly: true }} />
+                  <TextField fullWidth label="Mobile Number" value={selectedEmployee.primaryMobile || ''} margin="normal" onChange={e => setSelectedEmployee({ ...selectedEmployee, primaryMobile: e.target.value })} />
+                  <TextField fullWidth label="Alternate Mobile Number" value={selectedEmployee.secondaryMobile || ''} margin="normal" onChange={e => setSelectedEmployee({ ...selectedEmployee, secondaryMobile: e.target.value })} />
+                  <TextField select fullWidth label="Role" value={selectedEmployee.role} onChange={e => setSelectedEmployee({ ...selectedEmployee, role: e.target.value })} margin="normal">
+                    <MenuItem value="employee">Employee</MenuItem>
+                    <MenuItem value="admin">Admin</MenuItem>
+                  </TextField>
+                </>
+              )}
+            </DialogContent>
+            <DialogActions>
+              <Button onClick={() => setEditDialogOpen(false)}>Cancel</Button>
+              <Button variant="contained" color="primary" onClick={async () => {
+                if (!selectedEmployee) return;
+                try {
+                  const response = await fetch(`${API_URL}/admin/employees/${selectedEmployee._id}`, {
+                    method: 'PUT',
+                    headers: {
+                      'Content-Type': 'application/json',
+                      'x-auth-token': token || ''
+                    },
+                    body: JSON.stringify(selectedEmployee)
+                  });
+                  if (!response.ok) throw new Error('Failed to update employee');
+                  setEditDialogOpen(false);
+                  setSelectedEmployee(null);
+                  fetchEmployees();
+                  alert('Employee updated successfully!');
+                } catch (err) {
+                  alert(err instanceof Error ? err.message : 'Failed to update employee');
+                }
+              }}>Save</Button>
+            </DialogActions>
+          </Dialog>
           {/* Employee List Table */}
           {loading ? (
             <div>Loading employees...</div>
@@ -189,8 +233,9 @@ const EmployeesPage = () => {
                     <td className="px-6 py-4 whitespace-nowrap">{emp.secondaryMobile}</td>
                     <td className="px-6 py-4 whitespace-nowrap capitalize">{emp.role}</td>
                     <td className="px-6 py-4 whitespace-nowrap">
+                      <Button color="primary" variant="outlined" size="small" onClick={() => { setSelectedEmployee(emp); setEditDialogOpen(true); }}>Edit</Button>
                       {emp.role === 'employee' && (
-                        <Button color="error" variant="outlined" size="small" onClick={() => handleDelete(emp._id, emp.name)}>
+                        <Button color="error" variant="outlined" size="small" onClick={() => handleDelete(emp._id, emp.name)} style={{ marginLeft: 8 }}>
                           Delete
                         </Button>
                       )}

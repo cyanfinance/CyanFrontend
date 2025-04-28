@@ -1,5 +1,6 @@
 import { useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { API_URL } from '../config';
 
 // Token refresh interval (60 minutes)
 const REFRESH_INTERVAL = 60 * 60 * 1000;
@@ -20,7 +21,7 @@ export const refreshToken = async (): Promise<string | null> => {
     const currentToken = localStorage.getItem('token');
     if (!currentToken) return null;
 
-    const response = await fetch('http://localhost:5001/api/auth/refresh-token', {
+    const response = await fetch(`${API_URL}/auth/refresh-token`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',

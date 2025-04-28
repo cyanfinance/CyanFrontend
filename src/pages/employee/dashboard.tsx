@@ -32,7 +32,7 @@ interface Loan {
   totalPaid: number;
   createdAt: string;
 }
-
+const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:5001';
 const EmployeeDashboard = () => {
   const [loans, setLoans] = useState<Loan[]>([]);
   const [loading, setLoading] = useState(true);
@@ -47,7 +47,7 @@ const EmployeeDashboard = () => {
 
   const fetchLoans = async () => {
     try {
-      const response = await fetch('http://localhost:5001/api/employee/loans', {
+      const response = await fetch(`${API_URL}/employee/loans`, {
         headers: {
           'x-auth-token': token || ''
         }
