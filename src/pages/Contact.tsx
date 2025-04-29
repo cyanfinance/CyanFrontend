@@ -1,6 +1,4 @@
 import React, { useState } from 'react';
-import { MapPin, Phone, Mail } from 'lucide-react';
-import { Link } from 'react-router-dom';
 import { Container, TextField, Button, Typography, Box, Alert } from '@mui/material';
 
 const Contact = () => {

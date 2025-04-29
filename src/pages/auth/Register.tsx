@@ -1,6 +1,6 @@
-import React, { useState } from 'react';
 import { Link } from 'react-router-dom';
 import { UserPlus } from 'lucide-react';
+import { useState } from 'react';
 
 function Register() {
   const [formData, setFormData] = useState({

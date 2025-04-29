@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import { useState } from 'react';
 import AdminSidebar from '../../components/AdminSidebar';
 
 const ReportsPage = () => {

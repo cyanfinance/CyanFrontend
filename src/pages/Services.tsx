@@ -1,4 +1,3 @@
-import React from "react";
 import { Coins, ShoppingBag, Ban as Bank, Percent, Home, Smartphone } from "lucide-react";
 import { Link, useNavigate } from "react-router-dom";
  
