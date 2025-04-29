@@ -11,8 +11,10 @@ import Register from './pages/auth/Register';
 import ForgotPassword from './pages/auth/ForgotPassword';
 import GoldPurchase from './pages/goldpurchase';
 import BankBuyBack from './pages/bankbuyback';
+import Goldloan from './pages/goldloan';
 import InterestRates from './pages/interestrates';
 import Payments from './pages/payments';
+import OtherLoans from './pages/otherLoans';
 import Footer from './components/footer';
 import { AuthProvider, useAuth } from './context/AuthContext';
 import AdminDashboard from './pages/admin/dashboard';
@@ -86,8 +88,10 @@ const AppRoutes: React.FC = () => {
           <Route path="/" element={<Home />} />
           <Route path="/about" element={<About />} />
           <Route path="/services" element={<Services />} />
+          <Route path='/gold-loan' element={<Goldloan/>}/>
           <Route path="/gold-purchase" element={<GoldPurchase />} />
           <Route path="/bank-buy-back" element={<BankBuyBack />} />
+          <Route path="/other-loans" element={<OtherLoans/>}/>
           <Route path="/interest-rates" element={<InterestRates />} />
           <Route path="/payments" element={<Payments />} />
           <Route path="/location" element={<Location />} />
@@ -99,9 +103,9 @@ const AppRoutes: React.FC = () => {
 
           {/* Admin routes */}
           <Route element={
-            <ProtectedRoute allowedRoles={['admin']}>
+              <ProtectedRoute allowedRoles={['admin']}>
               <AdminLayout />
-            </ProtectedRoute>
+              </ProtectedRoute>
           }>
             <Route path="/admin/dashboard" element={<AdminDashboard />} />
             <Route path="/admin/customers" element={<CustomersPage />} />
@@ -114,7 +118,7 @@ const AppRoutes: React.FC = () => {
           <Route element={
             <ProtectedRoute allowedRoles={['employee']}>
               <EmployeeLayout />
-            </ProtectedRoute>
+              </ProtectedRoute>
           }>
             <Route path="/employee/dashboard" element={<EmployeeDashboard />} />
             <Route path="/employee/customers" element={<CustomersPage />} />
@@ -124,9 +128,9 @@ const AppRoutes: React.FC = () => {
 
           {/* Customer routes */}
           <Route element={
-            <ProtectedRoute allowedRoles={['customer']}>
+              <ProtectedRoute allowedRoles={['customer']}>
               <CustomerLayout />
-            </ProtectedRoute>
+              </ProtectedRoute>
           }>
             <Route path="/customer/dashboard" element={<CustomerDashboard />} />
             {/* Add more customer routes here if needed */}

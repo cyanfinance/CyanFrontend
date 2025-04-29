@@ -24,8 +24,11 @@ const Navbar: React.FC = () => {
     navigate('/login');
   };
 
+  // Determine if we are on an admin or employee page
+  const isSidebarPage = location.pathname.startsWith('/admin') || location.pathname.startsWith('/employee');
+
   return (
-    <nav className="fixed top-0 left-0 w-full bg-white z-10 shadow-lg">
+    <nav className="fixed top-0 left-0 w-full bg-white z-50 shadow-lg">
       {/* Top Bar with WhatsApp */}
       <div className="flex justify-end items-center bg-white py-2 px-4">
         <FaWhatsapp className="text-green-500 text-2xl mr-3" />
@@ -34,13 +37,18 @@ const Navbar: React.FC = () => {
       
       <div className="max-w-7xl mx-auto px-4">
         <div className="flex justify-between items-center h-16">
-          {/* Logo */}
-          <Link to="/">
+          {/* Logo - hidden on mobile */}
+          <Link to="/" className="hidden md:block">
             <img src={cyanlogo} alt="Logo" className="h-16 w-auto" />
           </Link>
 
+          {/* Mobile Logo - centered */}
+          <Link to="/" className="md:hidden absolute left-1/2 transform -translate-x-1/2">
+            <img src={cyanlogo} alt="Logo" className="h-8 w-auto" />
+          </Link>
+
           {/* Desktop Menu */}
-          <div className="hidden md:flex items-center space-x-8">
+          <div className="hidden md:flex items-center space-x-8 p-8">
             <Link to="/" className={`${isActive('/')} transition-colors duration-200`}><strong>Home</strong></Link>
             <Link to="/about" className={`${isActive('/about')} transition-colors duration-200`}><strong>About</strong></Link>
             <Link to="/services" className={`${isActive('/services')} transition-colors duration-200`}><strong>Services</strong></Link>
@@ -77,17 +85,19 @@ const Navbar: React.FC = () => {
 
           {/* Mobile Menu Button */}
           <div className="md:hidden flex items-center">
-            <button onClick={() => setIsOpen(!isOpen)} className="text-[#0e1353] text-2xl focus:outline-none">
-              {isOpen ? <FaTimes /> : <FaBars />}
-            </button>
+            {!isSidebarPage && (
+              <button onClick={() => setIsOpen(!isOpen)} className="text-[#0e1353] text-2xl focus:outline-none">
+                {isOpen ? <FaTimes /> : <FaBars />}
+              </button>
+            )}
           </div>
         </div>
       </div>
 
       {/* Mobile Menu */}
-      {isOpen && (
-        <div className="md:hidden bg-white shadow-lg py-4 px-6 space-y-4 flex flex-col items-center">
-          <Link to="/" className={`${isActive('/')} block`} onClick={() => setIsOpen(false)}><strong>Home</strong></Link>
+      {!isSidebarPage && isOpen && (
+        <div className="md:hidden bg-white shadow-lg p-8 py-4 px-6 space-y-4 flex flex-col items-center">
+          <Link to="/" className={`${isActive('/')} block `} onClick={() => setIsOpen(false)}><strong>Home</strong></Link>
           <Link to="/about" className={`${isActive('/about')} block`} onClick={() => setIsOpen(false)}><strong>About</strong></Link>
           <Link to="/services" className={`${isActive('/services')} block`} onClick={() => setIsOpen(false)}><strong>Services</strong></Link>
           <Link to="/location" className={`${isActive('/location')} block`} onClick={() => setIsOpen(false)}><strong>Location</strong></Link>

@@ -1,8 +1,9 @@
 import React, { useState, useEffect } from 'react';
-import { Alert, CircularProgress } from '@mui/material';
+import { Alert, CircularProgress, Card, Typography, TextField, Button } from '@mui/material';
 import AdminSidebar from '../../components/AdminSidebar';
 import { useAuth } from '../../context/AuthContext';
 import { API_URL } from '../../config';
+import axios from 'axios';
 
 interface GoldItem {
   description: string;
@@ -199,9 +200,24 @@ const AdminDashboard = () => {
   const { token: rawToken, user } = useAuth();
   const token = rawToken || '';
   const [search, setSearch] = useState('');
+  const [goldRate, setGoldRate] = useState('7000');
+  const [message, setMessage] = useState('');
+
+  // Ensure user is logged in
+  if (!user) {
+    return (
+      <div className="flex items-center justify-center h-screen">
+        <div className="text-center">
+          <h1 className="text-2xl font-bold mb-4">Access Denied</h1>
+          <p>Please log in to access the admin dashboard.</p>
+        </div>
+      </div>
+    );
+  }
 
   useEffect(() => {
     fetchLoans();
+    fetchGoldRate();
   }, []);
 
   const fetchLoans = async () => {
@@ -222,6 +238,18 @@ const AdminDashboard = () => {
       setError(err instanceof Error ? err.message : 'Failed to fetch loans');
     } finally {
       setLoading(false);
+    }
+  };
+
+  const fetchGoldRate = async () => {
+    try {
+      const response = await axios.get(`${API_URL}/settings/gold-rate`);
+      if (response.data.rate) {
+        setGoldRate(response.data.rate.toString());
+      }
+    } catch (error) {
+      console.error('Error fetching gold rate:', error);
+      // Keep the existing rate if there's an error
     }
   };
 
@@ -513,12 +541,12 @@ const AdminDashboard = () => {
     
     // Then filter by search term
     return (
-      loan.name.toLowerCase().includes(search.toLowerCase()) ||
-      loan.email.toLowerCase().includes(search.toLowerCase()) ||
-      loan.primaryMobile.includes(search) ||
-      (loan.customerId && loan.customerId.toString().includes(search)) ||
-      formatCurrency(loan.amount).includes(search)
-    );
+    loan.name.toLowerCase().includes(search.toLowerCase()) ||
+    loan.email.toLowerCase().includes(search.toLowerCase()) ||
+    loan.primaryMobile.includes(search) ||
+    (loan.customerId && loan.customerId.toString().includes(search)) ||
+    formatCurrency(loan.amount).includes(search)
+  );
   });
 
   // Count loans by status
@@ -526,6 +554,34 @@ const AdminDashboard = () => {
   const closedLoansCount = loans.filter(loan => loan.status === 'closed').length;
   const approvedLoansCount = loans.filter(loan => loan.status === 'approved').length;
   const rejectedLoansCount = loans.filter(loan => loan.status === 'rejected').length;
+
+  // Update gold rate
+  const handleUpdateGoldRate = async () => {
+    try {
+      setLoading(true);
+      console.log('Token being used:', token);
+      const response = await axios.post(`${API_URL}/settings/update-gold-rate`, 
+        { rate: parseFloat(goldRate) },
+        { headers: { 'x-auth-token': token } }
+      );
+      setMessage('Gold rate updated successfully!');
+      // Fetch the updated rate
+      await fetchGoldRate();
+      setTimeout(() => setMessage(''), 3000);
+    } catch (error: any) {
+      console.error('Error updating gold rate:', error);
+      if (error.response) {
+        console.log('Error response:', {
+          status: error.response.status,
+          data: error.response.data,
+          headers: error.response.headers
+        });
+      }
+      setMessage(error.response?.data?.message || 'Failed to update gold rate. Please try again.');
+    } finally {
+      setLoading(false);
+    }
+  };
 
   return (
     <div className="flex h-screen bg-gray-100">
@@ -1013,6 +1069,38 @@ const AdminDashboard = () => {
               </div>
             )}
           </div>
+
+          {/* Gold Rate Update Section */}
+          <Card className="p-4 mt-6">
+            <Typography variant="h6" className="mb-4">Update Gold Rate</Typography>
+            <div className="flex items-center gap-4">
+              <TextField
+                label="Gold Rate (per gram)"
+                type="number"
+                value={goldRate}
+                onChange={(e) => setGoldRate(e.target.value)}
+                className="w-48"
+                InputProps={{
+                  startAdornment: <span className="mr-2">₹</span>
+                }}
+              />
+              <Button
+                variant="contained"
+                onClick={handleUpdateGoldRate}
+                disabled={loading}
+                className="bg-yellow-600 hover:bg-yellow-700"
+              >
+                Update Rate
+              </Button>
+            </div>
+            {message && (
+              <Typography 
+                className={`mt-2 ${message.includes('success') ? 'text-green-600' : 'text-red-600'}`}
+              >
+                {message}
+              </Typography>
+            )}
+          </Card>
         </div>
       </div>
 
