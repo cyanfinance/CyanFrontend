@@ -1,6 +1,6 @@
-import React, { useState, useEffect } from 'react';
+import { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
-import { Facebook, Twitter, Instagram, Linkedin, Phone, Mail, MapPin } from 'lucide-react';
+import { Facebook, Instagram, Phone, Mail, MapPin } from 'lucide-react';
 import axios from 'axios';
 import { API_URL } from '../config';
 

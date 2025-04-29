@@ -24,7 +24,6 @@ import CustomersPage from './pages/admin/customers';
 import EmployeesPage from './pages/admin/employees';
 import ReportsPage from './pages/admin/reports';
 import LoansPage from './pages/admin/loans';
-import { useAuth as utilsAuth } from './utils/auth';
 import ResetPassword from './pages/auth/ResetPassword';
 
 // Protected Route component

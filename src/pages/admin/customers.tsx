@@ -1,3 +1,4 @@
+import React from 'react';
 import { useState, useEffect } from 'react';
 import AdminSidebar from '../../components/AdminSidebar';
 import EmployeeSidebar from '../../components/EmployeeSidebar';
@@ -49,7 +50,6 @@ const CustomersPage = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [sidebarOpen, setSidebarOpen] = useState(false);
-  const [expandedCustomer, setExpandedCustomer] = useState<string | null>(null);
   const [search, setSearch] = useState('');
   const [editDialogOpen, setEditDialogOpen] = useState(false);
   const [selectedCustomer, setSelectedCustomer] = useState<Customer | null>(null);
@@ -88,10 +88,6 @@ const CustomersPage = () => {
     } finally {
       setLoading(false);
     }
-  };
-
-  const toggleCustomerDetails = (customerId: string) => {
-    setExpandedCustomer(expandedCustomer === customerId ? null : customerId);
   };
 
   const formatDate = (date: string | undefined) => {
@@ -280,7 +276,7 @@ const CustomersPage = () => {
                           )}
                         </td>
                       </tr>
-                      {expandedCustomer === customer.customerId && customer.latestLoan && (
+                      {customer.latestLoan && (
                         <tr className="bg-gray-50" key={`expanded-${customer.mongoId || customer.customerId}`}>
                           <td colSpan={6} className="px-6 py-4">
                             <div className="grid grid-cols-2 gap-4">

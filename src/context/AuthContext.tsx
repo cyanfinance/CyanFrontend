@@ -40,7 +40,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     return { user: null, token: null, isAuthenticated: false };
   });
 
-  const [loading, setLoading] = useState(false);
+  const [loading] = useState(false);
 
   useEffect(() => {
     localStorage.setItem(STORAGE_KEY, JSON.stringify(authState));

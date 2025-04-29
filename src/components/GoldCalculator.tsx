@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import { useState } from 'react';
 import { Calculator } from 'lucide-react';
 
 const GOLD_RATE_PER_GRAM = 7000;

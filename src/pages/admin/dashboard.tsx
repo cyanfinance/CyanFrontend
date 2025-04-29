@@ -75,7 +75,7 @@ interface RepaymentModalProps {
   onRepay: (amount: number, paymentMethod: string, transactionId?: string) => Promise<void>;
 }
 
-const RepaymentModal: React.FC<RepaymentModalProps> = ({ loan, onClose, onRepay }) => {
+const RepaymentModal: React.FC<RepaymentModalProps> = ({ loan: _loan, onClose, onRepay }) => {
   const [amount, setAmount] = useState<number>(0);
   const [paymentMethod, setPaymentMethod] = useState<string>('handcash');
   const [transactionId, setTransactionId] = useState<string>('');
@@ -552,15 +552,13 @@ const AdminDashboard = () => {
   // Count loans by status
   const activeLoansCount = loans.filter(loan => loan.status === 'active').length;
   const closedLoansCount = loans.filter(loan => loan.status === 'closed').length;
-  const approvedLoansCount = loans.filter(loan => loan.status === 'approved').length;
-  const rejectedLoansCount = loans.filter(loan => loan.status === 'rejected').length;
 
   // Update gold rate
   const handleUpdateGoldRate = async () => {
     try {
       setLoading(true);
       console.log('Token being used:', token);
-      const response = await axios.post(`${API_URL}/settings/update-gold-rate`, 
+      await axios.post(`${API_URL}/settings/update-gold-rate`, 
         { rate: parseFloat(goldRate) },
         { headers: { 'x-auth-token': token } }
       );
@@ -631,26 +629,6 @@ const AdminDashboard = () => {
             >
               Closed Loans ({closedLoansCount})
             </button>
-            {/* <button
-              onClick={() => setStatusFilter('approved')}
-              className={`px-4 py-2 rounded-full ${
-                statusFilter === 'approved'
-                  ? 'bg-purple-600 text-white'
-                  : 'bg-gray-200 text-gray-800 hover:bg-gray-300'
-              }`}
-            >
-              Approved Loans ({approvedLoansCount})
-            </button> */}
-            {/* <button
-              onClick={() => setStatusFilter('rejected')}
-              className={`px-4 py-2 rounded-full ${
-                statusFilter === 'rejected'
-                  ? 'bg-red-600 text-white'
-                  : 'bg-gray-200 text-gray-800 hover:bg-gray-300'
-              }`}
-            >
-              Rejected Loans ({rejectedLoansCount})
-            </button> */}
           </div>
 
           {showLoanForm && (

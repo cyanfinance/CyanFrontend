@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import { useState } from "react";
 import { MapPin, Phone, Clock } from "lucide-react";
 import { Link } from "react-router-dom";
 
@@ -104,7 +104,7 @@ function Location() {
             src={`https://www.google.com/maps?q=${encodeURIComponent(selectedBranch.address)}&output=embed`}
             width="100%"
             height="100%"
-            allowFullScreen=""
+            allowFullScreen={true}
             loading="lazy"
             className="border-none"
             title="Google Maps Location"

@@ -1,5 +1,6 @@
-import jsPDF from 'jspdf';
+// @ts-ignore
 import 'jspdf-autotable';
+import jsPDF from 'jspdf';
 
 interface PaymentReceiptData {
   customerName: string;
@@ -10,6 +11,12 @@ interface PaymentReceiptData {
   remainingBalance: number;
   loanId: string;
   receiptNumber: string;
+}
+
+declare module 'jspdf' {
+  interface jsPDF {
+    autoTable: (...args: any[]) => jsPDF;
+  }
 }
 
 export const generatePaymentReceipt = (data: PaymentReceiptData): jsPDF => {
