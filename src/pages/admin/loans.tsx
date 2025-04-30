@@ -383,7 +383,7 @@ const LoansPage = () => {
 
   const handleRepay = async (amount: number, paymentMethod: string, transactionId?: string) => {
     if (!repayLoan) return;
-    const response = await fetch(`${API_URL}/loans/${repayLoan._id}/repay`, {
+    const response = await fetch(`${API_URL}/loans/${repayLoan._id}/payment`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
