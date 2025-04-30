@@ -88,7 +88,7 @@ const AdminSidebar: React.FC<AdminSidebarProps> = ({ isOpen, toggleSidebar }) =>
       <aside
         className={`fixed top-[5.5rem] lg:top-32 left-0 h-[calc(100vh-5.5rem)] lg:h-[calc(100vh-8rem)] bg-white shadow-xl transform transition-transform duration-300 ease-in-out z-[58] \
           ${isOpen ? 'translate-x-0' : '-translate-x-full'} \
-          lg:translate-x-0 lg:relative lg:z-0 w-64`}
+          lg:translate-x-0 lg:relative lg:z-0 w-40`}
       >
         <nav className="h-full overflow-y-auto">
           {/* Show public links on mobile only */}

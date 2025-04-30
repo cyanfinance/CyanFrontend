@@ -197,27 +197,27 @@ const CustomersPage = () => {
               <table className="min-w-full bg-white border border-gray-200 rounded-lg">
                 <thead className="bg-gray-50">
                   <tr>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Customer ID</th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Basic Info</th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Contact Details</th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Address</th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Loan Summary</th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Actions</th>
+                    <th className="px-2 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Customer ID</th>
+                    <th className="px-2 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Basic Info</th>
+                    <th className="px-2 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Contact Details</th>
+                    <th className="px-2 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Address</th>
+                    <th className="px-2 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Loan Summary</th>
+                    <th className="px-2 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Actions</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-gray-200">
                   {filteredCustomers.map((customer) => (
                     <React.Fragment key={customer.mongoId || customer.customerId}>
                       <tr className="hover:bg-gray-50" key={`row-${customer.mongoId || customer.customerId}`}>
-                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                        <td className="px-5 py-4 whitespace-nowrap text-sm text-gray-900">
                           {customer.customerId}
-                          <div className="text-xs text-gray-500">Aadhar: {customer.aadharNumber}</div>
+                          <div className="text-xs text-gray-500">{customer.aadharNumber}</div>
                         </td>
-                        <td className="px-6 py-4 whitespace-nowrap">
+                        <td className="px-5 py-4 whitespace-nowrap">
                           <div className="text-sm font-medium text-gray-900">{customer.name}</div>
                           <div className="text-sm text-gray-500">{customer.email}</div>
                         </td>
-                        <td className="px-6 py-4 whitespace-nowrap">
+                        <td className="px-5 py-4 whitespace-nowrap">
                           <div className="text-sm text-gray-900">Primary: {customer.primaryMobile}</div>
                           {customer.secondaryMobile && (
                             <div className="text-sm text-gray-500">Secondary: {customer.secondaryMobile}</div>
@@ -228,15 +228,15 @@ const CustomersPage = () => {
                             </div>
                           )}
                         </td>
-                        <td className="px-6 py-4">
+                        <td className="px-5 py-4">
                           <div className="text-sm text-gray-900">Present: {customer.presentAddress}</div>
                           <div className="text-sm text-gray-500">Permanent: {customer.permanentAddress}</div>
                         </td>
-                        <td className="px-6 py-4 whitespace-nowrap">
+                        <td className="px-5 py-4 whitespace-nowrap">
                           <div className="text-sm text-gray-900">Active Loans: {customer.activeLoans}</div>
                           <div className="text-sm text-gray-500">Total Loans: {customer.totalLoans}</div>
                         </td>
-                        <td className="px-6 py-4 whitespace-nowrap">
+                        <td className="px-5 py-4 whitespace-nowrap">
                           <button
                             onClick={() => {
                               setSelectedCustomer(customer);

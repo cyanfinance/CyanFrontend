@@ -160,29 +160,29 @@ const PaymentHistoryModal: React.FC<PaymentHistoryModalProps> = ({ loan, onClose
             <table className="min-w-full divide-y divide-gray-200">
               <thead className="bg-gray-50">
                 <tr>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Date</th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Amount</th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Payment Method</th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Transaction ID</th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Status</th>
+                  <th className="px-2 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Date</th>
+                  <th className="px-2 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Amount</th>
+                  <th className="px-2 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Payment Method</th>
+                  <th className="px-2 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Transaction ID</th>
+                  <th className="px-2 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Status</th>
                 </tr>
               </thead>
               <tbody className="bg-white divide-y divide-gray-200">
                 {payments.map((payment) => (
                   <tr key={payment._id || payment.date}>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                    <td className="px-2 py-4 whitespace-nowrap text-sm text-gray-500">
                       {formatDate(payment.date)}
                     </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                    <td className="px-2 py-4 whitespace-nowrap text-sm text-gray-900">
                       {formatCurrency(payment.amount)}
                     </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                    <td className="px-2 py-4 whitespace-nowrap text-sm text-gray-500">
                       {payment.method}
                     </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                    <td className="px-2 py-4 whitespace-nowrap text-sm text-gray-500">
                       {payment.transactionId || '-'}
                     </td>
-                    <td className="px-6 py-4 whitespace-nowrap">
+                    <td className="px-2 py-4 whitespace-nowrap">
                       <span className={`px-2 inline-flex text-xs leading-5 font-semibold rounded-full ${
                         payment.status === 'success' ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'
                       }`}>
@@ -398,6 +398,13 @@ const LoansPage = () => {
     await fetchLoans();
   };
 
+  // Add this CSS block at the top or in a <style> tag if using CSS-in-JS
+  const tableContainerStyle = {
+    maxWidth: '1200px',
+    margin: '0 auto',
+    width: '100%'
+  };
+
   return (
     <div className="flex h-screen bg-gray-100">
       {user?.role === 'employee' ? (
@@ -433,147 +440,149 @@ const LoansPage = () => {
         )}
 
         {!loading && !error && (
-          <TableContainer component={Paper}>
-            <Table>
-              <TableHead>
-                <TableRow>
-                  <TableCell />
-                  <TableCell>Date</TableCell>
-                  <TableCell>Customer Details</TableCell>
-                  <TableCell>Loan Details</TableCell>
-                  <TableCell>Status</TableCell>
-                  <TableCell>Actions</TableCell>
-                </TableRow>
-              </TableHead>
-              <TableBody>
-                {filteredLoans.map((loan) => (
-                  <React.Fragment key={loan._id}>
-                    <TableRow>
-                      <TableCell>
-                        <IconButton
-                          size="small"
-                          onClick={() => setExpandedRow(expandedRow === loan._id ? null : loan._id)}
-                        >
-                          {expandedRow === loan._id ? <KeyboardArrowUp /> : <KeyboardArrowDown />}
-                        </IconButton>
-                      </TableCell>
-                      <TableCell>{formatDate(loan.createdAt)}</TableCell>
-                      <TableCell>
-                        <Typography variant="subtitle2">{loan.name}</Typography>
-                        <Typography variant="body2" color="textSecondary">
-                          {loan.primaryMobile}
-                        </Typography>
-                        <Typography variant="body2" color="textSecondary">
-                          {loan.email}
-                        </Typography>
-                      </TableCell>
-                      <TableCell>
-                        <Typography variant="subtitle2">
-                          Amount: {formatCurrency(loan.amount)}
-                        </Typography>
-                        <Typography variant="body2" color="textSecondary">
-                          Term: {loan.term} months | Interest: {loan.interestRate}%
-                        </Typography>
-                        <Typography variant="body2" color="textSecondary">
-                          Monthly: {formatCurrency(loan.monthlyPayment)}
-                        </Typography>
-                        <Typography variant="body2" color="textSecondary">
-                          Total Paid: {formatCurrency(loan.totalPaid)}
-                        </Typography>
-                        <Typography variant="body2" color="textSecondary">
-                          To Be Paid: {formatCurrency(loan.totalPayment - loan.totalPaid)}
-                        </Typography>
-                      </TableCell>
-                      <TableCell>
-                        <Box
-                          sx={{
-                            bgcolor: getStatusColor(loan.status),
-                            px: 2,
-                            py: 0.5,
-                            borderRadius: 1,
-                            display: 'inline-block'
-                          }}
-                        >
-                          {loan.status.charAt(0).toUpperCase() + loan.status.slice(1)}
-                        </Box>
-                      </TableCell>
-                      <TableCell>
-                        <IconButton
-                          color="primary"
-                          onClick={() => handleEditClick(loan)}
-                        >
-                          <EditIcon />
-                        </IconButton>
-                        {loan.status === 'active' && (
+          <div style={tableContainerStyle}>
+            <TableContainer component={Paper}>
+              <Table>
+                <TableHead>
+                  <TableRow>
+                    <TableCell />
+                    <TableCell>Date</TableCell>
+                    <TableCell>Customer Details</TableCell>
+                    <TableCell>Loan Details</TableCell>
+                    <TableCell>Status</TableCell>
+                    <TableCell>Actions</TableCell>
+                  </TableRow>
+                </TableHead>
+                <TableBody>
+                  {filteredLoans.map((loan) => (
+                    <React.Fragment key={loan._id}>
+                      <TableRow>
+                        <TableCell>
+                          <IconButton
+                            size="small"
+                            onClick={() => setExpandedRow(expandedRow === loan._id ? null : loan._id)}
+                          >
+                            {expandedRow === loan._id ? <KeyboardArrowUp /> : <KeyboardArrowDown />}
+                          </IconButton>
+                        </TableCell>
+                        <TableCell>{formatDate(loan.createdAt)}</TableCell>
+                        <TableCell>
+                          <Typography variant="subtitle2">{loan.name}</Typography>
+                          <Typography variant="body2" color="textSecondary">
+                            {loan.primaryMobile}
+                          </Typography>
+                          <Typography variant="body2" color="textSecondary">
+                            {loan.email}
+                          </Typography>
+                        </TableCell>
+                        <TableCell>
+                          <Typography variant="subtitle2">
+                            Amount: {formatCurrency(loan.amount)}
+                          </Typography>
+                          <Typography variant="body2" color="textSecondary">
+                            Term: {loan.term} months | Interest: {loan.interestRate}%
+                          </Typography>
+                          <Typography variant="body2" color="textSecondary">
+                            Monthly: {formatCurrency(loan.monthlyPayment)}
+                          </Typography>
+                          <Typography variant="body2" color="textSecondary">
+                            Total Paid: {formatCurrency(loan.totalPaid)}
+                          </Typography>
+                          <Typography variant="body2" color="textSecondary">
+                            To Be Paid: {formatCurrency(loan.totalPayment - loan.totalPaid)}
+                          </Typography>
+                        </TableCell>
+                        <TableCell>
+                          <Box
+                            sx={{
+                              bgcolor: getStatusColor(loan.status),
+                              px: 2,
+                              py: 0.5,
+                              borderRadius: 1,
+                              display: 'inline-block'
+                            }}
+                          >
+                            {loan.status.charAt(0).toUpperCase() + loan.status.slice(1)}
+                          </Box>
+                        </TableCell>
+                        <TableCell>
+                          <IconButton
+                            color="primary"
+                            onClick={() => handleEditClick(loan)}
+                          >
+                            <EditIcon />
+                          </IconButton>
+                          {loan.status === 'active' && (
+                            <Button
+                              color="warning"
+                              size="small"
+                              onClick={() => {
+                                setRepayLoan(loan);
+                                setShowRepaymentModal(true);
+                              }}
+                              style={{ marginLeft: 8 }}
+                            >
+                              Repay
+                            </Button>
+                          )}
                           <Button
-                            color="warning"
+                            color="info"
                             size="small"
                             onClick={() => {
-                              setRepayLoan(loan);
-                              setShowRepaymentModal(true);
+                              setSelectedLoan(loan);
+                              setShowPaymentHistoryModal(true);
                             }}
                             style={{ marginLeft: 8 }}
                           >
-                            Repay
+                            Payment History
                           </Button>
-                        )}
-                        <Button
-                          color="info"
-                          size="small"
-                          onClick={() => {
-                            setSelectedLoan(loan);
-                            setShowPaymentHistoryModal(true);
-                          }}
-                          style={{ marginLeft: 8 }}
-                        >
-                          Payment History
-                        </Button>
-                      </TableCell>
-                    </TableRow>
-                    <TableRow>
-                      <TableCell style={{ paddingBottom: 0, paddingTop: 0 }} colSpan={6}>
-                        <Collapse in={expandedRow === loan._id} timeout="auto" unmountOnExit>
-                          <Box sx={{ margin: 2 }}>
-                            <Typography variant="h6" gutterBottom>
-                              Gold Items
-                            </Typography>
-                            <Table size="small">
-                              <TableHead>
-                                <TableRow>
-                                  <TableCell>Description</TableCell>
-                                  <TableCell>Gross Weight (g)</TableCell>
-                                  <TableCell>Net Weight (g)</TableCell>
-                                </TableRow>
-                              </TableHead>
-                              <TableBody>
-                                {loan.goldItems.map((item, index) => (
-                                  <TableRow key={index}>
-                                    <TableCell>{item.description}</TableCell>
-                                    <TableCell>{item.grossWeight}</TableCell>
-                                    <TableCell>{item.netWeight}</TableCell>
+                        </TableCell>
+                      </TableRow>
+                      <TableRow>
+                        <TableCell style={{ paddingBottom: 0, paddingTop: 0 }} colSpan={6}>
+                          <Collapse in={expandedRow === loan._id} timeout="auto" unmountOnExit>
+                            <Box sx={{ margin: 2 }}>
+                              <Typography variant="h6" gutterBottom>
+                                Gold Items
+                              </Typography>
+                              <Table size="small">
+                                <TableHead>
+                                  <TableRow>
+                                    <TableCell>Description</TableCell>
+                                    <TableCell>Gross Weight (g)</TableCell>
+                                    <TableCell>Net Weight (g)</TableCell>
                                   </TableRow>
-                                ))}
-                              </TableBody>
-                            </Table>
-                            {loan.depositedBank && (
-                              <Typography variant="body2" sx={{ mt: 2 }}>
-                                Deposited Bank: {loan.depositedBank}
-                              </Typography>
-                            )}
-                            {loan.renewalDate && (
-                              <Typography variant="body2">
-                                Renewal Date: {formatDate(loan.renewalDate)}
-                              </Typography>
-                            )}
-                          </Box>
-                        </Collapse>
-                      </TableCell>
-                    </TableRow>
-                  </React.Fragment>
-                ))}
-              </TableBody>
-            </Table>
-          </TableContainer>
+                                </TableHead>
+                                <TableBody>
+                                  {loan.goldItems.map((item, index) => (
+                                    <TableRow key={index}>
+                                      <TableCell>{item.description}</TableCell>
+                                      <TableCell>{item.grossWeight}</TableCell>
+                                      <TableCell>{item.netWeight}</TableCell>
+                                    </TableRow>
+                                  ))}
+                                </TableBody>
+                              </Table>
+                              {loan.depositedBank && (
+                                <Typography variant="body2" sx={{ mt: 2 }}>
+                                  Deposited Bank: {loan.depositedBank}
+                                </Typography>
+                              )}
+                              {loan.renewalDate && (
+                                <Typography variant="body2">
+                                  Renewal Date: {formatDate(loan.renewalDate)}
+                                </Typography>
+                              )}
+                            </Box>
+                          </Collapse>
+                        </TableCell>
+                      </TableRow>
+                    </React.Fragment>
+                  ))}
+                </TableBody>
+              </Table>
+            </TableContainer>
+          </div>
         )}
 
         {/* Edit Dialog */}
