@@ -1050,7 +1050,7 @@ const AdminDashboard = () => {
 
           {/* Gold Rate Update Section */}
           <Card className="p-4 mt-6">
-            <Typography variant="h6" className="mb-4">Update Gold Rate</Typography>
+            <Typography variant="h6" className="mb-4 p-4">Update Gold Rate</Typography>
             <div className="flex items-center gap-4">
               <TextField
                 label="Gold Rate (per gram)"
