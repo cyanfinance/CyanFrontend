@@ -43,6 +43,8 @@ interface Customer {
   activeLoans: number;
   latestLoan?: LoanDetails;
   mongoId?: string;
+  userId?: string;
+  role?: string;
 }
 
 const CustomersPage = () => {
@@ -56,6 +58,7 @@ const CustomersPage = () => {
   const [saving, setSaving] = useState(false);
   const { token: rawToken, user } = useAuth();
   const token = rawToken || '';
+  const [originalAadharNumber, setOriginalAadharNumber] = useState<string | null>(null);
 
   useEffect(() => {
     console.log('Admin Customers Page Token:', token);
@@ -119,9 +122,9 @@ const CustomersPage = () => {
     setSaving(true);
     try {
       if (!token) throw new Error('No authentication token found');
-      let endpoint = `${API_URL}/admin/customers/${selectedCustomer.mongoId}`;
+      let endpoint = `${API_URL}/admin/customers/${originalAadharNumber}`;
       if (user && user.role === 'employee') {
-        endpoint = `${API_URL}/employee/customers/${selectedCustomer.mongoId}`;
+        endpoint = `${API_URL}/employee/customers/${originalAadharNumber}`;
       }
       const safeToken = token || '';
       // Only send updatable fields
@@ -240,6 +243,7 @@ const CustomersPage = () => {
                           <button
                             onClick={() => {
                               setSelectedCustomer(customer);
+                              setOriginalAadharNumber(customer.aadharNumber);
                               setEditDialogOpen(true);
                             }}
                             className="text-yellow-600 hover:text-yellow-900"
@@ -248,32 +252,6 @@ const CustomersPage = () => {
                           >
                             Edit
                           </button>
-                          {user?.role === 'admin' && customer.mongoId && (
-                            <button
-                              onClick={async () => {
-                                if (!window.confirm('Are you sure you want to delete this customer?')) return;
-                                try {
-                                  const safeToken = token || '';
-                                  const res = await fetch(`${API_URL}/admin/customers/${customer.mongoId}`, {
-                                    method: 'DELETE',
-                                    headers: { 'x-auth-token': safeToken }
-                                  });
-                                  const data = await res.json();
-                                  if (data.success) {
-                                    setCustomers(prev => prev.filter(c => c.mongoId !== customer.mongoId));
-                                  } else {
-                                    alert(data.message || 'Failed to delete customer');
-                                  }
-                                } catch (err) {
-                                  alert('Failed to delete customer');
-                                }
-                              }}
-                              className="ml-2 text-red-600 hover:text-red-900"
-                              title="Delete customer"
-                            >
-                              Delete
-                            </button>
-                          )}
                         </td>
                       </tr>
                       {customer.latestLoan && (

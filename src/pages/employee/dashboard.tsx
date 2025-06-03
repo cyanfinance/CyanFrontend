@@ -501,7 +501,7 @@ const EmployeeDashboard = () => {
 
   const handleRepay = async (amount: number, paymentMethod: string, transactionId?: string) => {
     if (!selectedLoan) return;
-    const response = await fetch(`${API_URL}/loans/${selectedLoan._id}/repay`, {
+    const response = await fetch(`${API_URL}/loans/${selectedLoan._id}/payment`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
