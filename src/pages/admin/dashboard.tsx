@@ -992,7 +992,7 @@ const AdminDashboard = () => {
                         </td>
                         <td className="px-6 py-4">
                           <div className="text-sm font-medium text-gray-900">{loan.name}</div>
-                          <div className="text-sm text-gray-500">{loan.customerId}</div>
+                          {/* <div className="text-sm text-gray-500">{loan.customerId}</div> */}
                         </td>
                         <td className="px-6 py-4">
                           <div className="text-sm text-gray-900">{loan.primaryMobile}</div>
