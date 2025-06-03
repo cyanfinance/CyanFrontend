@@ -18,7 +18,7 @@ const Login = () => {
     setLoading(true);
 
     try {
-      console.log('Attempting login with:', { email });
+      // console.log('Attempting login with:', { email });
       
       const response = await fetch(`${API_URL}/auth/login`, {
         method: 'POST',
@@ -29,7 +29,7 @@ const Login = () => {
       });
 
       const data = await response.json();
-      console.log('Login response:', data);
+      // console.log('Login response:', data);
 
       if (!response.ok) {
         throw new Error(data.message || 'Login failed');

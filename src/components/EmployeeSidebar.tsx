@@ -103,11 +103,11 @@ const EmployeeSidebar: React.FC<EmployeeSidebarProps> = ({ isOpen, toggleSidebar
               className={`flex items-center px-6 py-3 text-gray-700 hover:bg-yellow-50 hover:text-yellow-600 transition-colors duration-200
                 ${location.pathname === item.path ? 'bg-yellow-50 text-yellow-600 border-r-4 border-yellow-600' : ''}`}
               onClick={() => {
-                console.log('[Sidebar Link Click]', {
-                  user,
-                  isAuthenticated,
-                  to: item.path
-                });
+                // console.log('[Sidebar Link Click]', {
+                //   user,
+                //   isAuthenticated,
+                //   to: item.path
+                // });
                 if (isOpen) toggleSidebar();
               }}
             >

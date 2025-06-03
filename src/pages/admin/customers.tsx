@@ -61,7 +61,7 @@ const CustomersPage = () => {
   const [originalAadharNumber, setOriginalAadharNumber] = useState<string | null>(null);
 
   useEffect(() => {
-    console.log('Admin Customers Page Token:', token);
+    // console.log('Admin Customers Page Token:', token);
     fetchCustomers();
   }, []);
 

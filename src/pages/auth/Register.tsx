@@ -14,7 +14,7 @@ function Register() {
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     // Handle registration logic
-    console.log(formData);
+    // console.log(formData);
   };
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {

@@ -420,7 +420,7 @@ const EmployeeDashboard = () => {
         createdBy: user.id
       };
 
-      console.log('Sending loan request with data:', JSON.stringify(requestData, null, 2));
+      // console.log('Sending loan request with data:', JSON.stringify(requestData, null, 2));
 
       const response = await fetch(`${API_URL}/employee/loans`, {
         method: 'POST',

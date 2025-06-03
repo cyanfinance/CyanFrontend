@@ -436,7 +436,7 @@ const AdminDashboard = () => {
         createdBy: user.id
       };
 
-      console.log('Sending loan request with data:', JSON.stringify(requestData, null, 2));
+      // console.log('Sending loan request with data:', JSON.stringify(requestData, null, 2));
 
       const response = await fetch(`${API_URL}/admin/loans`, {
         method: 'POST',
@@ -557,7 +557,7 @@ const AdminDashboard = () => {
   const handleUpdateGoldRate = async () => {
     try {
       setLoading(true);
-      console.log('Token being used:', token);
+      // console.log('Token being used:', token);
       await axios.post(`${API_URL}/settings/update-gold-rate`, 
         { rate: parseFloat(goldRate) },
         { headers: { 'x-auth-token': token } }

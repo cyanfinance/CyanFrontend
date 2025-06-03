@@ -31,12 +31,12 @@ const ProtectedRoute = ({ children, allowedRoles = [] }: { children: React.React
   const { isAuthenticated, user, loading } = useAuth();
 
   // Debug output
-  console.log('[ProtectedRoute]', {
-    user,
-    isAuthenticated,
-    loading,
-    allowedRoles
-  });
+  // console.log('[ProtectedRoute]', {
+  //   user,
+  //   isAuthenticated,
+  //   loading,
+  //   allowedRoles
+  // });
 
   if (loading) {
     return <div className="flex justify-center items-center h-screen">Loading...</div>;
