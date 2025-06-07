@@ -1,5 +1,4 @@
 import { Info, Shield, Percent } from 'lucide-react';
-import { Link } from 'react-router-dom';
 import GoldCalculator from '../components/GoldCalculator';
  
 function Home() {

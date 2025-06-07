@@ -1,5 +1,4 @@
 import { Shield, Award, Clock } from 'lucide-react';
-import { Link } from 'react-router-dom';
  
 function About() {
   return (

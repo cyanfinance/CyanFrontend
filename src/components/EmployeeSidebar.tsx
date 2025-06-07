@@ -18,7 +18,7 @@ interface EmployeeSidebarProps {
 
 const EmployeeSidebar: React.FC<EmployeeSidebarProps> = ({ isOpen, toggleSidebar }) => {
   const location = useLocation();
-  const { user, isAuthenticated } = useAuth();
+  const { } = useAuth();
 
   const menuItems = [
     {

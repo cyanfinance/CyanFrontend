@@ -1,6 +1,5 @@
 import { useState } from "react";
 import { MapPin, Phone, Clock } from "lucide-react";
-import { Link } from "react-router-dom";
 
 function Location() {
   const branches = [
