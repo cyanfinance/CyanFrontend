@@ -19,7 +19,7 @@ function About() {
             className="rounded-lg shadow-lg w-full h-[600px] object-cover"
           >
             <source
-              src="src/components/WhatsApp Video 2025-04-01 at 17.02.44_38fe5129.mp4"
+              src="/videos/about-video.mp4"
               type="video/mp4"
             />
             Your browser does not support the video tag.
@@ -93,7 +93,7 @@ function About() {
     {/* CTA Section */}
     <div className="bg-[#0e1353]">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
-          <div className="text-center">
+         {/*} <div className="text-center">
             <h2 className="text-3xl font-bold text-white">
               Ready to Get Started?
             </h2>
@@ -108,7 +108,7 @@ function About() {
                 Check Eligibility
               </Link>
             </div>
-          </div>
+          </div>*/}
         </div>
       </div>
     </div>

@@ -119,7 +119,7 @@ function Location() {
       {/* CTA Section */}
       <div className="bg-[#0e1353]">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
-          <div className="text-center">
+          {/* <div className="text-center">
             <h2 className="text-3xl font-bold text-white">
               Ready to Get Started?
             </h2>
@@ -134,7 +134,7 @@ function Location() {
                 Check Eligibility
               </Link>
             </div>
-          </div>
+          </div> */}
         </div>
       </div>
     </div>
