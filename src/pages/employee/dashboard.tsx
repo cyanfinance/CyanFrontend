@@ -268,6 +268,8 @@ const EmployeeDashboard = () => {
     } catch (err) {
       console.error('Error checking Aadhar:', err);
       setError(err instanceof Error ? err.message : 'Failed to check Aadhar number');
+    } finally {
+      setCheckingAadhar(false);
     }
   };
 
