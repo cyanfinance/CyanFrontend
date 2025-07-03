@@ -291,7 +291,7 @@ const AdminDashboard = () => {
 
   const calculateLoanDetails = (data: Partial<LoanFormData>) => {
     const principal = data.loanAmount || formData.loanAmount;
-    const ratePerMonth = (data.interestRate || formData.interestRate) / 100;
+    const ratePerMonth = (data.interestRate || formData.interestRate) / 100/12;
     const months = data.duration || formData.duration;
 
     if (principal > 0 && ratePerMonth > 0 && months > 0) {
