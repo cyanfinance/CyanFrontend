@@ -25,7 +25,7 @@ import {
 import { Edit as EditIcon, KeyboardArrowDown, KeyboardArrowUp } from '@mui/icons-material';
 import { RepaymentModal } from './dashboard';
 import { useAuth } from '../../context/AuthContext';
-import { API_URL } from '../../config.ts';
+import { API_URL } from '../../config';
 import Navbar from '../../components/Navbar';
 import ReactDOMServer from 'react-dom/server';
 import { fetchEarlyRepaymentDetails } from '../../utils/api';
