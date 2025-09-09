@@ -5,6 +5,7 @@ import EmployeeSidebar from '../../components/EmployeeSidebar';
 import { Dialog, DialogTitle, DialogContent, DialogActions, Button, TextField } from '@mui/material';
 import { useAuth } from '../../context/AuthContext';
 import { API_URL } from '../../config';
+import Navbar from '../../components/Navbar';
 
 interface GoldItem {
   description: string;
@@ -108,12 +109,12 @@ const CustomersPage = () => {
   const filteredCustomers = customers.filter((customer) => {
     const query = search.toLowerCase();
     return (
-      customer.name.toLowerCase().includes(query) ||
-      customer.aadharNumber.includes(query) ||
-      customer.customerId.includes(query) ||
-      customer.email.toLowerCase().includes(query) ||
-      customer.primaryMobile.includes(query) ||
-      (customer.secondaryMobile && customer.secondaryMobile.includes(query))
+      (customer.name?.toLowerCase().includes(query)) ||
+      (customer.aadharNumber?.includes(query)) ||
+      (customer.customerId?.includes(query)) ||
+      (customer.email?.toLowerCase().includes(query)) ||
+      (customer.primaryMobile?.includes(query)) ||
+      (customer.secondaryMobile?.includes(query))
     );
   });
 
@@ -162,237 +163,258 @@ const CustomersPage = () => {
   };
 
   return (
-    <div className="flex h-screen bg-gray-100">
-      {user?.role === 'employee' ? (
-        <EmployeeSidebar isOpen={sidebarOpen} toggleSidebar={() => setSidebarOpen(!sidebarOpen)} />
-      ) : (
-        <AdminSidebar isOpen={sidebarOpen} toggleSidebar={() => setSidebarOpen(!sidebarOpen)} />
-      )}
-      
-      <div className="flex-1 overflow-auto">
-        <div className="p-8">
-          <h1 className="text-3xl font-bold mb-6">Customers</h1>
-
-          <div className="mb-4 flex justify-end">
-            <input
-              type="text"
-              value={search}
-              onChange={e => setSearch(e.target.value)}
-              placeholder="Search by Name, Aadhar, Mobile, or Email"
-              className="p-2 border rounded w-80"
-            />
-          </div>
-
-          {loading && (
-            <div className="text-center py-4">
-              <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-yellow-600 mx-auto"></div>
+    <>
+      <Navbar isSidebarPage={true} sidebarOpen={sidebarOpen} toggleSidebar={() => setSidebarOpen(open => !open)} />
+      <div className="flex h-screen bg-gradient-to-br from-blue-50 via-cyan-50 to-white">
+        {user?.role === 'employee' ? (
+          <EmployeeSidebar isOpen={sidebarOpen} toggleSidebar={() => setSidebarOpen(open => !open)} />
+        ) : (
+          <AdminSidebar isOpen={sidebarOpen} toggleSidebar={() => setSidebarOpen(open => !open)} />
+        )}
+        
+        <div className="flex-1 overflow-auto">
+          <div className="p-8">
+            <div className="bg-gradient-to-r from-blue-100 via-cyan-50 to-white rounded-b-3xl shadow p-4 mb-4">
+              <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
+                <div>
+                  <h1 className="text-2xl font-bold text-blue-800 mb-1 flex items-center gap-2">
+                    <span>👥</span> Customers
+                  </h1>
+                  <p className="text-gray-600 text-base">Manage all your customers and their loan activity here.</p>
+                </div>
+                <div className="relative w-full md:w-96 mt-4 md:mt-0">
+                  <span className="absolute left-3 top-1/2 -translate-y-1/2 text-blue-300 text-lg">🔍</span>
+                  <input
+                    type="text"
+                    value={search}
+                    onChange={e => setSearch(e.target.value)}
+                    placeholder="Search by Name, Aadhar, Mobile, or Email"
+                    className="pl-10 pr-4 py-2 w-full rounded-full border border-blue-100 bg-blue-50 focus:ring-2 focus:ring-blue-200 focus:border-blue-300 transition text-gray-700 shadow-sm"
+                  />
+                </div>
+              </div>
             </div>
-          )}
-
-          {error && (
-            <div className="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded mb-4">
-              {error}
-            </div>
-          )}
-
-          {!loading && !error && (
-            <div className="overflow-x-auto">
-              <table className="min-w-full bg-white border border-gray-200 rounded-lg">
-                <thead className="bg-gray-50">
-                  <tr>
-                    <th className="px-2 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Customer ID</th>
-                    <th className="px-2 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Basic Info</th>
-                    <th className="px-2 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Contact Details</th>
-                    <th className="px-2 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Address</th>
-                    <th className="px-2 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Loan Summary</th>
-                    <th className="px-2 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Actions</th>
-                  </tr>
-                </thead>
-                <tbody className="divide-y divide-gray-200">
-                  {filteredCustomers.map((customer) => (
-                    <React.Fragment key={customer.mongoId || customer.customerId}>
-                      <tr className="hover:bg-gray-50" key={`row-${customer.mongoId || customer.customerId}`}>
-                        <td className="px-5 py-4 whitespace-nowrap text-sm text-gray-900">
-                          {customer.customerId}
-                          <div className="text-xs text-gray-500">{customer.aadharNumber}</div>
-                        </td>
-                        <td className="px-5 py-4 whitespace-nowrap">
-                          <div className="text-sm font-medium text-gray-900">{customer.name}</div>
-                          <div className="text-sm text-gray-500">{customer.email}</div>
-                        </td>
-                        <td className="px-5 py-4 whitespace-nowrap">
-                          <div className="text-sm text-gray-900">Primary: {customer.primaryMobile}</div>
-                          {customer.secondaryMobile && (
-                            <div className="text-sm text-gray-500">Secondary: {customer.secondaryMobile}</div>
-                          )}
-                          {customer.emergencyContact && (
-                            <div className="text-sm text-gray-500">
-                              Emergency: {customer.emergencyContact.mobile} ({customer.emergencyContact.relation})
-                            </div>
-                          )}
-                        </td>
-                        <td className="px-5 py-4">
-                          <div className="text-sm text-gray-900">Present: {customer.presentAddress}</div>
-                          <div className="text-sm text-gray-500">Permanent: {customer.permanentAddress}</div>
-                        </td>
-                        <td className="px-5 py-4 whitespace-nowrap">
-                          <div className="text-sm text-gray-900">Active Loans: {customer.activeLoans}</div>
-                          <div className="text-sm text-gray-500">Total Loans: {customer.totalLoans}</div>
-                        </td>
-                        <td className="px-5 py-4 whitespace-nowrap">
-                          <button
-                            onClick={() => {
-                              setSelectedCustomer(customer);
-                              setOriginalAadharNumber(customer.aadharNumber);
-                              setEditDialogOpen(true);
-                            }}
-                            className="text-yellow-600 hover:text-yellow-900"
-                            disabled={!customer.mongoId}
-                            title={!customer.mongoId ? 'Cannot edit: No user record found for this customer' : ''}
-                          >
-                            Edit
-                          </button>
-                        </td>
-                      </tr>
-                      {customer.latestLoan && (
-                        <tr className="bg-gray-50" key={`expanded-${customer.mongoId || customer.customerId}`}>
-                          <td colSpan={6} className="px-6 py-4">
-                            <div className="grid grid-cols-2 gap-4">
-                              <div>
-                                <h4 className="font-semibold mb-2">Latest Loan Details</h4>
-                                <div className="text-sm">
-                                  <p>Amount: {formatCurrency(customer.latestLoan.amount)}</p>
-                                  <p>Term: {customer.latestLoan.term} months</p>
-                                  <p>Interest Rate: {customer.latestLoan.interestRate}%</p>
-                                  <p>Monthly Payment: {formatCurrency(customer.latestLoan.monthlyPayment)}</p>
-                                  <p>Total Payment: {formatCurrency(customer.latestLoan.totalPayment)}</p>
-                                  <p>Status: <span className="capitalize">{customer.latestLoan.status}</span></p>
-                                  {customer.latestLoan.depositedBank && (
-                                    <p>Bank: {customer.latestLoan.depositedBank}</p>
-                                  )}
-                                  {customer.latestLoan.renewalDate && (
-                                    <p>Renewal Date: {formatDate(customer.latestLoan.renewalDate.toString())}</p>
-                                  )}
-                                </div>
+            <div className="bg-white/90 rounded-2xl shadow-xl p-6">
+              <div className="overflow-x-auto">
+                <table className="min-w-full bg-white rounded-xl">
+                  <thead className="bg-blue-100">
+                    <tr>
+                      <th className="px-2 py-3 text-left text-xs font-bold text-blue-700 uppercase tracking-wider">Customer ID</th>
+                      <th className="px-2 py-3 text-left text-xs font-bold text-blue-700 uppercase tracking-wider">Basic Info</th>
+                      <th className="px-2 py-3 text-left text-xs font-bold text-blue-700 uppercase tracking-wider">Contact Details</th>
+                      <th className="px-2 py-3 text-left text-xs font-bold text-blue-700 uppercase tracking-wider">Address</th>
+                      <th className="px-2 py-3 text-left text-xs font-bold text-blue-700 uppercase tracking-wider">Loan Summary</th>
+                      <th className="px-2 py-3 text-left text-xs font-bold text-blue-700 uppercase tracking-wider">Actions</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-blue-50">
+                    {filteredCustomers.map((customer, idx) => (
+                      <React.Fragment key={customer.mongoId || customer.customerId}>
+                        <tr className={`transition group ${idx % 2 === 0 ? 'bg-blue-50' : 'bg-white'} hover:bg-cyan-50`}>
+                          <td className="px-5 py-4 whitespace-nowrap text-sm text-gray-900 font-semibold">
+                            {customer.customerId}
+                            <div className="text-xs text-gray-500">{customer.aadharNumber}</div>
+                          </td>
+                          <td className="px-5 py-4 whitespace-nowrap">
+                            <div className="text-sm font-bold text-blue-800 flex items-center gap-1">{customer.name}</div>
+                            <div className="text-xs text-gray-500">{customer.email}</div>
+                          </td>
+                          <td className="px-5 py-4 whitespace-nowrap">
+                            <div className="text-sm text-gray-900">Primary: {customer.primaryMobile}</div>
+                            {customer.secondaryMobile && (
+                              <div className="text-xs text-gray-500">Secondary: {customer.secondaryMobile}</div>
+                            )}
+                            {customer.emergencyContact && (
+                              <div className="text-xs text-gray-500">
+                                Emergency: {customer.emergencyContact.mobile} ({customer.emergencyContact.relation})
                               </div>
-                              {customer.goldItems && customer.goldItems.length > 0 && (
-                                <div>
-                                  <h4 className="font-semibold mb-2">Gold Items</h4>
-                                  <div className="text-sm">
-                                    {customer.goldItems.map((item, index) => (
-                                      <div key={item.description + index} className="mb-2">
-                                        <p>Item {index + 1}: {item.description}</p>
-                                        <p className="ml-4">Gross Weight: {item.grossWeight}g</p>
-                                        <p className="ml-4">Net Weight: {item.netWeight}g</p>
-                                      </div>
-                                    ))}
-                                  </div>
-                                </div>
-                              )}
-                            </div>
+                            )}
+                          </td>
+                          <td className="px-5 py-4">
+                            <div className="text-sm text-gray-900">Present: {customer.presentAddress}</div>
+                            <div className="text-xs text-gray-500">Permanent: {customer.permanentAddress}</div>
+                          </td>
+                          <td className="px-5 py-4 whitespace-nowrap">
+                            <div className="text-sm text-green-700 font-semibold">Active Loans: {customer.activeLoans}</div>
+                            <div className="text-xs text-gray-500">Total Loans: {customer.totalLoans}</div>
+                          </td>
+                          <td className="px-5 py-4 whitespace-nowrap">
+                            <button
+                              onClick={() => {
+                                setSelectedCustomer(customer);
+                                setOriginalAadharNumber(customer.aadharNumber);
+                                setEditDialogOpen(true);
+                              }}
+                              className="bg-gradient-to-r from-blue-400 to-cyan-500 hover:from-blue-500 hover:to-cyan-600 text-white px-4 py-2 rounded-full font-bold flex items-center gap-2 shadow group-hover:scale-105 transition"
+                              disabled={!customer.mongoId}
+                              title={!customer.mongoId ? 'Cannot edit: No user record found for this customer' : ''}
+                            >
+                              <span>✏️</span> Edit
+                            </button>
                           </td>
                         </tr>
-                      )}
-                    </React.Fragment>
-                  ))}
-                  {filteredCustomers.length === 0 && (
-                    <tr>
-                      <td colSpan={6} className="px-6 py-4 text-center text-gray-500">
-                        No customers found
-                      </td>
-                    </tr>
-                  )}
-                </tbody>
-              </table>
+                        {customer.latestLoan && (
+                          <tr className="bg-blue-50 border-t border-blue-100" key={`expanded-${customer.mongoId || customer.customerId}`}>
+                            <td colSpan={6} className="px-6 py-4">
+                              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                <div>
+                                  <h4 className="font-semibold mb-2 flex items-center gap-1 text-blue-700"><span>💳</span> Latest Loan Details</h4>
+                                  <div className="text-sm">
+                                    <p>Amount: <span className="font-bold text-blue-800">{formatCurrency(customer.latestLoan.amount)}</span></p>
+                                    <p>Term: {customer.latestLoan.term} months</p>
+                                    <p>Interest Rate: {customer.latestLoan.interestRate}%</p>
+                                    <p>Monthly Payment: {formatCurrency(customer.latestLoan.monthlyPayment)}</p>
+                                    <p>Total Payment: {formatCurrency(customer.latestLoan.totalPayment)}</p>
+                                    <p>Status: <span className="capitalize font-semibold text-blue-700">{customer.latestLoan.status}</span></p>
+                                    {customer.latestLoan.depositedBank && (
+                                      <p>Bank: {customer.latestLoan.depositedBank}</p>
+                                    )}
+                                    {customer.latestLoan.renewalDate && (
+                                      <p>Renewal Date: {formatDate(customer.latestLoan.renewalDate.toString())}</p>
+                                    )}
+                                  </div>
+                                </div>
+                                {customer.goldItems && customer.goldItems.length > 0 && (
+                                  <div>
+                                    <h4 className="font-semibold mb-2 flex items-center gap-1 text-blue-700"><span>🪙</span> Gold Items</h4>
+                                    <div className="text-sm">
+                                      {customer.goldItems.map((item, index) => (
+                                        <div key={item.description + index} className="mb-2">
+                                          <p>Item {index + 1}: <span className="font-semibold">{item.description}</span></p>
+                                          <p className="ml-4">Gross Weight: {item.grossWeight}g</p>
+                                          <p className="ml-4">Net Weight: {item.netWeight}g</p>
+                                        </div>
+                                      ))}
+                                    </div>
+                                  </div>
+                                )}
+                              </div>
+                            </td>
+                          </tr>
+                        )}
+                      </React.Fragment>
+                    ))}
+                    {filteredCustomers.length === 0 && (
+                      <tr>
+                        <td colSpan={6} className="px-6 py-4 text-center text-gray-400">
+                          No customers found
+                        </td>
+                      </tr>
+                    )}
+                  </tbody>
+                </table>
+              </div>
             </div>
-          )}
+          </div>
         </div>
       </div>
 
       {/* Edit Customer Dialog */}
       <Dialog open={editDialogOpen} onClose={() => setEditDialogOpen(false)} maxWidth="sm" fullWidth>
-        <DialogTitle>Edit Customer Details</DialogTitle>
-        <DialogContent>
-          {selectedCustomer && (
-            <div className="space-y-4 mt-2">
-              <TextField
-                fullWidth
-                label="Name"
-                value={selectedCustomer.name}
-                margin="normal"
-                onChange={e => setSelectedCustomer({ ...selectedCustomer, name: e.target.value })}
-              />
-              <TextField
-                fullWidth
-                label="Email"
-                value={selectedCustomer.email}
-                margin="normal"
-                onChange={e => setSelectedCustomer({ ...selectedCustomer, email: e.target.value })}
-              />
-              <TextField
-                fullWidth
-                label="Aadhar Number"
-                value={selectedCustomer.aadharNumber}
-                margin="normal"
-                onChange={e => setSelectedCustomer({ ...selectedCustomer, aadharNumber: e.target.value })}
-              />
-              <TextField
-                fullWidth
-                label="Primary Mobile"
-                value={selectedCustomer.primaryMobile}
-                margin="normal"
-                onChange={e => setSelectedCustomer({ ...selectedCustomer, primaryMobile: e.target.value })}
-              />
-              <TextField
-                fullWidth
-                label="Secondary Mobile"
-                value={selectedCustomer.secondaryMobile || ''}
-                margin="normal"
-                onChange={e => setSelectedCustomer({ ...selectedCustomer, secondaryMobile: e.target.value })}
-              />
-              <TextField
-                fullWidth
-                label="Present Address"
-                value={selectedCustomer.presentAddress}
-                margin="normal"
-                onChange={e => setSelectedCustomer({ ...selectedCustomer, presentAddress: e.target.value })}
-              />
-              <TextField
-                fullWidth
-                label="Permanent Address"
-                value={selectedCustomer.permanentAddress}
-                margin="normal"
-                onChange={e => setSelectedCustomer({ ...selectedCustomer, permanentAddress: e.target.value })}
-              />
-              {selectedCustomer.emergencyContact && (
-                <>
+        <div className="bg-gradient-to-br from-blue-50 via-cyan-50 to-white rounded-xl shadow-xl">
+          <DialogTitle className="!bg-gradient-to-r !from-blue-400 !to-cyan-500 !text-white !rounded-t-xl !py-5 !px-8 flex items-center gap-3">
+            <span className="text-2xl">📝</span> Edit Customer Details
+          </DialogTitle>
+          <DialogContent className="!py-8 !px-8">
+            {selectedCustomer && (
+              <div className="space-y-6">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                   <TextField
                     fullWidth
-                    label="Emergency Contact Mobile"
-                    value={selectedCustomer.emergencyContact.mobile}
+                    label="Name"
+                    value={selectedCustomer.name}
                     margin="normal"
-                    onChange={e => setSelectedCustomer({ ...selectedCustomer, emergencyContact: { mobile: e.target.value, relation: selectedCustomer.emergencyContact!.relation } })}
+                    onChange={e => setSelectedCustomer({ ...selectedCustomer, name: e.target.value })}
+                    className="bg-white rounded-lg shadow-sm"
                   />
                   <TextField
                     fullWidth
-                    label="Emergency Contact Relation"
-                    value={selectedCustomer.emergencyContact.relation}
+                    label="Email"
+                    value={selectedCustomer.email}
                     margin="normal"
-                    onChange={e => setSelectedCustomer({ ...selectedCustomer, emergencyContact: { mobile: selectedCustomer.emergencyContact!.mobile, relation: e.target.value } })}
+                    onChange={e => setSelectedCustomer({ ...selectedCustomer, email: e.target.value })}
+                    className="bg-white rounded-lg shadow-sm"
                   />
-                </>
-              )}
-            </div>
-          )}
-        </DialogContent>
-        <DialogActions>
-          <Button onClick={() => setEditDialogOpen(false)} disabled={saving}>Close</Button>
-          <Button onClick={handleSaveCustomer} variant="contained" color="primary" disabled={saving}>
-            {saving ? 'Saving...' : 'Save'}
-          </Button>
-        </DialogActions>
+                </div>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                  <TextField
+                    fullWidth
+                    label="Aadhar Number"
+                    value={selectedCustomer.aadharNumber}
+                    margin="normal"
+                    onChange={e => setSelectedCustomer({ ...selectedCustomer, aadharNumber: e.target.value })}
+                    className="bg-white rounded-lg shadow-sm"
+                  />
+                  <TextField
+                    fullWidth
+                    label="Primary Mobile"
+                    value={selectedCustomer.primaryMobile}
+                    margin="normal"
+                    onChange={e => setSelectedCustomer({ ...selectedCustomer, primaryMobile: e.target.value })}
+                    className="bg-white rounded-lg shadow-sm"
+                  />
+                </div>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                  <TextField
+                    fullWidth
+                    label="Secondary Mobile"
+                    value={selectedCustomer.secondaryMobile || ''}
+                    margin="normal"
+                    onChange={e => setSelectedCustomer({ ...selectedCustomer, secondaryMobile: e.target.value })}
+                    className="bg-white rounded-lg shadow-sm"
+                  />
+                  <TextField
+                    fullWidth
+                    label="Present Address"
+                    value={selectedCustomer.presentAddress}
+                    margin="normal"
+                    onChange={e => setSelectedCustomer({ ...selectedCustomer, presentAddress: e.target.value })}
+                    className="bg-white rounded-lg shadow-sm"
+                  />
+                </div>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                  <TextField
+                    fullWidth
+                    label="Permanent Address"
+                    value={selectedCustomer.permanentAddress}
+                    margin="normal"
+                    onChange={e => setSelectedCustomer({ ...selectedCustomer, permanentAddress: e.target.value })}
+                    className="bg-white rounded-lg shadow-sm"
+                  />
+                  {selectedCustomer.emergencyContact && (
+                    <div className="flex flex-col gap-4">
+                      <TextField
+                        fullWidth
+                        label="Emergency Contact Mobile"
+                        value={selectedCustomer.emergencyContact.mobile}
+                        margin="normal"
+                        onChange={e => setSelectedCustomer({ ...selectedCustomer, emergencyContact: { mobile: e.target.value, relation: selectedCustomer.emergencyContact!.relation } })}
+                        className="bg-white rounded-lg shadow-sm"
+                      />
+                      <TextField
+                        fullWidth
+                        label="Emergency Contact Relation"
+                        value={selectedCustomer.emergencyContact.relation}
+                        margin="normal"
+                        onChange={e => setSelectedCustomer({ ...selectedCustomer, emergencyContact: { mobile: selectedCustomer.emergencyContact!.mobile, relation: e.target.value } })}
+                        className="bg-white rounded-lg shadow-sm"
+                      />
+                    </div>
+                  )}
+                </div>
+              </div>
+            )}
+          </DialogContent>
+          <DialogActions className="!px-8 !pb-6">
+            <Button onClick={() => setEditDialogOpen(false)} disabled={saving} className="rounded-lg font-semibold text-gray-700 bg-gray-100 hover:bg-gray-200 shadow mr-2">Close</Button>
+            <Button onClick={handleSaveCustomer} variant="contained" disabled={saving}
+              className="rounded-lg font-bold bg-gradient-to-r from-blue-500 to-cyan-500 hover:from-blue-600 hover:to-cyan-600 text-white shadow-lg px-8 py-2">
+              {saving ? 'Saving...' : 'Save'}
+            </Button>
+          </DialogActions>
+        </div>
       </Dialog>
-    </div>
+    </>
   );
 };
 

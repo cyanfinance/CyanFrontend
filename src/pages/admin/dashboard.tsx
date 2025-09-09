@@ -3,7 +3,11 @@ import { Alert, CircularProgress, Card, Typography, TextField, Button } from '@m
 import AdminSidebar from '../../components/AdminSidebar';
 import { useAuth } from '../../context/AuthContext';
 import { API_URL } from '../../config';
+import { calculateDailyInterest, fetchEarlyRepaymentDetails } from '../../utils/api';
 import axios from 'axios';
+import Navbar from '../../components/Navbar';
+import { Bell, AlertCircle, DollarSign, Calendar, Clock } from 'lucide-react';
+import { useNavigate } from 'react-router-dom';
 
 interface GoldItem {
   description: string;
@@ -13,7 +17,13 @@ interface GoldItem {
 
 interface Loan {
   _id: string;
-  customerId: string;
+  customerId: string | {
+    _id: string;
+    name: string;
+    email: string;
+    primaryMobile: string;
+    aadharNumber: string;
+  };
   name: string;
   email: string;
   primaryMobile: string;
@@ -33,6 +43,11 @@ interface Loan {
   totalPayment: number;
   totalPaid: number;
   createdAt: string;
+  createdBy?: {
+    name: string;
+    email: string;
+    role: string;
+  };
 }
 
 interface LoanFormData {
@@ -72,7 +87,20 @@ interface CustomerDetails {
 interface RepaymentModalProps {
   loan: Loan;
   onClose: () => void;
-  onRepay: (amount: number, paymentMethod: string, transactionId?: string) => Promise<void>;
+  onRepay: (amount: number, paymentMethod: string, transactionId?: string, bankName?: string) => Promise<void>;
+}
+
+interface WeeklyDue {
+  loanId: string;
+  customer: {
+    name: string;
+    email: string;
+    primaryMobile: string;
+    aadharNumber: string;
+  };
+  dueDate: string;
+  amount: number;
+  status: string;
 }
 
 const RepaymentModal: React.FC<RepaymentModalProps> = ({ loan: _loan, onClose, onRepay }) => {
@@ -81,19 +109,53 @@ const RepaymentModal: React.FC<RepaymentModalProps> = ({ loan: _loan, onClose, o
   const [transactionId, setTransactionId] = useState<string>('');
   const [error, setError] = useState<string>('');
   const [loading, setLoading] = useState<boolean>(false);
+  const [repaymentDate, setRepaymentDate] = useState<string>(() => new Date().toISOString().slice(0, 10));
+  const [calc, setCalc] = useState<any>(null);
+  const [calcLoading, setCalcLoading] = useState(false);
+  const [bankName, setBankName] = useState<string>('');
+
+  const { token } = useAuth();
+
+  useEffect(() => {
+    let mounted = true;
+    async function fetchCalc() {
+      setCalcLoading(true);
+      setError('');
+      try {
+        const data = await fetchEarlyRepaymentDetails({
+          loanId: _loan._id,
+          repaymentDate,
+          token: token || '',
+        });
+        if (mounted) setCalc(data);
+        // Set default amount to totalDue if not set
+        if (mounted && !amount) setAmount(Math.round(data.totalDue));
+      } catch (err: any) {
+        if (mounted) setError(err.message || 'Failed to fetch repayment details');
+      } finally {
+        if (mounted) setCalcLoading(false);
+      }
+    }
+    fetchCalc();
+    return () => { mounted = false; };
+    // eslint-disable-next-line
+  }, [_loan._id, repaymentDate]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError('');
     setLoading(true);
-
     try {
-      // Validate transaction ID for online payments
       if (paymentMethod === 'online' && !transactionId.trim()) {
         throw new Error('Transaction ID is required for online payments');
       }
-
-      await onRepay(amount, paymentMethod, paymentMethod === 'online' ? transactionId : undefined);
+      if (calc && amount < calc.minimumTotalDue) {
+        throw new Error(`Amount must be at least ₹${calc.minimumTotalDue}`);
+      }
+      if (paymentMethod === 'online' && !bankName.trim()) {
+        throw new Error('Bank Name is required for online payments');
+      }
+      await onRepay(amount, paymentMethod, transactionId, bankName);
       onClose();
     } catch (err: any) {
       setError(err.message || 'Failed to process repayment');
@@ -103,43 +165,142 @@ const RepaymentModal: React.FC<RepaymentModalProps> = ({ loan: _loan, onClose, o
   };
 
   return (
-    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center">
-      <div className="bg-white p-6 rounded-lg w-96">
-        <h2 className="text-xl font-semibold mb-4">Repay Loan</h2>
+    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-[60]">
+      <div className="bg-white p-6 rounded-lg w-full max-w-2xl max-h-[90vh] overflow-y-auto shadow-2xl">
+        <h2 className="text-xl font-semibold mb-4 mt-16">Repay Loan</h2>
         <form onSubmit={handleSubmit}>
           <div className="mb-4">
-            <label className="block text-sm font-medium text-gray-700">Amount</label>
+            <label className="block text-sm font-medium text-gray-700">Repayment Date</label>
             <input
-              type="number"
-              value={amount}
-              onChange={(e) => setAmount(Number(e.target.value))}
+              type="date"
+              value={repaymentDate}
+              onChange={e => setRepaymentDate(e.target.value)}
               className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-yellow-500 focus:ring-yellow-500"
+              max={new Date().toISOString().slice(0, 10)}
               required
             />
           </div>
-          <div className="mb-4">
-            <label className="block text-sm font-medium text-gray-700">Payment Method</label>
-            <select
-              value={paymentMethod}
-              onChange={(e) => setPaymentMethod(e.target.value)}
-              className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-yellow-500 focus:ring-yellow-500"
-              required
-            >
-              <option value="handcash">Hand Cash</option>
-              <option value="online">Online Payment</option>
-            </select>
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 mb-4">
+            {calcLoading ? (
+              <div className="text-yellow-700 text-sm">Calculating interest...</div>
+            ) : calc && (
+              <div className="text-sm bg-yellow-50 border-l-4 border-yellow-400 p-3 rounded">
+                <div className="font-semibold text-yellow-800 mb-2">Interest Calculation:</div>
+                <div className="space-y-1">
+                  <div><b>Interest (compounded monthly):</b> ₹{calc.interest}</div>
+                  <div><b>Minimum interest period:</b> {calc.minimumDays} days</div>
+                  <div><b>Minimum interest amount:</b> ₹{calc.minimumInterest}</div>
+                  <div><b>Rebate:</b> ₹{calc.rebate || 0}</div>
+                  <div><b>Grace period:</b> {calc.gracePeriodDays} days {calc.gracePeriodReason ? `(${calc.gracePeriodReason})` : ''}</div>
+                  <div><b>Total Due:</b> <span className="text-lg font-bold">₹{calc.totalDue}</span></div>
+                  {calc.minimumTotalDue && (
+                    <div className="text-xs text-gray-500">Minimum total due: ₹{calc.minimumTotalDue}</div>
+                  )}
+                </div>
+                {calc.breakdown && (
+                  <details className="mt-2">
+                    <summary className="cursor-pointer text-yellow-700 text-sm">View Breakdown</summary>
+                    <pre className="text-xs text-gray-700 whitespace-pre-wrap mt-1">{JSON.stringify(calc.breakdown, null, 2)}</pre>
+                  </details>
+                )}
+              </div>
+            )}
+            
+            {/* Monthly vs Total Amount Information */}
+            <div className="text-sm bg-blue-50 border-l-4 border-blue-400 p-3 rounded">
+              <div className="font-semibold text-blue-800 mb-2">Payment Options:</div>
+              <div className="space-y-1">
+                <div className="flex justify-between">
+                  <span>Monthly Installment:</span>
+                  <span className="font-bold text-blue-700">₹{_loan.monthlyPayment?.toLocaleString() || 'N/A'}</span>
+                </div>
+                <div className="flex justify-between">
+                  <span>Total Loan Amount:</span>
+                  <span className="font-bold text-blue-700">₹{_loan.amount?.toLocaleString() || 'N/A'}</span>
+                </div>
+                <div className="flex justify-between">
+                  <span>Total Payment (with interest):</span>
+                  <span className="font-bold text-blue-700">₹{_loan.totalPayment?.toLocaleString() || 'N/A'}</span>
+                </div>
+                <div className="flex justify-between">
+                  <span>Already Paid:</span>
+                  <span className="font-bold text-green-600">₹{_loan.totalPaid?.toLocaleString() || '0'}</span>
+                </div>
+                <div className="flex justify-between border-t border-blue-200 pt-1">
+                  <span>Remaining Balance:</span>
+                  <span className="font-bold text-red-600">₹{((_loan.totalPayment || 0) - (_loan.totalPaid || 0)).toLocaleString()}</span>
+                </div>
+              </div>
+              <div className="mt-2 text-xs text-blue-600 bg-blue-100 p-2 rounded">
+                💡 <strong>Tip:</strong> You can pay the monthly installment or any amount up to the full remaining balance. Use the buttons below to quickly set common amounts.
+              </div>
+            </div>
+          </div>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">Amount</label>
+              <div className="flex gap-2 mb-2">
+                <button
+                  type="button"
+                  onClick={() => setAmount(_loan.monthlyPayment || 0)}
+                  className="px-3 py-1 text-xs bg-blue-100 text-blue-700 rounded hover:bg-blue-200 border border-blue-300"
+                >
+                  Set Monthly (₹{_loan.monthlyPayment?.toLocaleString() || '0'})
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setAmount((_loan.totalPayment || 0) - (_loan.totalPaid || 0))}
+                  className="px-3 py-1 text-xs bg-green-100 text-green-700 rounded hover:bg-green-200 border border-green-300"
+                >
+                  Set Full Balance (₹{((_loan.totalPayment || 0) - (_loan.totalPaid || 0)).toLocaleString()})
+                </button>
+              </div>
+              <input
+                type="number"
+                value={amount}
+                onChange={(e) => setAmount(Number(e.target.value))}
+                className="block w-full rounded-md border-gray-300 shadow-sm focus:border-yellow-500 focus:ring-yellow-500"
+                required
+                min={calc?.minimumTotalDue || 0}
+              />
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">Payment Method</label>
+              <select
+                value={paymentMethod}
+                onChange={(e) => setPaymentMethod(e.target.value)}
+                className="block w-full rounded-md border-gray-300 shadow-sm focus:border-yellow-500 focus:ring-yellow-500"
+                required
+              >
+                <option value="handcash">Hand Cash</option>
+                <option value="online">Online Payment</option>
+              </select>
+            </div>
           </div>
           {paymentMethod === 'online' && (
-            <div className="mb-4">
-              <label className="block text-sm font-medium text-gray-700">Transaction ID</label>
-              <input
-                type="text"
-                value={transactionId}
-                onChange={(e) => setTransactionId(e.target.value)}
-                className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-yellow-500 focus:ring-yellow-500"
-                placeholder="Enter transaction ID"
-                required={paymentMethod === 'online'}
-              />
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">Bank Name</label>
+                <input
+                  type="text"
+                  value={bankName}
+                  onChange={e => setBankName(e.target.value)}
+                  className="block w-full rounded-md border-gray-300 shadow-sm focus:border-yellow-500 focus:ring-yellow-500"
+                  placeholder="Enter bank name"
+                  required={paymentMethod === 'online'}
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">Transaction ID</label>
+                <input
+                  type="text"
+                  value={transactionId}
+                  onChange={(e) => setTransactionId(e.target.value)}
+                  className="block w-full rounded-md border-gray-300 shadow-sm focus:border-yellow-500 focus:ring-yellow-500"
+                  placeholder="Enter transaction ID"
+                  required={paymentMethod === 'online'}
+                />
+              </div>
             </div>
           )}
           {error && (
@@ -155,7 +316,7 @@ const RepaymentModal: React.FC<RepaymentModalProps> = ({ loan: _loan, onClose, o
             </button>
             <button
               type="submit"
-              disabled={loading}
+              disabled={loading || calcLoading}
               className="px-4 py-2 text-sm font-medium text-white bg-yellow-600 hover:bg-yellow-700 rounded-md disabled:opacity-50"
             >
               {loading ? 'Processing...' : 'Repay'}
@@ -202,6 +363,23 @@ const AdminDashboard = () => {
   const [search, setSearch] = useState('');
   const [goldRate, setGoldRate] = useState('7000');
   const [message, setMessage] = useState('');
+  const [loanStep, setLoanStep] = useState<1 | 2 | 3>(1); // 1: customer, 2: otp, 3: loan
+  const [customerEmail, setCustomerEmail] = useState('');
+  const [otp, setOtp] = useState('');
+  const [customerVerified, setCustomerVerified] = useState(false);
+  const [customerId, setCustomerId] = useState<string | null>(null);
+  const [todaysDuePayments, setTodaysDuePayments] = useState<any[]>([]);
+  const [loadingDuePayments, setLoadingDuePayments] = useState(false);
+  const [earlyDueMap, setEarlyDueMap] = useState<Record<string, number>>({});
+  const [loanOtp, setLoanOtp] = useState('');
+  const [loanOtpSent, setLoanOtpSent] = useState(false);
+  const [loanOtpVerified, setLoanOtpVerified] = useState(false);
+  const [loanOtpError, setLoanOtpError] = useState<string | null>(null);
+  const [justVerified, setJustVerified] = useState(false);
+  const navigate = useNavigate();
+  const [selectedCustomer, setSelectedCustomer] = useState<CustomerDetails | null>(null);
+  const [customers, setCustomers] = useState<CustomerDetails[]>([]);
+  const [showCustomerSelect, setShowCustomerSelect] = useState(false);
 
   // Ensure user is logged in
   if (!user) {
@@ -218,6 +396,7 @@ const AdminDashboard = () => {
   useEffect(() => {
     fetchLoans();
     fetchGoldRate();
+    fetchTodaysDuePayments();
   }, []);
 
   const fetchLoans = async () => {
@@ -250,6 +429,25 @@ const AdminDashboard = () => {
     } catch (error) {
       console.error('Error fetching gold rate:', error);
       // Keep the existing rate if there's an error
+    }
+  };
+
+  const fetchTodaysDuePayments = async () => {
+    setLoadingDuePayments(true);
+    try {
+      const response = await fetch(`${API_URL}/notifications/todays-due`, {
+        headers: {
+          'x-auth-token': token
+        }
+      });
+      const data = await response.json();
+      if (response.ok) {
+        setTodaysDuePayments(data.data);
+      }
+    } catch (error) {
+      console.error("Error fetching today's due payments:", error);
+    } finally {
+      setLoadingDuePayments(false);
     }
   };
 
@@ -289,29 +487,62 @@ const AdminDashboard = () => {
     }
   };
 
-  const calculateLoanDetails = (data: Partial<LoanFormData>) => {
+  const calculateLoanDetails = async (data: Partial<LoanFormData>) => {
     const principal = data.loanAmount || formData.loanAmount;
-    const ratePerMonth = (data.interestRate || formData.interestRate) / 100;
+    const yearlyRate = data.interestRate || formData.interestRate;
     const months = data.duration || formData.duration;
 
-    if (principal > 0 && ratePerMonth > 0 && months > 0) {
-      // Monthly payment formula: P * r * (1 + r)^n / ((1 + r)^n - 1)
-      const monthlyPayment = (principal * ratePerMonth * Math.pow(1 + ratePerMonth, months)) /
-                            (Math.pow(1 + ratePerMonth, months) - 1);
-      // Total amount is monthly payment times number of months
-      const totalAmount = monthlyPayment * months;
-
+    if (principal > 0 && yearlyRate > 0 && months > 0) {
+      // Use today's date as disbursement, closure after months
+      const disbursementDate = new Date();
+      const closureDate = new Date(disbursementDate.getTime());
+      closureDate.setMonth(closureDate.getMonth() + months);
+      const res = await fetch(`${API_URL}/loans/calculate-interest`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          principal,
+          annualRate: yearlyRate,
+          disbursementDate: disbursementDate.toISOString(),
+          closureDate: closureDate.toISOString()
+        })
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.message || 'Calculation failed');
+      // Monthly payment = totalAmount / months
       return {
-        monthlyPayment: Math.round(monthlyPayment),
-        totalAmount: Math.round(totalAmount)
+        monthlyPayment: Math.round(data.totalAmount / months),
+        totalAmount: data.totalAmount
       };
     }
     return { monthlyPayment: 0, totalAmount: 0 };
   };
 
+  const capitalizeWords = (str: string) =>
+    str.replace(/\b\w/g, c => c.toUpperCase());
+
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
     const { name, value } = e.target;
-    
+
+    // Always process the value for name and relation fields
+    if (name === 'name') {
+      setFormData(prev => ({
+        ...prev,
+        [name]: capitalizeWords(value)
+      }));
+      return;
+    }
+    if (name === 'emergencyContact.relation') {
+      setFormData(prev => ({
+        ...prev,
+        emergencyContact: {
+          ...prev.emergencyContact,
+          relation: capitalizeWords(value)
+        }
+      }));
+      return;
+    }
+
     // Check Aadhar number when it's 12 digits
     if (name === 'aadharNumber' && value.length === 12) {
       checkAadharNumber(value);
@@ -327,27 +558,61 @@ const AdminDashboard = () => {
         }
       }));
     } else {
-      const newValue = name === 'interestRate' || name === 'loanAmount' || name === 'duration'
-        ? parseFloat(value) || 0
-        : value;
-
-      setFormData(prev => {
-        const updatedData = {
-          ...prev,
-          [name]: newValue
-        };
-
-        // Calculate monthly payment and total amount if relevant fields change
-        if (name === 'interestRate' || name === 'loanAmount' || name === 'duration') {
-          const { monthlyPayment, totalAmount } = calculateLoanDetails(updatedData);
-          updatedData.monthlyPayment = monthlyPayment;
-          updatedData.totalAmount = totalAmount;
-        }
-
-        return updatedData;
-      });
+      setFormData(prev => ({
+        ...prev,
+        [name]: name === 'interestRate' || name === 'loanAmount' || name === 'duration'
+          ? parseFloat(value) || 0
+          : value
+      }));
     }
   };
+
+  // Recalculate monthlyPayment and totalAmount when relevant fields change
+  useEffect(() => {
+    const recalc = async () => {
+      const principal = formData.loanAmount;
+      const yearlyRate = formData.interestRate;
+      const months = formData.duration;
+      if (principal > 0 && yearlyRate > 0 && months > 0) {
+        try {
+          const disbursementDate = new Date();
+          const closureDate = new Date(disbursementDate.getTime());
+          closureDate.setMonth(closureDate.getMonth() + months);
+          const res = await fetch(`${API_URL}/loans/calculate-interest`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              principal,
+              annualRate: yearlyRate,
+              disbursementDate: disbursementDate.toISOString(),
+              closureDate: closureDate.toISOString()
+            })
+          });
+          const data = await res.json();
+          if (!res.ok) throw new Error(data.message || 'Calculation failed');
+          setFormData(prev => ({
+            ...prev,
+            monthlyPayment: Math.round(data.totalAmount / months),
+            totalAmount: data.totalAmount
+          }));
+        } catch {
+          setFormData(prev => ({
+            ...prev,
+            monthlyPayment: 0,
+            totalAmount: 0
+          }));
+        }
+      } else {
+        setFormData(prev => ({
+          ...prev,
+          monthlyPayment: 0,
+          totalAmount: 0
+        }));
+      }
+    };
+    recalc();
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [formData.loanAmount, formData.interestRate, formData.duration]);
 
   const handleGoldItemChange = (index: number, field: keyof GoldItem, value: string) => {
     setFormData(prev => ({
@@ -372,8 +637,116 @@ const AdminDashboard = () => {
     }));
   };
 
+  // Step 1: Add customer and send OTP
+  const handleAddCustomer = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setError(null);
+    try {
+      const response = await fetch(`${API_URL}/admin/customers`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'x-auth-token': token
+        },
+        body: JSON.stringify({
+          aadharNumber: formData.aadharNumber,
+          name: formData.name,
+          email: formData.email,
+          primaryMobile: formData.primaryMobile,
+          secondaryMobile: formData.secondaryMobile,
+          presentAddress: formData.presentAddress,
+          permanentAddress: formData.permanentAddress,
+          emergencyContact: formData.emergencyContact
+        })
+      });
+      const data = await response.json();
+      if (!response.ok) {
+        if (data.errors && Array.isArray(data.errors)) {
+          const errorMessage = data.errors.map((error: any) => error.msg).join('\n');
+          throw new Error(errorMessage);
+        } else {
+          throw new Error(data.message || 'Failed to add customer');
+        }
+      }
+      setCustomerEmail(formData.email);
+      setLoanStep(2);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Failed to add customer');
+    }
+  };
+
+  // Step 2: Verify OTP
+  const handleVerifyOtp = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setError(null);
+    try {
+      const response = await fetch(`${API_URL}/admin/verify-customer-otp`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'x-auth-token': token
+        },
+        body: JSON.stringify({ email: customerEmail, otp })
+      });
+      const data = await response.json();
+      if (!response.ok) throw new Error(data.message || 'OTP verification failed');
+      setCustomerVerified(true);
+      setCustomerId(data.customer._id);
+      setLoanStep(3);
+      setJustVerified(true);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'OTP verification failed');
+    }
+  };
+
+  // Step 3: Send OTP for loan creation
+  const handleSendLoanOtp = async () => {
+    setLoanOtpError(null);
+    try {
+      const response = await fetch(`${API_URL}/loans/send-otp`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'x-auth-token': token
+        },
+        body: JSON.stringify({ customerId, email: formData.email })
+      });
+      const data = await response.json();
+      if (!response.ok) throw new Error(data.message || 'Failed to send OTP');
+      setLoanOtpSent(true);
+    } catch (err) {
+      setLoanOtpError(err instanceof Error ? err.message : 'Failed to send OTP');
+    }
+  };
+
+  const handleVerifyLoanOtp = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setLoanOtpError(null);
+    try {
+      const response = await fetch(`${API_URL}/loans/verify-otp`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'x-auth-token': token
+        },
+        body: JSON.stringify({ customerId, email: formData.email, otp: loanOtp })
+      });
+      const data = await response.json();
+      if (!response.ok) throw new Error(data.message || 'Failed to verify OTP');
+      setLoanOtpVerified(true);
+    } catch (err) {
+      setLoanOtpError(err instanceof Error ? err.message : 'Failed to verify OTP');
+    }
+  };
+
+  // Step 3: Add loan (existing handleSubmit, but only allow if customerVerified)
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    setError(null);
+    if (!customerVerified) {
+      setError('Customer must be verified before adding a loan.');
+      return;
+    }
     try {
       // Validate Aadhar number
       if (!/^\d{12}$/.test(formData.aadharNumber)) {
@@ -517,7 +890,7 @@ const AdminDashboard = () => {
     return colors[status];
   };
 
-  const handleRepay = async (amount: number, paymentMethod: string, transactionId?: string) => {
+  const handleRepay = async (amount: number, paymentMethod: string, transactionId?: string, bankName?: string) => {
     if (!selectedLoan) return;
     const response = await fetch(`${API_URL}/loans/${selectedLoan._id}/payment`, {
       method: 'POST',
@@ -525,7 +898,7 @@ const AdminDashboard = () => {
         'Content-Type': 'application/json',
         'x-auth-token': token
       },
-      body: JSON.stringify({ amount, paymentMethod, transactionId })
+      body: JSON.stringify({ amount, paymentMethod, transactionId, bankName })
     });
     const data = await response.json();
     if (!response.ok) {
@@ -542,13 +915,16 @@ const AdminDashboard = () => {
     }
     
     // Then filter by search term
+    const customerName = typeof loan.customerId === 'object' ? loan.customerId.name : '';
+    const customerAadhar = typeof loan.customerId === 'object' ? loan.customerId.aadharNumber : '';
+    
     return (
-    loan.name.toLowerCase().includes(search.toLowerCase()) ||
-    loan.email.toLowerCase().includes(search.toLowerCase()) ||
-    loan.primaryMobile.includes(search) ||
-    (loan.customerId && loan.customerId.toString().includes(search)) ||
-    formatCurrency(loan.amount).includes(search)
-  );
+      customerName.toLowerCase().includes(search.toLowerCase()) ||
+      loan.email.toLowerCase().includes(search.toLowerCase()) ||
+      loan.primaryMobile.includes(search) ||
+      customerAadhar.includes(search) ||
+      formatCurrency(loan.amount).includes(search)
+    );
   });
 
   // Count loans by status
@@ -583,455 +959,513 @@ const AdminDashboard = () => {
     }
   };
 
+  useEffect(() => {
+    // Fetch early repayment due for all loans
+    const fetchAllEarlyDue = async () => {
+      const map: Record<string, number> = {};
+      for (const loan of loans) {
+        try {
+          const data = await fetchEarlyRepaymentDetails({
+            loanId: loan._id,
+            repaymentDate: new Date().toISOString().slice(0, 10),
+            token: token || '',
+          });
+          map[loan._id] = data.totalDue;
+        } catch (e) {
+          map[loan._id] = loan.amount; // fallback
+        }
+      }
+      setEarlyDueMap(map);
+    };
+    if (loans.length > 0) fetchAllEarlyDue();
+    // eslint-disable-next-line
+  }, [loans]);
+
   return (
-    <div className="flex h-screen bg-gray-100">
-      <AdminSidebar isOpen={sidebarOpen} toggleSidebar={() => setSidebarOpen(!sidebarOpen)} />
+    <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-50">
+      {/* Background Pattern */}
+      <div className="absolute inset-0 opacity-5" style={{
+        backgroundImage: `url("data:image/svg+xml,%3Csvg width='60' height='60' viewBox='0 0 60 60' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='none' fill-rule='evenodd'%3E%3Cg fill='%239C92AC' fill-opacity='0.1'%3E%3Ccircle cx='30' cy='30' r='2'/%3E%3C/g%3E%3C/g%3E%3C/svg%3E")`
+      }}></div>
       
-      <div className="flex-1 overflow-auto">
-        <div className="p-8">
-          <div className="flex justify-between items-center mb-6">
-            <h1 className="text-3xl font-bold">Admin Dashboard</h1>
-            <button
-              onClick={() => setShowLoanForm(!showLoanForm)}
-              className="bg-yellow-600 hover:bg-yellow-700 text-white px-4 py-2 rounded"
-            >
-              {showLoanForm ? 'Close Form' : 'Add New Loan'}
-            </button>
+      <Navbar isSidebarPage={true} sidebarOpen={sidebarOpen} toggleSidebar={() => setSidebarOpen(open => !open)} />
+      <div className="flex flex-1 relative">
+        <AdminSidebar isOpen={sidebarOpen} toggleSidebar={() => setSidebarOpen(open => !open)} />
+        <main className={`flex-1 p-8 transition-all duration-300 relative z-10 ${sidebarOpen ? 'lg:ml-64' : 'ml-0'}`}>
+          {/* Header Section */}
+          <div className="text-center mb-8">
+            <div className="flex items-center justify-center space-x-3 mb-4">
+              <div className="w-12 h-12 bg-gradient-to-br from-blue-500 to-purple-600 rounded-xl flex items-center justify-center shadow-lg">
+                <span className="text-white text-xl">🏦</span>
+              </div>
+              <h1 className="text-4xl font-bold text-gray-800 bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">
+                Admin Dashboard
+              </h1>
+            </div>
+            <div className="w-24 h-1 bg-gradient-to-r from-blue-500 to-purple-500 mx-auto rounded-full mb-4"></div>
+            <p className="text-gray-600 text-lg">Manage loans, customers, and financial operations</p>
           </div>
-
-          {/* Status Filter Buttons */}
-          <div className="flex flex-wrap gap-4 mb-6">
-            <button
-              onClick={() => setStatusFilter('all')}
-              className={`px-4 py-2 rounded-full ${
-                statusFilter === 'all'
-                  ? 'bg-yellow-600 text-white'
-                  : 'bg-gray-200 text-gray-800 hover:bg-gray-300'
-              }`}
-            >
-              All Loans ({loans.length})
-            </button>
-            <button
-              onClick={() => setStatusFilter('active')}
-              className={`px-4 py-2 rounded-full ${
-                statusFilter === 'active'
-                  ? 'bg-blue-600 text-white'
-                  : 'bg-gray-200 text-gray-800 hover:bg-gray-300'
-              }`}
-            >
-              Active Loans ({activeLoansCount})
-            </button>
-            <button
-              onClick={() => setStatusFilter('closed')}
-              className={`px-4 py-2 rounded-full ${
-                statusFilter === 'closed'
-                  ? 'bg-green-600 text-white'
-                  : 'bg-gray-200 text-gray-800 hover:bg-gray-300'
-              }`}
-            >
-              Closed Loans ({closedLoansCount})
-            </button>
-          </div>
-
-          {showLoanForm && (
-            <form onSubmit={handleSubmit} className="bg-white rounded-lg shadow p-6 space-y-6">
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                {/* Personal Information */}
-                <div className="space-y-4">
-                  <h2 className="text-xl font-semibold">Personal Information</h2>
-                  <input
-                    type="text"
-                    name="aadharNumber"
-                    value={formData.aadharNumber}
-                    onChange={handleInputChange}
-                    placeholder="Aadhar Number"
-                    className="w-full p-2 border rounded"
-                    required
-                  />
-                  {checkingAadhar && (
-                    <div style={{ display: 'flex', justifyContent: 'center', margin: '10px 0' }}>
-                      <CircularProgress size={24} />
+          
+          <div className="relative z-10">
+          
+            {/* Today's Due Payments Section */}
+            {todaysDuePayments.length > 0 && (
+              <div className="bg-white/80 backdrop-blur-sm rounded-2xl shadow-xl p-6 mb-8 border border-white/20">
+                <div className="flex items-center justify-between mb-4">
+                  <div className="flex items-center space-x-3">
+                    <div className="w-10 h-10 bg-yellow-100 rounded-xl flex items-center justify-center">
+                      <AlertCircle className="w-5 h-5 text-yellow-600" />
                     </div>
-                  )}
-                  {customerDetails && (
-                    <Alert severity="info" style={{ margin: '10px 0' }}>
-                      <strong>Existing Customer Found:</strong><br />
-                      Name: {customerDetails.name}<br />
-                      Customer ID: {customerDetails.customerId}<br />
-                      Mobile: {customerDetails.primaryMobile}<br />
-                      {customerDetails.secondaryMobile && (<span>Secondary Mobile: {customerDetails.secondaryMobile}<br /></span>)}
-                      {customerDetails.emergencyContact?.mobile && (<span>Emergency Contact: {customerDetails.emergencyContact.mobile}<br /></span>)}
-                      {customerDetails.emergencyContact?.relation && (<span>Relation: {customerDetails.emergencyContact.relation}<br /></span>)}
-                      Email: {customerDetails.email}
-                    </Alert>
-                  )}
-                  <input
-                    type="text"
-                    name="name"
-                    value={formData.name}
-                    onChange={handleInputChange}
-                    placeholder="Full Name"
-                    className="w-full p-2 border rounded"
-                    required
-                  />
-                  <input
-                    type="email"
-                    name="email"
-                    value={formData.email}
-                    onChange={handleInputChange}
-                    placeholder="Email"
-                    className="w-full p-2 border rounded"
-                    required
-                  />
+                    <div>
+                      <h3 className="text-xl font-bold text-gray-800">Today's Due Payments</h3>
+                      <p className="text-sm text-gray-600">Payments due for today</p>
+                    </div>
+                  </div>
+                  <div className="bg-yellow-100 text-yellow-800 px-4 py-2 rounded-full font-bold">
+                    {todaysDuePayments.length} Due
+                  </div>
                 </div>
-
-                {/* Contact Information */}
-                <div className="space-y-4">
-                  <h2 className="text-xl font-semibold">Contact Information</h2>
-                  <input
-                    type="tel"
-                    name="primaryMobile"
-                    value={formData.primaryMobile}
-                    onChange={handleInputChange}
-                    placeholder="Primary Mobile Number"
-                    className="w-full p-2 border rounded"
-                    required
-                  />
-                  <input
-                    type="tel"
-                    name="secondaryMobile"
-                    value={formData.secondaryMobile}
-                    onChange={handleInputChange}
-                    placeholder="Secondary Mobile Number"
-                    className="w-full p-2 border rounded"
-                    required
-                  />
-                  <input
-                    type="tel"
-                    name="emergencyContact.mobile"
-                    value={formData.emergencyContact.mobile}
-                    onChange={handleInputChange}
-                    placeholder="Emergency Contact Number"
-                    className="w-full p-2 border rounded"
-                    required
-                  />
-                  <input
-                    type="text"
-                    name="emergencyContact.relation"
-                    value={formData.emergencyContact.relation}
-                    onChange={handleInputChange}
-                    placeholder="Relation with Emergency Contact"
-                    className="w-full p-2 border rounded"
-                    required
-                  />
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                  {todaysDuePayments.map((payment) => (
+                    <div key={payment._id} className="bg-white/60 backdrop-blur-sm p-4 rounded-xl border border-yellow-200 shadow-sm hover:shadow-md transition-all duration-300">
+                      <div className="flex items-center justify-between mb-3">
+                        <div className="flex items-center space-x-2">
+                          <div className="w-8 h-8 bg-blue-100 rounded-lg flex items-center justify-center">
+                            <span className="text-blue-600 text-sm font-bold">{payment.customerName?.charAt(0)?.toUpperCase()}</span>
+                          </div>
+                          <div>
+                            <span className="font-semibold text-sm text-gray-800">{payment.customerName}</span>
+                            <div className="text-xs text-gray-500">{payment.customerMobile}</div>
+                          </div>
+                        </div>
+                      </div>
+                      <div className="flex items-center justify-between">
+                        <div className="flex items-center space-x-2">
+                          <DollarSign className="w-4 h-4 text-green-600" />
+                          <span className="text-sm font-bold text-gray-700">
+                            {formatCurrency(payment.amount)}
+                          </span>
+                        </div>
+                        <div className="text-xs text-gray-500">
+                          Due Today
+                        </div>
+                      </div>
+                      <div className="text-xs text-gray-500 mt-2">
+                        Loan ID: {payment.loanId?.loanId || 'N/A'}
+                      </div>
+                    </div>
+                  ))}
                 </div>
               </div>
-
-              {/* Address Information */}
-              <div className="space-y-4">
-                <h2 className="text-xl font-semibold">Address Information</h2>
-                <textarea
-                  name="presentAddress"
-                  value={formData.presentAddress}
-                  onChange={handleInputChange}
-                  placeholder="Present Address"
-                  className="w-full p-2 border rounded"
-                  required
-                />
-                <textarea
-                  name="permanentAddress"
-                  value={formData.permanentAddress}
-                  onChange={handleInputChange}
-                  placeholder="Permanent Address"
-                  className="w-full p-2 border rounded"
-                  required
-                />
+            )}
+            {/* Summary Statistics */}
+            {loans.length > 0 && (
+              <div className="bg-white/80 backdrop-blur-sm rounded-2xl shadow-xl p-6 mb-8 border border-white/20">
+                <h2 className="text-2xl font-bold text-gray-800 mb-6">Portfolio Overview</h2>
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+                  <div className="bg-gradient-to-br from-blue-50 to-blue-100 p-6 rounded-xl border border-blue-200">
+                    <div className="flex items-center justify-between">
+                      <div>
+                        <p className="text-sm text-blue-600 font-medium">Total Loans</p>
+                        <p className="text-2xl font-bold text-blue-900">{loans.length}</p>
+                      </div>
+                      <div className="w-12 h-12 bg-blue-200 rounded-lg flex items-center justify-center">
+                        <span className="text-blue-600 text-xl">📊</span>
+                      </div>
+                    </div>
+                  </div>
+                  
+                  <div className="bg-gradient-to-br from-green-50 to-green-100 p-6 rounded-xl border border-green-200">
+                    <div className="flex items-center justify-between">
+                      <div>
+                        <p className="text-sm text-green-600 font-medium">Active Loans</p>
+                        <p className="text-2xl font-bold text-green-900">{activeLoansCount}</p>
+                      </div>
+                      <div className="w-12 h-12 bg-green-200 rounded-lg flex items-center justify-center">
+                        <span className="text-green-600 text-xl">✅</span>
+                      </div>
+                    </div>
+                  </div>
+                  
+                  <div className="bg-gradient-to-br from-gray-50 to-gray-100 p-6 rounded-xl border border-gray-200">
+                    <div className="flex items-center justify-between">
+                      <div>
+                        <p className="text-sm text-gray-600 font-medium">Closed Loans</p>
+                        <p className="text-2xl font-bold text-gray-900">{closedLoansCount}</p>
+                      </div>
+                      <div className="w-12 h-12 bg-gray-200 rounded-lg flex items-center justify-center">
+                        <span className="text-gray-600 text-xl">🔒</span>
+                      </div>
+                    </div>
+                  </div>
+                  
+                  <div className="bg-gradient-to-br from-purple-50 to-purple-100 p-6 rounded-xl border border-purple-200">
+                    <div className="flex items-center justify-between">
+                      <div>
+                        <p className="text-sm text-purple-600 font-medium">Total Amount</p>
+                        <p className="text-2xl font-bold text-purple-900">
+                          {formatCurrency(loans.reduce((sum, loan) => sum + loan.amount, 0))}
+                        </p>
+                      </div>
+                      <div className="w-12 h-12 bg-purple-200 rounded-lg flex items-center justify-center">
+                        <span className="text-purple-600 text-xl">💰</span>
+                      </div>
+                    </div>
+                  </div>
+                </div>
               </div>
+            )}
 
-              {/* Gold Items */}
-              <div className="space-y-4">
-                <div className="flex justify-between items-center">
-                  <h2 className="text-xl font-semibold">Gold Items</h2>
-                  <button
-                    type="button"
-                    onClick={addGoldItem}
-                    className="bg-green-500 hover:bg-green-600 text-white px-3 py-1 rounded"
+            {/* Filter and Actions */}
+            <div className="bg-white/80 backdrop-blur-sm rounded-2xl shadow-xl p-6 mb-8 border border-white/20">
+              <div className="flex flex-col lg:flex-row gap-4 items-center justify-between">
+                <div className="flex flex-wrap gap-3">
+                  <button 
+                    className={`px-6 py-3 rounded-xl font-semibold shadow transition-all duration-300 ${
+                      statusFilter === 'all' 
+                        ? 'bg-gradient-to-r from-blue-500 to-blue-600 text-white' 
+                        : 'bg-white/60 text-blue-700 border border-blue-200 hover:bg-blue-50'
+                    }`} 
+                    onClick={() => setStatusFilter('all')}
                   >
-                    Add Item
+                    All Loans ({loans.length})
+                  </button>
+                  <button 
+                    className={`px-6 py-3 rounded-xl font-semibold shadow transition-all duration-300 ${
+                      statusFilter === 'active' 
+                        ? 'bg-gradient-to-r from-green-500 to-green-600 text-white' 
+                        : 'bg-white/60 text-green-700 border border-green-200 hover:bg-green-50'
+                    }`} 
+                    onClick={() => setStatusFilter('active')}
+                  >
+                    Active ({activeLoansCount})
+                  </button>
+                  <button 
+                    className={`px-6 py-3 rounded-xl font-semibold shadow transition-all duration-300 ${
+                      statusFilter === 'closed' 
+                        ? 'bg-gradient-to-r from-gray-500 to-gray-600 text-white' 
+                        : 'bg-white/60 text-gray-700 border border-gray-200 hover:bg-gray-50'
+                    }`} 
+                    onClick={() => setStatusFilter('closed')}
+                  >
+                    Closed ({closedLoansCount})
                   </button>
                 </div>
-                {formData.goldItems.map((item, index) => (
-                  <div key={index} className="space-y-4">
-                    <div className="grid grid-cols-1 gap-4">
-                      <div className="space-y-1">
-                        <label className="block text-sm font-medium text-gray-700">
-                          Item Description
-                        </label>
-                        <input
-                          type="text"
-                          value={item.description}
-                          onChange={(e) => handleGoldItemChange(index, 'description', e.target.value)}
-                          placeholder="Enter item description"
-                          className="w-full p-2 border rounded"
-                          required
-                        />
-                      </div>
-                      
-                      <div className="grid grid-cols-2 gap-4">
-                        <div className="space-y-1">
-                          <label className="block text-sm font-medium text-gray-700">
-                            Gross Weight (in grams)
-                          </label>
-                          <input
-                            type="number"
-                            value={item.grossWeight}
-                            onChange={(e) => handleGoldItemChange(index, 'grossWeight', e.target.value)}
-                            placeholder="Total weight with impurities"
-                            className="w-full p-2 border rounded"
-                            required
-                            min="0"
-                            step="0.01"
-                          />
-                          <p className="text-xs text-gray-500">Total weight including impurities</p>
-                        </div>
-
-                        <div className="space-y-1">
-                          <label className="block text-sm font-medium text-gray-700">
-                            Net Weight (in grams)
-                          </label>
-                          <input
-                            type="number"
-                            value={item.netWeight}
-                            onChange={(e) => handleGoldItemChange(index, 'netWeight', e.target.value)}
-                            placeholder="Pure gold weight"
-                            className="w-full p-2 border rounded"
-                            required
-                            min="0"
-                            step="0.01"
-                          />
-                          <p className="text-xs text-gray-500">Actual gold weight (must be less than gross weight)</p>
-                        </div>
-                      </div>
-                    </div>
-
-                    <div className="flex justify-end">
-                      <button
-                        type="button"
-                        onClick={() => removeGoldItem(index)}
-                        className="bg-red-500 hover:bg-red-600 text-white px-3 py-1 rounded"
-                        disabled={formData.goldItems.length === 1}
-                      >
-                        Remove Item
-                      </button>
-                    </div>
-                  </div>
-                ))}
+                <button 
+                  className="bg-gradient-to-r from-blue-500 to-purple-600 hover:from-blue-600 hover:to-purple-700 text-white px-8 py-3 rounded-xl font-bold shadow-lg transition-all duration-300 flex items-center space-x-2 group"
+                  onClick={() => navigate('/admin/add-loan')}
+                >
+                  <span className="group-hover:scale-110 transition-transform">➕</span>
+                  <span>Add New Loan</span>
+                </button>
               </div>
+            </div>
 
-              {/* Loan Details */}
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                <div className="space-y-4">
-                  <h2 className="text-xl font-semibold">Loan Details</h2>
-                  
-                  <div className="space-y-1">
-                    <label htmlFor="interestRate" className="block text-sm font-medium text-gray-700">
-                      Interest Rate (% per year)
-                    </label>
-                    <input
-                      id="interestRate"
-                      type="number"
-                      name="interestRate"
-                      value={formData.interestRate}
-                      onChange={handleInputChange}
-                      placeholder="Enter annual interest rate"
-                      className="w-full p-2 border rounded"
-                      required
-                      min="0"
-                      step="0.01"
-                    />
-                    <p className="text-sm text-gray-500">Annual interest rate as a percentage (e.g., 12 for 12% per year)</p>
+            {showLoanForm && (
+              <div className="bg-white/90 rounded-2xl shadow-xl p-6 space-y-6">
+                {loanStep === 1 && (
+                  <div className="max-w-4xl mx-auto bg-blue-50 shadow-xl rounded-2xl p-8 mt-8 mb-12 border border-blue-100">
+                    <h2 className="flex items-center gap-2 text-2xl font-bold text-blue-700 mb-4"><span>📝</span> Add Customer & Send OTP</h2>
+                    <p className="text-gray-500 mb-6 text-sm">Fill in the customer details below. An OTP will be sent to the provided email for verification before proceeding with the loan process.</p>
+                    {/* Error display block */}
+                    {error && (
+                      <div className="mb-4">
+                        {error.includes('\n') ? (
+                          <ul className="bg-red-50 border border-red-300 text-red-700 rounded-lg px-4 py-3 list-disc list-inside">
+                            {error.split('\n').map((msg, idx) => (
+                              <li key={idx}>{msg}</li>
+                            ))}
+                          </ul>
+                        ) : (
+                          <div className="bg-red-50 border border-red-300 text-red-700 rounded-lg px-4 py-3">{error}</div>
+                        )}
+                      </div>
+                    )}
+                    <form onSubmit={handleAddCustomer} className="space-y-8">
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+                        <div className="space-y-4">
+                          <h3 className="text-lg font-semibold text-blue-600 mb-2 flex items-center gap-1"><span>👤</span> Personal Info</h3>
+                          <label className="block text-sm font-semibold text-gray-700">Aadhar Number
+                            <span className="block text-xs text-gray-400">12-digit unique ID</span>
+                          </label>
+                          <input type="text" name="aadharNumber" value={formData.aadharNumber} onChange={handleInputChange} placeholder="Aadhar Number" className="w-full p-3 border rounded-lg focus:ring-2 focus:ring-blue-300 focus:border-blue-400 transition" required autoComplete="off" />
+                          <label className="block text-sm font-semibold text-gray-700">Full Name</label>
+                          <input type="text" name="name" value={formData.name} onChange={handleInputChange} placeholder="Full Name" className="w-full p-3 border rounded-lg focus:ring-2 focus:ring-blue-300 focus:border-blue-400 transition" required style={{ textTransform: 'capitalize' }} autoComplete="name" />
+                          <label className="block text-sm font-semibold text-gray-700">Email
+                            <span className="block text-xs text-gray-400">OTP will be sent here</span>
+                          </label>
+                          <input type="email" name="email" value={formData.email} onChange={handleInputChange} placeholder="Email Address" className="w-full p-3 border rounded-lg focus:ring-2 focus:ring-blue-300 focus:border-blue-400 transition" required autoComplete="email" />
+                        </div>
+                        <div className="space-y-4">
+                          <h3 className="text-lg font-semibold text-blue-600 mb-2 flex items-center gap-1"><span>📞</span> Contact Info</h3>
+                          <label className="block text-sm font-semibold text-gray-700">Primary Mobile</label>
+                          <input type="tel" name="primaryMobile" value={formData.primaryMobile} onChange={handleInputChange} placeholder="Primary Mobile Number" className="w-full p-3 border rounded-lg focus:ring-2 focus:ring-blue-300 focus:border-blue-400 transition" required autoComplete="tel" />
+                          <label className="block text-sm font-semibold text-gray-700">Secondary Mobile</label>
+                          <input type="tel" name="secondaryMobile" value={formData.secondaryMobile} onChange={handleInputChange} placeholder="Secondary Mobile Number" className="w-full p-3 border rounded-lg focus:ring-2 focus:ring-blue-300 focus:border-blue-400 transition" autoComplete="tel" />
+                          <label className="block text-sm font-semibold text-gray-700">Emergency Contact Number</label>
+                          <input type="tel" name="emergencyContact.mobile" value={formData.emergencyContact.mobile} onChange={handleInputChange} placeholder="Emergency Contact Number" className="w-full p-3 border rounded-lg focus:ring-2 focus:ring-blue-300 focus:border-blue-400 transition" required autoComplete="tel" />
+                          <label className="block text-sm font-semibold text-gray-700">Relation with Emergency Contact
+                            <span className="block text-xs text-gray-400">e.g., Father, Mother</span>
+                          </label>
+                          <input type="text" name="emergencyContact.relation" value={formData.emergencyContact.relation} onChange={handleInputChange} placeholder="Relation (e.g., Father, Mother)" className="w-full p-3 border rounded-lg focus:ring-2 focus:ring-blue-300 focus:border-blue-400 transition" required style={{ textTransform: 'capitalize' }} autoComplete="relationship" />
+                        </div>
+                      </div>
+                      <div className="space-y-4">
+                        <h3 className="text-lg font-semibold text-blue-600 mb-2 flex items-center gap-1"><span>🏠</span> Address</h3>
+                        <label className="block text-sm font-semibold text-gray-700">Present Address</label>
+                        <textarea name="presentAddress" value={formData.presentAddress} onChange={handleInputChange} placeholder="Present Address" className="w-full p-3 border rounded-lg focus:ring-2 focus:ring-blue-300 focus:border-blue-400 transition" required autoComplete="address-line1" />
+                        <label className="block text-sm font-semibold text-gray-700">Permanent Address</label>
+                        <textarea name="permanentAddress" value={formData.permanentAddress} onChange={handleInputChange} placeholder="Permanent Address" className="w-full p-3 border rounded-lg focus:ring-2 focus:ring-blue-300 focus:border-blue-400 transition" required autoComplete="address-line2" />
+                      </div>
+                      <div className="flex justify-end mt-8">
+                        <button type="submit" className="bg-gradient-to-r from-yellow-400 to-yellow-600 hover:from-yellow-500 hover:to-yellow-700 text-white px-8 py-3 rounded-xl text-lg font-bold shadow-lg flex items-center gap-2">
+                          <span>📧</span> Add Customer & Send OTP
+                        </button>
+                      </div>
+                    </form>
                   </div>
+                )}
+                {loanStep === 2 && (
+                  <div className="max-w-md mx-auto bg-yellow-50 shadow-xl rounded-2xl p-8 mt-8 mb-12 border border-yellow-200">
+                    <h2 className="flex items-center gap-2 text-xl font-bold text-blue-700 mb-4"><span>📱</span> Verify Customer Mobile Number</h2>
+                    <p className="text-gray-500 mb-6 text-sm">Enter the One-Time Password (OTP) sent to the customer's <strong>mobile number</strong> to verify their identity before proceeding with the loan process.</p>
+                    <form onSubmit={handleVerifyOtp} className="space-y-6">
+                      <div>
+                        <label htmlFor="otp" className="block text-sm font-semibold text-gray-700 mb-1">OTP Code</label>
+                        <input
+                          id="otp"
+                          type="text"
+                          placeholder="Enter 6-digit OTP"
+                          value={otp}
+                          onChange={e => setOtp(e.target.value)}
+                          required
+                          className="w-full p-3 border rounded-lg focus:ring-2 focus:ring-blue-300 focus:border-blue-400 transition tracking-widest text-lg text-center"
+                          maxLength={6}
+                        />
+                        <p className="text-xs text-gray-400 mt-1">Didn't receive the OTP? Ask the customer to check their mobile phone or resend the OTP.</p>
+                      </div>
+                      <button type="submit" className="w-full bg-gradient-to-r from-yellow-400 to-yellow-600 hover:from-yellow-500 hover:to-yellow-700 text-white py-3 rounded-xl text-lg font-bold shadow-lg flex items-center gap-2 justify-center">
+                        <span>✅</span> Verify OTP
+                      </button>
+                    </form>
+                  </div>
+                )}
+                {loanStep === 3 && customerVerified && !loanOtpVerified && (
+                  <div className="max-w-md mx-auto bg-orange-50 shadow-xl rounded-2xl p-8 mt-8 mb-12 border border-orange-200">
+                    <h2 className="flex items-center gap-2 text-xl font-bold text-blue-700 mb-4"><span>📱</span> Verify Customer Mobile Number</h2>
+                    <p className="text-gray-500 mb-6 text-sm">Enter the One-Time Password (OTP) sent to the customer's <strong>mobile number</strong> to verify their identity before proceeding with the loan creation process.</p>
+                    
+                    {!loanOtpSent ? (
+                      <div className="space-y-4">
+                        <p className="text-sm text-gray-600">Click the button below to send OTP to customer's mobile number.</p>
+                        <button 
+                          onClick={handleSendLoanOtp}
+                          className="w-full bg-gradient-to-r from-orange-400 to-orange-600 hover:from-orange-500 hover:to-orange-700 text-white py-3 rounded-xl text-lg font-bold shadow-lg flex items-center gap-2 justify-center"
+                        >
+                          <span>📱</span> Send SMS OTP to Customer
+                        </button>
+                        {loanOtpError && (
+                          <div className="text-red-600 text-sm bg-red-50 p-3 rounded-lg">
+                            {loanOtpError}
+                          </div>
+                        )}
+                      </div>
+                    ) : (
+                      <form onSubmit={handleVerifyLoanOtp} className="space-y-6">
+                        <div>
+                          <label htmlFor="loanOtp" className="block text-sm font-semibold text-gray-700 mb-1">OTP Code</label>
+                          <input
+                            id="loanOtp"
+                            type="text"
+                            placeholder="Enter 6-digit OTP"
+                            value={loanOtp}
+                            onChange={e => setLoanOtp(e.target.value)}
+                            required
+                            className="w-full p-3 border rounded-lg focus:ring-2 focus:ring-orange-300 focus:border-orange-400 transition tracking-widest text-lg text-center"
+                            maxLength={6}
+                          />
+                          <p className="text-xs text-gray-400 mt-1">Check the customer's mobile phone for the SMS OTP.</p>
+                        </div>
+                        <button type="submit" className="w-full bg-gradient-to-r from-orange-400 to-orange-600 hover:from-orange-500 hover:to-orange-700 text-white py-3 rounded-xl text-lg font-bold shadow-lg flex items-center gap-2 justify-center">
+                          <span>✅</span> Verify OTP & Proceed
+                        </button>
+                      </form>
+                    )}
+                  </div>
+                )}
+                {loanStep === 3 && customerVerified && loanOtpVerified && (
+                  <div className="max-w-4xl mx-auto bg-green-50 shadow-xl rounded-2xl p-8 mt-8 mb-12 border border-green-200">
+                    <form onSubmit={handleSubmit} className="space-y-8">
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-10">
+                        <div className="space-y-4">
+                          <h2 className="flex items-center gap-2 text-xl font-bold text-blue-700 mb-2"><span>👤</span> Customer Details</h2>
+                          <label className="block text-sm font-semibold text-gray-700">Aadhar Number
+                            <span className="block text-xs text-gray-400">12-digit unique ID</span>
+                          </label>
+                          <input type="text" name="aadharNumber" value={formData.aadharNumber} onChange={handleInputChange} placeholder="Aadhar Number" className="w-full p-3 border rounded-lg focus:ring-2 focus:ring-blue-300 focus:border-blue-400 transition" required autoComplete="off" />
+                          <label className="block text-sm font-semibold text-gray-700">Full Name</label>
+                          <input type="text" name="name" value={formData.name} onChange={handleInputChange} placeholder="Full Name" className="w-full p-3 border rounded-lg focus:ring-2 focus:ring-blue-300 focus:border-blue-400 transition" required style={{ textTransform: 'capitalize' }} autoComplete="name" />
+                          <label className="block text-sm font-semibold text-gray-700">Email
+                            <span className="block text-xs text-gray-400">We'll send an OTP for verification</span>
+                          </label>
+                          <input type="email" name="email" value={formData.email} onChange={handleInputChange} placeholder="Email Address" className="w-full p-3 border rounded-lg focus:ring-2 focus:ring-blue-300 focus:border-blue-400 transition" required autoComplete="email" />
+                          <label className="block text-sm font-semibold text-gray-700">Primary Mobile</label>
+                          <input type="tel" name="primaryMobile" value={formData.primaryMobile} onChange={handleInputChange} placeholder="Primary Mobile Number" className="w-full p-3 border rounded-lg focus:ring-2 focus:ring-blue-300 focus:border-blue-400 transition" required autoComplete="tel" />
+                          <label className="block text-sm font-semibold text-gray-700">Secondary Mobile</label>
+                          <input type="tel" name="secondaryMobile" value={formData.secondaryMobile} onChange={handleInputChange} placeholder="Secondary Mobile Number" className="w-full p-3 border rounded-lg focus:ring-2 focus:ring-blue-300 focus:border-blue-400 transition" autoComplete="tel" />
+                        </div>
+                        <div className="space-y-4">
+                          <h2 className="flex items-center gap-2 text-xl font-bold text-blue-700 mb-2"><span>📞</span> Emergency Contact</h2>
+                          <label className="block text-sm font-semibold text-gray-700">Contact Number</label>
+                          <input type="tel" name="emergencyContact.mobile" value={formData.emergencyContact.mobile} onChange={handleInputChange} placeholder="Emergency Contact Number" className="w-full p-3 border rounded-lg focus:ring-2 focus:ring-blue-300 focus:border-blue-400 transition" required autoComplete="tel" />
+                          <label className="block text-sm font-semibold text-gray-700">Relation
+                            <span className="block text-xs text-gray-400">e.g., Father, Mother</span>
+                          </label>
+                          <input type="text" name="emergencyContact.relation" value={formData.emergencyContact.relation} onChange={handleInputChange} placeholder="Relation (e.g., Father, Mother)" className="w-full p-3 border rounded-lg focus:ring-2 focus:ring-blue-300 focus:border-blue-400 transition" required style={{ textTransform: 'capitalize' }} autoComplete="relationship" />
+                          <h2 className="flex items-center gap-2 text-xl font-bold text-blue-700 mt-6 mb-2"><span>🏠</span> Address</h2>
+                          <label className="block text-sm font-semibold text-gray-700">Present Address</label>
+                          <textarea name="presentAddress" value={formData.presentAddress} onChange={handleInputChange} placeholder="Present Address" className="w-full p-3 border rounded-lg focus:ring-2 focus:ring-blue-300 focus:border-blue-400 transition" required autoComplete="address-line1" />
+                          <label className="block text-sm font-semibold text-gray-700">Permanent Address</label>
+                          <textarea name="permanentAddress" value={formData.permanentAddress} onChange={handleInputChange} placeholder="Permanent Address" className="w-full p-3 border rounded-lg focus:ring-2 focus:ring-blue-300 focus:border-blue-400 transition" required autoComplete="address-line2" />
+                        </div>
+                      </div>
+                      <div className="mt-8">
+                          <h2 className="flex items-center gap-2 text-xl font-bold text-yellow-700 mb-2"><span>🪙</span> Gold Items</h2>
+                          {formData.goldItems.map((item, index) => (
+                            <div key={index} className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4 p-4 bg-yellow-50 rounded-lg border border-yellow-200">
+                              <div>
+                                <label className="block text-sm font-semibold text-gray-700">Description</label>
+                                <input type="text" value={item.description} onChange={e => handleGoldItemChange(index, 'description', e.target.value)} placeholder="Gold Item Description" className="w-full p-3 border rounded-lg focus:ring-2 focus:ring-yellow-300 focus:border-yellow-400 transition" required autoComplete="off" />
+                              </div>
+                              <div>
+                                <label className="block text-sm font-semibold text-gray-700">Gross Weight (g)</label>
+                                <input type="number" value={item.grossWeight} onChange={e => handleGoldItemChange(index, 'grossWeight', e.target.value)} placeholder="Gross Weight" className="w-full p-3 border rounded-lg focus:ring-2 focus:ring-yellow-300 focus:border-yellow-400 transition" min="0" step="0.01" required autoComplete="off" />
+                              </div>
+                              <div>
+                                <label className="block text-sm font-semibold text-gray-700">Net Weight (g)</label>
+                                <input type="number" value={item.netWeight} onChange={e => handleGoldItemChange(index, 'netWeight', e.target.value)} placeholder="Net Weight" className="w-full p-3 border rounded-lg focus:ring-2 focus:ring-yellow-300 focus:border-yellow-400 transition" min="0" step="0.01" required autoComplete="off" />
+                              </div>
+                              <div className="col-span-3 flex justify-end">
+                                <button type="button" onClick={() => removeGoldItem(index)} className="text-red-600 hover:underline font-semibold" disabled={formData.goldItems.length === 1}>Remove</button>
+                              </div>
+                            </div>
+                          ))}
+                          <button type="button" onClick={addGoldItem} className="bg-gradient-to-r from-green-400 to-green-600 hover:from-green-500 hover:to-green-700 text-white px-5 py-2 rounded-lg mt-2 font-semibold shadow">+ Add Gold Item</button>
+                        </div>
+                      <div className="space-y-4 mt-8">
+                        <h2 className="flex items-center gap-2 text-xl font-bold text-yellow-700 mb-2"><span>💰</span> Loan Details</h2>
+                        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                          <div>
+                            <label className="block text-sm font-semibold text-gray-700">Interest Rate (%)</label>
+                            <input type="number" name="interestRate" value={formData.interestRate} onChange={handleInputChange} placeholder="Annual Interest Rate" className="w-full p-3 border rounded-lg focus:ring-2 focus:ring-yellow-300 focus:border-yellow-400 transition" min="0" step="0.01" required autoComplete="off" />
+                          </div>
+                          <div>
+                            <label className="block text-sm font-semibold text-gray-700">Loan Amount (₹)</label>
+                            <input type="number" name="loanAmount" value={formData.loanAmount} onChange={handleInputChange} placeholder="Loan Amount" className="w-full p-3 border rounded-lg focus:ring-2 focus:ring-yellow-300 focus:border-yellow-400 transition" min="100" step="1" required autoComplete="off" />
+                          </div>
+                          <div>
+                            <label className="block text-sm font-semibold text-gray-700">Duration (months)</label>
+                            <input type="number" name="duration" value={formData.duration} onChange={handleInputChange} placeholder="Loan Duration" className="w-full p-3 border rounded-lg focus:ring-2 focus:ring-yellow-300 focus:border-yellow-400 transition" min="1" step="1" required autoComplete="off" />
+                          </div>
+                          <div>
+                            <label className="block text-sm font-semibold text-gray-700">Monthly Payment (₹)</label>
+                            <input type="number" name="monthlyPayment" value={formData.monthlyPayment} onChange={handleInputChange} placeholder="Monthly Payment" className="w-full p-3 border rounded-lg focus:ring-2 focus:ring-yellow-300 focus:border-yellow-400 transition" min="0" step="1" required autoComplete="off" />
+                          </div>
+                          <div>
+                            <label className="block text-sm font-semibold text-gray-700">Total Amount to be Paid (₹)</label>
+                            <input type="number" name="totalAmount" value={formData.totalAmount} onChange={handleInputChange} placeholder="Total Amount" className="w-full p-3 border rounded-lg focus:ring-2 focus:ring-yellow-300 focus:border-yellow-400 transition" min="0" step="1" required autoComplete="off" />
+                          </div>
+                        </div>
+                        
+                      </div>
+                      <div className="flex justify-end mt-10">
+                        <button type="submit" className="bg-gradient-to-r from-yellow-400 to-yellow-600 hover:from-yellow-500 hover:to-yellow-700 text-white px-8 py-3 rounded-xl text-lg font-bold shadow-lg flex items-center gap-2">
+                          <span>🚀</span> Create Loan
+                        </button>
+                      </div>
+                    </form>
+                  </div>
+                )}
+              </div>
+            )}
 
-                  <div className="space-y-1">
-                    <label htmlFor="loanAmount" className="block text-sm font-medium text-gray-700">
-                      Loan Amount (₹)
-                    </label>
-                    <input
-                      id="loanAmount"
-                      type="number"
-                      name="loanAmount"
-                      value={formData.loanAmount}
-                      onChange={handleInputChange}
-                      placeholder="Enter loan amount"
-                      className="w-full p-2 border rounded"
-                      required
-                      min="100"
-                      step="1"
-                    />
-                    <p className="text-sm text-gray-500">Principal amount to be disbursed to the customer (minimum ₹100)</p>
-                  </div>
-
-                  <div className="space-y-1">
-                    <label htmlFor="duration" className="block text-sm font-medium text-gray-700">
-                      Loan Duration
-                    </label>
-                    <input
-                      id="duration"
-                      type="number"
-                      name="duration"
-                      value={formData.duration}
-                      onChange={handleInputChange}
-                      placeholder="Enter number of months"
-                      className="w-full p-2 border rounded"
-                      required
-                      min="1"
-                      step="1"
-                    />
-                    <p className="text-sm text-gray-500">Loan tenure in months (minimum 1 month)</p>
-                  </div>
-
-                  <div className="space-y-1">
-                    <label htmlFor="monthlyPayment" className="block text-sm font-medium text-gray-700">
-                      Monthly Payment (₹)
-                    </label>
-                    <div className="relative">
-                      <input
-                        id="monthlyPayment"
-                        type="number"
-                        name="monthlyPayment"
-                        value={formData.monthlyPayment}
-                        className="w-full p-2 border rounded bg-gray-100"
-                        placeholder="Monthly payment will be calculated automatically"
-                        readOnly
-                      />
-                      <span className="absolute right-3 top-2 text-gray-500 text-sm">Auto-calculated</span>
-                    </div>
-                    <p className="text-sm text-gray-500">Monthly installment amount to be paid by the customer</p>
-                  </div>
-
-                  <div className="space-y-1">
-                    <label htmlFor="totalAmount" className="block text-sm font-medium text-gray-700">
-                      Total Amount to be Paid (₹)
-                    </label>
-                    <div className="relative">
-                      <input
-                        id="totalAmount"
-                        type="number"
-                        name="totalAmount"
-                        value={formData.totalAmount}
-                        className="w-full p-2 border rounded bg-gray-100"
-                        placeholder="Total amount will be calculated automatically"
-                        readOnly
-                      />
-                      <span className="absolute right-3 top-2 text-gray-500 text-sm">Auto-calculated</span>
-                    </div>
-                    <p className="text-sm text-gray-500">Total amount including interest to be repaid by the customer</p>
-                  </div>
-
-                  <div className="mt-2 p-3 bg-blue-50 rounded-md">
-                    <p className="text-sm text-blue-600">
-                      <strong>Note:</strong> The monthly payment and total amount are calculated using compound interest, 
-                      with interest being charged monthly. The interest rate you enter is the <b>annual rate</b> (not monthly rate).
-                    </p>
-                  </div>
+            {/* Loans Table Section */}
+            <div className="bg-white/90 rounded-2xl shadow-xl p-6 mt-8">
+              <div className="flex flex-col md:flex-row md:items-center md:justify-between mb-4 gap-4">
+                <h2 className="text-2xl font-semibold flex items-center gap-2 mb-2 md:mb-0">
+                  <span>📄</span> Loans
+                </h2>
+                <div className="relative w-full md:w-96">
+                  <span className="absolute left-3 top-1/2 -translate-y-1/2 text-blue-300 text-lg">🔍</span>
+                  <input
+                    type="text"
+                    value={search}
+                    onChange={e => setSearch(e.target.value)}
+                    placeholder="Search by name, email, mobile, Aadhar"
+                    className="pl-10 pr-4 py-2 w-full rounded-full border border-blue-100 bg-blue-50 focus:ring-2 focus:ring-blue-200 focus:border-blue-300 transition text-gray-700 shadow-sm"
+                  />
                 </div>
               </div>
-
-              <button
-                type="submit"
-                className="w-full bg-yellow-600 hover:bg-yellow-700 text-white py-2 rounded"
-              >
-                Create Loan
-              </button>
-            </form>
-          )}
-
-          {/* Search Input */}
-          <div className="flex justify-end mb-4">
-            <input
-              type="text"
-              value={search}
-              onChange={e => setSearch(e.target.value)}
-              placeholder="Search by name, email, mobile, customer ID, or amount"
-              className="p-2 border rounded w-80"
-            />
-          </div>
-
-          {/* Loans Table */}
-          <div className="mt-8">
-            <h2 className="text-2xl font-semibold mb-4">Loans</h2>
-            
-            {loading && (
-              <div className="text-center py-4">
-                <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-yellow-600 mx-auto"></div>
-              </div>
-            )}
-
-            {error && (
-              <div className="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded mb-4">
-                {error}
-              </div>
-            )}
-
-            {!loading && !error && (
               <div className="overflow-x-auto">
-                <table className="min-w-full bg-white border border-gray-200 rounded-lg">
-                  <thead className="bg-gray-50">
+                <table className="min-w-full bg-white rounded-xl">
+                  <thead className="bg-blue-100">
                     <tr>
-                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Date</th>
-                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Customer</th>
-                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Contact</th>
-                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Loan Details</th>
-                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Status</th>
-                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Actions</th>
+                      <th className="px-3 py-2 text-left text-xs font-bold text-blue-700 uppercase tracking-wider">Date</th>
+                      <th className="px-3 py-2 text-left text-xs font-bold text-blue-700 uppercase tracking-wider">Customer</th>
+                      <th className="px-3 py-2 text-left text-xs font-bold text-blue-700 uppercase tracking-wider">Contact</th>
+                      <th className="px-3 py-2 text-left text-xs font-bold text-blue-700 uppercase tracking-wider">Loan Details</th>
+                      <th className="px-3 py-2 text-left text-xs font-bold text-blue-700 uppercase tracking-wider">Created By</th>
+                      <th className="px-3 py-2 text-left text-xs font-bold text-blue-700 uppercase tracking-wider">Status</th>
+                      <th className="px-3 py-2 text-left text-xs font-bold text-blue-700 uppercase tracking-wider">Actions</th>
                     </tr>
                   </thead>
-                  <tbody className="divide-y divide-gray-200">
-                    {filteredLoans.map((loan) => (
-                      <tr key={loan._id} className="hover:bg-gray-50">
-                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                          {formatDate(loan.createdAt)}
+                  <tbody>
+                    {filteredLoans.map((loan, idx) => (
+                      <tr key={loan._id} className={`transition group ${idx % 2 === 0 ? 'bg-blue-50' : 'bg-white'} hover:bg-cyan-50`}>
+                        <td className="px-3 py-2 whitespace-nowrap text-sm text-gray-500">{formatDate(loan.createdAt)}</td>
+                        <td className="px-4 py-3 max-w-[120px] truncate">
+                          <div className="text-sm font-medium text-gray-900 truncate">
+                            {typeof loan.customerId === 'object' ? loan.customerId.name : loan.name}
+                          </div>
+                          <div className="text-xs text-gray-500 truncate">
+                            {typeof loan.customerId === 'object' ? loan.customerId.aadharNumber : ''}
+                          </div>
                         </td>
-                        <td className="px-6 py-4">
-                          <div className="text-sm font-medium text-gray-900">{loan.name}</div>
-                          {/* <div className="text-sm text-gray-500">{loan.customerId}</div> */}
-                        </td>
-                        <td className="px-6 py-4">
+                        <td className="px-3 py-2">
                           <div className="text-sm text-gray-900">{loan.primaryMobile}</div>
-                          <div className="text-sm text-gray-500">{loan.email}</div>
+                          <div className="text-xs text-gray-500">{loan.email}</div>
                         </td>
-                        <td className="px-6 py-4">
-                          <div className="text-sm text-gray-900">
-                            Amount: {formatCurrency(loan.amount)}
-                          </div>
-                          <div className="text-sm text-gray-500">
-                            Term: {loan.term} months | Interest: {loan.interestRate}%
-                          </div>
-                          <div className="text-sm text-gray-500">
-                            Monthly: {formatCurrency(loan.monthlyPayment)}
-                          </div>
-                          <div className="text-sm text-green-700">
-                            Total Paid: {formatCurrency(loan.totalPaid || 0)}
-                          </div>
-                          <div className="text-sm text-red-700">
-                            To Be Paid: {formatCurrency((loan.totalPayment || 0) - (loan.totalPaid || 0))}
-                          </div>
+                        <td className="px-3 py-2">
+                          <div className="text-sm text-gray-900">Amount: ₹{loan.amount}</div>
+                          <div className="text-xs text-gray-500">Term: {loan.term} months | Interest: {loan.interestRate}% (Daily)</div>
+                          <div className="text-xs text-gray-500">Monthly: ₹{loan.monthlyPayment}</div>
+                          <div className="text-xs text-green-700">Total Paid: ₹{loan.totalPaid || 0}</div>
                         </td>
-                        <td className="px-6 py-4 whitespace-nowrap">
-                          <span className={`px-2 inline-flex text-xs leading-5 font-semibold rounded-full ${getStatusColor(loan.status)}`}>
-                            {loan.status.charAt(0).toUpperCase() + loan.status.slice(1)}
-                          </span>
+                        
+                        <td className="px-3 py-2 max-w-[120px] truncate">
+                          {loan.createdBy ? (
+                            <>
+                              <div className="text-sm font-medium text-gray-900 truncate">{loan.createdBy.name}</div>
+                              <div className="text-xs text-gray-500 truncate">{loan.createdBy.email}</div>
+                              <div className="text-xs text-gray-500 truncate">{loan.createdBy.role}</div>
+                            </>
+                          ) : (
+                            <div className="text-xs text-gray-500">N/A</div>
+                          )}
                         </td>
-                        <td className="px-6 py-4 whitespace-no-wrap border-b border-gray-200 text-sm font-medium">
+                        <td className="px-3 py-2 whitespace-nowrap">
+                          <span className={`px-2 inline-flex text-xs leading-5 font-semibold rounded-full ${getStatusColor(loan.status)}`}>{loan.status === 'active' ? '🟢 Active' : loan.status.charAt(0).toUpperCase() + loan.status.slice(1)}</span>
+                        </td>
+                        <td className="px-3 py-2 whitespace-nowrap text-right">
                           {loan.status === 'active' && (
                             <button
                               onClick={() => {
                                 setSelectedLoan(loan);
                                 setShowRepaymentModal(true);
                               }}
-                              className="text-yellow-600 hover:text-yellow-900"
+                              className="bg-gradient-to-r from-yellow-400 to-yellow-600 hover:from-yellow-500 hover:to-yellow-700 text-white px-4 py-2 rounded-xl font-bold shadow flex items-center gap-2"
                             >
-                              Repay
+                              <span>💸</span> Repay
                             </button>
                           )}
                         </td>
@@ -1039,49 +1473,86 @@ const AdminDashboard = () => {
                     ))}
                     {filteredLoans.length === 0 && (
                       <tr>
-                        <td colSpan={5} className="px-6 py-4 text-center text-gray-500">
-                          No loans found
-                        </td>
+                        <td colSpan={7} className="px-3 py-4 text-center text-gray-500">No loans found</td>
                       </tr>
                     )}
                   </tbody>
                 </table>
               </div>
-            )}
-          </div>
-
-          {/* Gold Rate Update Section */}
-          <Card className="p-4 mt-6">
-            <Typography variant="h6" className="mb-4 p-4">Update Gold Rate</Typography>
-            <div className="flex items-center gap-4">
-              <TextField
-                label="Gold Rate (per gram)"
-                type="number"
-                value={goldRate}
-                onChange={(e) => setGoldRate(e.target.value)}
-                className="w-48"
-                InputProps={{
-                  startAdornment: <span className="mr-2">₹</span>
-                }}
-              />
-              <Button
-                variant="contained"
-                onClick={handleUpdateGoldRate}
-                disabled={loading}
-                className="bg-yellow-600 hover:bg-yellow-700"
-              >
-                Update Rate
-              </Button>
             </div>
-            {message && (
-              <Typography 
-                className={`mt-2 ${message.includes('success') ? 'text-green-600' : 'text-red-600'}`}
-              >
-                {message}
-              </Typography>
-            )}
-          </Card>
-        </div>
+
+            {/* Gold Rate Update Section */}
+            <div className="bg-white/80 backdrop-blur-sm rounded-2xl shadow-xl p-6 mt-8 border border-white/20">
+              <div className="flex items-center space-x-3 mb-6">
+                <div className="w-10 h-10 bg-yellow-100 rounded-xl flex items-center justify-center">
+                  <span className="text-yellow-600 text-lg">💰</span>
+                </div>
+                <div>
+                  <h2 className="text-xl font-bold text-gray-800">Gold Rate Management</h2>
+                  <p className="text-sm text-gray-600">Update current gold rate per gram</p>
+                </div>
+              </div>
+              <div className="flex flex-col lg:flex-row items-center gap-4">
+                <div className="relative">
+                  <span className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-500">₹</span>
+                  <input
+                    type="number"
+                    value={goldRate}
+                    onChange={(e) => setGoldRate(e.target.value)}
+                    placeholder="Gold Rate per gram"
+                    className="pl-8 pr-4 py-3 w-48 border border-gray-300 rounded-xl focus:ring-2 focus:ring-yellow-500 focus:border-yellow-400 transition bg-white/80 backdrop-blur-sm"
+                  />
+                </div>
+                <button
+                  onClick={handleUpdateGoldRate}
+                  disabled={loading}
+                  className="bg-gradient-to-r from-yellow-500 to-yellow-600 hover:from-yellow-600 hover:to-yellow-700 text-white px-6 py-3 rounded-xl font-bold shadow-lg transition-all duration-300 flex items-center space-x-2 disabled:opacity-50"
+                >
+                  <span>🔄</span>
+                  <span>{loading ? 'Updating...' : 'Update Rate'}</span>
+                </button>
+              </div>
+              {message && (
+                <div className={`mt-4 p-3 rounded-lg ${
+                  message.includes('success') 
+                    ? 'bg-green-50 border border-green-200 text-green-700' 
+                    : 'bg-red-50 border border-red-200 text-red-700'
+                }`}>
+                  {message}
+                </div>
+              )}
+            </div>
+
+            {/* Footer Section */}
+            <div className="mt-12 pb-8">
+              <div className="bg-white/60 backdrop-blur-sm rounded-2xl shadow-lg p-6 border border-white/20">
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                  <div className="text-center">
+                    <div className="w-12 h-12 bg-blue-100 rounded-xl flex items-center justify-center mx-auto mb-3">
+                      <span className="text-blue-600 text-xl">📊</span>
+                    </div>
+                    <h3 className="font-semibold text-gray-800 mb-2">Dashboard Overview</h3>
+                    <p className="text-sm text-gray-600">Monitor all loan activities and customer data</p>
+                  </div>
+                  <div className="text-center">
+                    <div className="w-12 h-12 bg-green-100 rounded-xl flex items-center justify-center mx-auto mb-3">
+                      <span className="text-green-600 text-xl">⚡</span>
+                    </div>
+                    <h3 className="font-semibold text-gray-800 mb-2">Quick Actions</h3>
+                    <p className="text-sm text-gray-600">Add loans, manage repayments, and update rates</p>
+                  </div>
+                  <div className="text-center">
+                    <div className="w-12 h-12 bg-purple-100 rounded-xl flex items-center justify-center mx-auto mb-3">
+                      <span className="text-purple-600 text-xl">🔒</span>
+                    </div>
+                    <h3 className="font-semibold text-gray-800 mb-2">Secure Access</h3>
+                    <p className="text-sm text-gray-600">Protected admin dashboard with role-based access</p>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </main>
       </div>
 
       {/* Repayment Modal */}

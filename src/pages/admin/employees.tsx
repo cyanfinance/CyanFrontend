@@ -3,6 +3,7 @@ import AdminSidebar from '../../components/AdminSidebar';
 import { Dialog, DialogTitle, DialogContent, DialogActions, Button, TextField, MenuItem } from '@mui/material';
 import { useAuth } from '../../context/AuthContext';
 import { API_URL } from '../../config';
+import Navbar from '../../components/Navbar';
 
 const EmployeesPage = () => {
   const [sidebarOpen, setSidebarOpen] = useState(false);
@@ -16,8 +17,15 @@ const EmployeesPage = () => {
     role: 'employee',
     aadharNumber: ''
   });
+  const [editForm, setEditForm] = useState({
+    name: '',
+    mobile: '',
+    alternateMobile: '',
+    role: 'employee'
+  });
   const [selectedEmployee, setSelectedEmployee] = useState<any | null>(null);
   const [registering, setRegistering] = useState(false);
+  const [editing, setEditing] = useState(false);
   const [employees, setEmployees] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -75,6 +83,47 @@ const EmployeesPage = () => {
     }
   };
 
+  const handleEdit = (employee: any) => {
+    setSelectedEmployee(employee);
+    setEditForm({
+      name: employee.name || '',
+      mobile: employee.primaryMobile || '',
+      alternateMobile: employee.secondaryMobile || '',
+      role: employee.role || 'employee'
+    });
+    setEditDialogOpen(true);
+  };
+
+  const handleUpdate = async () => {
+    if (!selectedEmployee) return;
+    setEditing(true);
+    try {
+      const response = await fetch(`${API_URL}/admin/employees/${selectedEmployee._id}`, {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+          'x-auth-token': token || ''
+        },
+        body: JSON.stringify({
+          name: editForm.name,
+          primaryMobile: editForm.mobile,
+          secondaryMobile: editForm.alternateMobile,
+          role: editForm.role
+        })
+      });
+      const data = await response.json();
+      if (!response.ok) throw new Error(data.message || 'Failed to update employee');
+      alert('Employee updated successfully!');
+      setEditDialogOpen(false);
+      setSelectedEmployee(null);
+      fetchEmployees();
+    } catch (err) {
+      alert(err instanceof Error ? err.message : 'Failed to update employee');
+    } finally {
+      setEditing(false);
+    }
+  };
+
   const handleDelete = async (id: string, name: string) => {
     if (!window.confirm(`Are you sure you want to delete employee '${name}'? This action cannot be undone.`)) return;
     try {
@@ -92,165 +141,295 @@ const EmployeesPage = () => {
   };
 
   return (
-    <div className="flex h-screen bg-gray-100">
-      <AdminSidebar isOpen={sidebarOpen} toggleSidebar={() => setSidebarOpen(!sidebarOpen)} />
-      
-      <div className="flex-1 overflow-auto">
-        <div className="p-8">
-          <h1 className="text-3xl font-bold mb-6">Employees Management</h1>
-          <div className="flex justify-end mb-6">
-            <Button variant="contained" color="primary" onClick={() => setAddDialogOpen(true)}>
-              Add Employee
-            </Button>
-          </div>
-          {/* Add Employee Dialog */}
-          <Dialog open={addDialogOpen} onClose={() => setAddDialogOpen(false)} maxWidth="sm" fullWidth>
-            <DialogTitle>Add Employee</DialogTitle>
-            <DialogContent>
-              <TextField
-                fullWidth
-                label="Email"
-                value={form.email}
-                onChange={e => setForm({ ...form, email: e.target.value })}
-                margin="normal"
-              />
-              <TextField
-                fullWidth
-                label="Name"
-                value={form.name}
-                onChange={e => setForm({ ...form, name: e.target.value })}
-                margin="normal"
-              />
-              <TextField
-                fullWidth
-                label="Aadhar Number"
-                value={form.aadharNumber}
-                onChange={e => setForm({ ...form, aadharNumber: e.target.value })}
-                margin="normal"
-                inputProps={{ maxLength: 12 }}
-                helperText="Must be exactly 12 digits"
-              />
-              <TextField
-                fullWidth
-                label="Mobile Number"
-                value={form.mobile}
-                onChange={e => setForm({ ...form, mobile: e.target.value })}
-                margin="normal"
-              />
-              <TextField
-                fullWidth
-                label="Alternate Mobile Number"
-                value={form.alternateMobile}
-                onChange={e => setForm({ ...form, alternateMobile: e.target.value })}
-                margin="normal"
-              />
-              <TextField
-                select
-                fullWidth
-                label="Role"
-                value={form.role}
-                onChange={e => setForm({ ...form, role: e.target.value })}
-                margin="normal"
-              >
-                <MenuItem value="employee">Employee</MenuItem>
-                <MenuItem value="admin">Admin</MenuItem>
-              </TextField>
-            </DialogContent>
-            <DialogActions>
-              <Button onClick={() => setAddDialogOpen(false)} disabled={registering}>Cancel</Button>
-              <Button variant="contained" color="primary" onClick={handleRegister} disabled={registering}>
-                {registering ? 'Registering...' : 'Register'}
-              </Button>
-            </DialogActions>
-          </Dialog>
-          {/* Edit Employee Dialog */}
-          <Dialog open={editDialogOpen} onClose={() => setEditDialogOpen(false)} maxWidth="sm" fullWidth>
-            <DialogTitle>Edit Employee</DialogTitle>
-            <DialogContent>
-              {selectedEmployee && (
-                <>
-                  <TextField fullWidth label="Name" value={selectedEmployee.name} margin="normal" onChange={e => setSelectedEmployee({ ...selectedEmployee, name: e.target.value })} />
-                  <TextField fullWidth label="Email" value={selectedEmployee.email} margin="normal" InputProps={{ readOnly: true }} />
-                  <TextField fullWidth label="Aadhar Number" value={selectedEmployee.aadharNumber} margin="normal" InputProps={{ readOnly: true }} />
-                  <TextField fullWidth label="Mobile Number" value={selectedEmployee.primaryMobile || ''} margin="normal" onChange={e => setSelectedEmployee({ ...selectedEmployee, primaryMobile: e.target.value })} />
-                  <TextField fullWidth label="Alternate Mobile Number" value={selectedEmployee.secondaryMobile || ''} margin="normal" onChange={e => setSelectedEmployee({ ...selectedEmployee, secondaryMobile: e.target.value })} />
-                  <TextField select fullWidth label="Role" value={selectedEmployee.role} onChange={e => setSelectedEmployee({ ...selectedEmployee, role: e.target.value })} margin="normal">
-                    <MenuItem value="employee">Employee</MenuItem>
-                    <MenuItem value="admin">Admin</MenuItem>
-                  </TextField>
-                </>
+    <>
+      <Navbar isSidebarPage={true} sidebarOpen={sidebarOpen} toggleSidebar={() => setSidebarOpen(open => !open)} />
+      <div className="flex h-screen bg-gray-100">
+        <AdminSidebar isOpen={sidebarOpen} toggleSidebar={() => setSidebarOpen(open => !open)} />
+        <div className="flex-1 overflow-auto">
+          <div className="p-8">
+            <div className="max-w-4xl mx-auto mt-8 bg-white rounded-xl shadow-lg p-6">
+              <div className="flex justify-between items-center mb-4">
+                <h2 className="text-2xl font-bold text-yellow-800">Employees Management</h2>
+                <button
+                  className="bg-gradient-to-r from-yellow-400 to-yellow-600 text-white px-4 py-2 rounded-lg font-semibold flex items-center gap-2 shadow hover:from-yellow-500 hover:to-yellow-700"
+                  onClick={() => setAddDialogOpen(true)}
+                >
+                  <span className="text-lg">➕</span> Add Employee
+                </button>
+              </div>
+              {loading ? (
+                <div className="text-center py-8">
+                  <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-yellow-600 mx-auto"></div>
+                  <p className="mt-2 text-gray-600">Loading employees...</p>
+                </div>
+              ) : error ? (
+                <div className="text-center py-8">
+                  <p className="text-red-600">{error}</p>
+                  <button 
+                    onClick={fetchEmployees}
+                    className="mt-2 bg-yellow-500 text-white px-4 py-2 rounded hover:bg-yellow-600"
+                  >
+                    Retry
+                  </button>
+                </div>
+              ) : (
+                <table className="min-w-full divide-y divide-gray-200 rounded-lg overflow-hidden table-fixed">
+                  <thead className="bg-yellow-50">
+                    <tr>
+                      <th className="px-4 py-3 text-left font-bold text-gray-700">Name</th>
+                      <th className="px-4 py-3 text-left font-bold text-gray-700">Email</th>
+                      <th className="px-4 py-3 text-left font-bold text-gray-700">Aadhar Number</th>
+                      <th className="px-4 py-3 text-left font-bold text-gray-700">Mobile</th>
+                      <th className="px-4 py-3 text-left font-bold text-gray-700">Alternate Mobile</th>
+                      <th className="px-4 py-3 text-left font-bold text-gray-700">Role</th>
+                      <th className="px-4 py-3 text-left font-bold text-gray-700">Actions</th>
+                    </tr>
+                  </thead>
+                  <tbody className="bg-white divide-y divide-gray-100">
+                    {employees.map(emp => (
+                      <tr key={emp._id} className="hover:bg-yellow-50 transition">
+                        <td className="px-4 py-3 flex items-center gap-2">
+                          <span className="font-semibold">{emp.name}</span>
+                        </td>
+                        <td className="px-4 py-3">{emp.email}</td>
+                        <td className="px-4 py-3">{emp.aadharNumber}</td>
+                        <td className="px-4 py-3">{emp.primaryMobile}</td>
+                        <td className="px-4 py-3">{emp.secondaryMobile}</td>
+                        <td className="px-4 py-3 capitalize font-semibold">{emp.role}</td>
+                        <td className="px-4 py-3 flex gap-2 items-center">
+                          <button 
+                            onClick={() => handleEdit(emp)}
+                            className="bg-blue-100 text-blue-700 px-3 py-1 rounded hover:bg-blue-200 flex items-center gap-1"
+                          >
+                            ✏️ Edit
+                          </button>
+                          {emp.role.toLowerCase() === 'employee' ? (
+                            <button 
+                              onClick={() => handleDelete(emp._id, emp.name)}
+                              className="bg-red-100 text-red-700 px-3 py-1 rounded hover:bg-red-200 flex items-center gap-1"
+                            >
+                              🗑️ Delete
+                            </button>
+                          ) : (
+                            <span className="text-gray-400 text-xs px-2">Admin cannot be deleted</span>
+                          )}
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
               )}
-            </DialogContent>
-            <DialogActions>
-              <Button onClick={() => setEditDialogOpen(false)}>Cancel</Button>
-              <Button variant="contained" color="primary" onClick={async () => {
-                if (!selectedEmployee) return;
-                try {
-                  const response = await fetch(`${API_URL}/admin/employees/${selectedEmployee._id}`, {
-                    method: 'PUT',
-                    headers: {
-                      'Content-Type': 'application/json',
-                      'x-auth-token': token || ''
-                    },
-                    body: JSON.stringify(selectedEmployee)
-                  });
-                  if (!response.ok) throw new Error('Failed to update employee');
-                  setEditDialogOpen(false);
-                  setSelectedEmployee(null);
-                  fetchEmployees();
-                  alert('Employee updated successfully!');
-                } catch (err) {
-                  alert(err instanceof Error ? err.message : 'Failed to update employee');
-                }
-              }}>Save</Button>
-            </DialogActions>
-          </Dialog>
-          {/* Employee List Table */}
-          {loading ? (
-            <div>Loading employees...</div>
-          ) : error ? (
-            <div className="text-red-600">{error}</div>
-          ) : (
-            <table className="min-w-full bg-white border border-gray-200 rounded-lg mt-6">
-              <thead className="bg-gray-50">
-                <tr>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Name</th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Email</th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Aadhar Number</th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Mobile</th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Alternate Mobile</th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Role</th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Actions</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-gray-200">
-                {employees.map(emp => (
-                  <tr key={emp._id}>
-                    <td className="px-6 py-4 whitespace-nowrap">{emp.name}</td>
-                    <td className="px-6 py-4 whitespace-nowrap">{emp.email}</td>
-                    <td className="px-6 py-4 whitespace-nowrap">{emp.aadharNumber}</td>
-                    <td className="px-6 py-4 whitespace-nowrap">{emp.primaryMobile}</td>
-                    <td className="px-6 py-4 whitespace-nowrap">{emp.secondaryMobile}</td>
-                    <td className="px-6 py-4 whitespace-nowrap capitalize">{emp.role}</td>
-                    <td className="px-6 py-4 whitespace-nowrap">
-                      <Button color="primary" variant="outlined" size="small" onClick={() => { setSelectedEmployee(emp); setEditDialogOpen(true); }}>Edit</Button>
-                      {emp.role === 'employee' && (
-                        <Button color="error" variant="outlined" size="small" onClick={() => handleDelete(emp._id, emp.name)} style={{ marginLeft: 8 }}>
-                          Delete
-                        </Button>
-                      )}
-                    </td>
-                  </tr>
-                ))}
-                {employees.length === 0 && (
-                  <tr><td colSpan={5} className="px-6 py-4 text-center text-gray-500">No employees found</td></tr>
-                )}
-              </tbody>
-            </table>
-          )}
+            </div>
+          </div>
         </div>
       </div>
-    </div>
+
+      {/* Add Employee Dialog */}
+      <Dialog open={addDialogOpen} onClose={() => setAddDialogOpen(false)} maxWidth="sm" fullWidth
+        PaperProps={{
+          style: {
+            background: 'rgba(255,255,255,0.85)',
+            boxShadow: '0 8px 32px 0 rgba(31, 38, 135, 0.37)',
+            backdropFilter: 'blur(8px)',
+            borderRadius: 18,
+            border: '1px solid rgba(255,255,255,0.18)'
+          }
+        }}
+      >
+        <DialogTitle style={{
+          background: 'linear-gradient(90deg, #0ea5e9 0%, #38bdf8 100%)',
+          color: 'white',
+          fontWeight: 700,
+          fontSize: 24,
+          letterSpacing: 1,
+          borderTopLeftRadius: 18,
+          borderTopRightRadius: 18
+        }}>Add New Employee</DialogTitle>
+        <DialogContent style={{ background: 'rgba(236, 245, 255, 0.7)', padding: '24px 18px 8px 18px' }}>
+          <div
+            className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-2"
+            style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: 16 }}
+          >
+            <TextField
+              fullWidth
+              label="Name"
+              value={form.name}
+              onChange={e => setForm({ ...form, name: e.target.value })}
+              margin="normal"
+              required
+              InputProps={{
+                style: {
+                  borderRadius: 10,
+                  background: 'rgba(255,255,255,0.95)',
+                  fontSize: 15,
+                  padding: '7px 12px',
+                  height: 38
+                }
+              }}
+              FormHelperTextProps={{ style: { marginLeft: 0 } }}
+            />
+            <TextField
+              fullWidth
+              label="Email"
+              type="email"
+              value={form.email}
+              onChange={e => setForm({ ...form, email: e.target.value })}
+              margin="normal"
+              required
+              InputProps={{
+                style: {
+                  borderRadius: 10,
+                  background: 'rgba(255,255,255,0.95)',
+                  fontSize: 15,
+                  padding: '7px 12px',
+                  height: 38
+                }
+              }}
+            />
+            <TextField
+              fullWidth
+              label="Aadhar Number"
+              value={form.aadharNumber}
+              onChange={e => setForm({ ...form, aadharNumber: e.target.value })}
+              margin="normal"
+              required
+              inputProps={{ maxLength: 12, style: { letterSpacing: '0.12em', fontSize: 15 } }}
+              InputProps={{
+                style: {
+                  borderRadius: 10,
+                  background: 'rgba(255,255,255,0.95)',
+                  fontSize: 15,
+                  padding: '7px 12px',
+                  height: 38
+                }
+              }}
+            />
+            <TextField
+              fullWidth
+              label="Mobile"
+              value={form.mobile}
+              onChange={e => setForm({ ...form, mobile: e.target.value })}
+              margin="normal"
+              required
+              inputProps={{ maxLength: 10, style: { fontSize: 15 } }}
+              InputProps={{
+                style: {
+                  borderRadius: 10,
+                  background: 'rgba(255,255,255,0.95)',
+                  fontSize: 15,
+                  padding: '7px 12px',
+                  height: 38
+                }
+              }}
+            />
+            <TextField
+              fullWidth
+              label="Alternate Mobile"
+              value={form.alternateMobile}
+              onChange={e => setForm({ ...form, alternateMobile: e.target.value })}
+              margin="normal"
+              inputProps={{ maxLength: 10, style: { fontSize: 15 } }}
+              InputProps={{
+                style: {
+                  borderRadius: 10,
+                  background: 'rgba(255,255,255,0.95)',
+                  fontSize: 15,
+                  padding: '7px 12px',
+                  height: 38
+                }
+              }}
+            />
+            <TextField
+              fullWidth
+              select
+              label="Role"
+              value={form.role}
+              onChange={e => setForm({ ...form, role: e.target.value })}
+              margin="normal"
+              required
+              InputProps={{
+                style: {
+                  borderRadius: 10,
+                  background: 'rgba(255,255,255,0.95)',
+                  fontSize: 15,
+                  padding: '7px 12px',
+                  height: 38
+                }
+              }}
+            >
+              <MenuItem value="employee">Employee</MenuItem>
+              <MenuItem value="admin">Admin</MenuItem>
+            </TextField>
+          </div>
+        </DialogContent>
+        <DialogActions style={{ background: 'rgba(236, 245, 255, 0.7)', borderBottomLeftRadius: 18, borderBottomRightRadius: 18, padding: '14px 18px' }}>
+          <Button onClick={() => setAddDialogOpen(false)} style={{ color: '#64748b', fontWeight: 600, borderRadius: 8, fontSize: 15, padding: '7px 18px' }}>Cancel</Button>
+          <Button onClick={handleRegister} variant="contained" style={{
+            background: 'linear-gradient(90deg, #0ea5e9 0%, #38bdf8 100%)',
+            color: 'white',
+            fontWeight: 700,
+            borderRadius: 8,
+            fontSize: 16,
+            padding: '8px 26px',
+            boxShadow: '0 2px 8px 0 rgba(14,165,233,0.15)',
+            textTransform: 'none',
+            letterSpacing: 1
+          }} disabled={registering}>
+            {registering ? 'Registering...' : 'Add Employee'}
+          </Button>
+        </DialogActions>
+      </Dialog>
+
+      {/* Edit Employee Dialog */}
+      <Dialog open={editDialogOpen} onClose={() => setEditDialogOpen(false)} maxWidth="sm" fullWidth>
+        <DialogTitle className="bg-gradient-to-r from-blue-400 to-blue-600 text-white">Edit Employee</DialogTitle>
+        <DialogContent className="bg-blue-50">
+          <div className="space-y-4 mt-2">
+            <TextField
+              fullWidth
+              label="Name"
+              value={editForm.name}
+              onChange={e => setEditForm({ ...editForm, name: e.target.value })}
+              margin="normal"
+              required
+            />
+            <TextField
+              fullWidth
+              label="Mobile"
+              value={editForm.mobile}
+              onChange={e => setEditForm({ ...editForm, mobile: e.target.value })}
+              margin="normal"
+              required
+            />
+            <TextField
+              fullWidth
+              label="Alternate Mobile"
+              value={editForm.alternateMobile}
+              onChange={e => setEditForm({ ...editForm, alternateMobile: e.target.value })}
+              margin="normal"
+            />
+            <TextField
+              fullWidth
+              select
+              label="Role"
+              value={editForm.role}
+              onChange={e => setEditForm({ ...editForm, role: e.target.value })}
+              margin="normal"
+              required
+            >
+              <MenuItem value="employee">Employee</MenuItem>
+              <MenuItem value="admin">Admin</MenuItem>
+            </TextField>
+          </div>
+        </DialogContent>
+        <DialogActions className="bg-blue-50">
+          <Button onClick={() => setEditDialogOpen(false)} className="bg-gray-100 hover:bg-gray-200 text-gray-700 font-semibold rounded-lg px-6 py-2 shadow">Cancel</Button>
+          <Button onClick={handleUpdate} variant="contained" className="bg-gradient-to-r from-blue-500 to-blue-700 hover:from-blue-600 hover:to-blue-800 text-white font-bold rounded-lg px-8 py-2 shadow-lg" disabled={editing}>
+            {editing ? 'Updating...' : 'Update Employee'}
+          </Button>
+        </DialogActions>
+      </Dialog>
+    </>
   );
 };
 

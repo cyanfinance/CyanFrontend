@@ -16,3 +16,13 @@ export interface LoanCalculation {
   interest: number;
   totalAmount: number;
 }
+
+export interface DailyInterestCalculation {
+  principal: number;
+  dailyRate: number;
+  totalDays: number;
+  dailyInterest: number;
+  totalInterest: number;
+  monthlyPayment: number;
+  totalAmount: number;
+}

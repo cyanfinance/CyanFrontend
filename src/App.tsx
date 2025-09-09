@@ -25,6 +25,11 @@ import EmployeesPage from './pages/admin/employees';
 import ReportsPage from './pages/admin/reports';
 import LoansPage from './pages/admin/loans';
 import ResetPassword from './pages/auth/ResetPassword';
+import AdminAddLoan from './pages/admin/AddLoan';
+import EmployeeAddLoan from './pages/employee/AddLoan';
+import PendingRepayments from './pages/admin/pending-repayments';
+import PaymentReminders from './pages/admin/payment-reminders';
+import GoldReturns from './pages/admin/gold-returns';
 
 // Protected Route component
 const ProtectedRoute = ({ children, allowedRoles = [] }: { children: React.ReactNode, allowedRoles?: string[] }) => {
@@ -111,6 +116,10 @@ const AppRoutes: React.FC = () => {
             <Route path="/admin/loans" element={<LoansPage />} />
             <Route path="/admin/employees" element={<EmployeesPage />} />
             <Route path="/admin/reports" element={<ReportsPage />} />
+            <Route path="/admin/add-loan" element={<AdminAddLoan />} />
+            <Route path="/admin/pending-repayments" element={<PendingRepayments />} />
+            <Route path="/admin/payment-reminders" element={<PaymentReminders />} />
+            <Route path="/admin/gold-returns" element={<GoldReturns />} />
           </Route>
 
           {/* Employee routes */}
@@ -123,6 +132,7 @@ const AppRoutes: React.FC = () => {
             <Route path="/employee/customers" element={<CustomersPage />} />
             <Route path="/employee/loans" element={<LoansPage />} />
             <Route path="/employee/reports" element={<ReportsPage />} />
+            <Route path="/employee/add-loan" element={<EmployeeAddLoan />} />
           </Route>
 
           {/* Customer routes */}

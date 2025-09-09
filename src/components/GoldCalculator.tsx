@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { Calculator } from 'lucide-react';
+import { API_URL } from '../config';
 
 const GOLD_RATE_PER_GRAM = 7000;
 
@@ -9,18 +10,49 @@ function GoldCalculator() {
     amount: number;
     interest: number;
     totalAmount: number;
+    effectiveDays: number;
+    months: number;
+    minInterestApplied: boolean;
+    minDaysApplied: boolean;
   } | null>(null);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
-  const calculateLoan = () => {
+  const calculateLoan = async () => {
+    setError(null);
+    setCalculation(null);
     const weightNum = parseFloat(weight);
     if (weightNum > 0) {
       const amount = weightNum * GOLD_RATE_PER_GRAM;
-      const interest = amount * 0.12; // 12% annual interest
-      setCalculation({
-        amount,
-        interest,
-        totalAmount: amount + interest,
-      });
+      setLoading(true);
+      try {
+        // Assume 12 months, 12% for demo
+        const res = await fetch(`${API_URL}/loans/calculate-interest`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            principal: amount,
+            annualRate: 12,
+            disbursementDate: new Date().toISOString(),
+            closureDate: new Date(Date.now() + 365 * 24 * 60 * 60 * 1000).toISOString() // 1 year
+          })
+        });
+        const data = await res.json();
+        if (!res.ok) throw new Error(data.message || 'Calculation failed');
+        setCalculation({
+          amount,
+          interest: data.totalInterest,
+          totalAmount: data.totalAmount,
+          effectiveDays: data.effectiveDays,
+          months: data.months,
+          minInterestApplied: data.totalInterest === 50,
+          minDaysApplied: data.effectiveDays === 7 || data.effectiveDays === 15
+        });
+      } catch (err: any) {
+        setError(err.message || 'Calculation failed');
+      } finally {
+        setLoading(false);
+      }
     }
   };
 
@@ -46,9 +78,12 @@ function GoldCalculator() {
         <button
           onClick={calculateLoan}
           className="w-full bg-yellow-600 text-white py-2 px-4 rounded-md hover:bg-yellow-700 transition-colors duration-200"
+          disabled={loading}
         >
-          Calculate Loan Amount
+          {loading ? 'Calculating...' : 'Calculate Loan Amount'}
         </button>
+
+        {error && <div className="text-red-600 text-sm">{error}</div>}
 
         {calculation && (
           <div className="mt-4 p-4 bg-gray-50 rounded-md">
@@ -59,9 +94,19 @@ function GoldCalculator() {
               </p>
               <p className="text-gray-600">
                 Interest (12% p.a.): ₹{calculation.interest.toLocaleString()}
+                {calculation.minInterestApplied && <span className="ml-2 text-xs text-yellow-700">(Minimum ₹50 applied)</span>}
               </p>
               <p className="text-gray-600 font-semibold">
                 Total Amount: ₹{calculation.totalAmount.toLocaleString()}
+              </p>
+              <p className="text-xs text-gray-500">
+                Days Charged: {calculation.effectiveDays} {calculation.minDaysApplied && '(Minimum days applied)'}
+              </p>
+              <p className="text-xs text-gray-500">
+                Compounded Monthly ({calculation.months} month{calculation.months > 1 ? 's' : ''})
+              </p>
+              <p className="text-xs text-blue-700 mt-2">
+                * As per policy: Minimum interest of ₹50 and minimum days (7 or 15) may apply. Interest is compounded monthly.
               </p>
             </div>
           </div>

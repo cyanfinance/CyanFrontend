@@ -4,8 +4,15 @@ import { FaBars, FaTimes, FaWhatsapp } from 'react-icons/fa';
 import cyanlogo from '../pages/cyanlogo.png';
 import { useAuth } from '../context/AuthContext';
 import { Button } from '@mui/material';
+import NotificationBell from './NotificationBell';
 
-const Navbar: React.FC = () => {
+interface NavbarProps {
+  isSidebarPage?: boolean;
+  sidebarOpen?: boolean;
+  toggleSidebar?: () => void;
+}
+
+const Navbar: React.FC<NavbarProps> = ({ isSidebarPage, sidebarOpen, toggleSidebar }) => {
   const location = useLocation();
   const [isOpen, setIsOpen] = useState(false);
   const { user, logout } = useAuth();
@@ -25,7 +32,7 @@ const Navbar: React.FC = () => {
   };
 
   // Determine if we are on an admin or employee page
-  const isSidebarPage = location.pathname.startsWith('/admin') || location.pathname.startsWith('/employee');
+  const sidebarPage = isSidebarPage !== undefined ? isSidebarPage : (location.pathname.startsWith('/admin') || location.pathname.startsWith('/employee'));
 
   return (
     <nav className="fixed top-0 left-0 w-full bg-white z-50 shadow-lg">
@@ -34,9 +41,8 @@ const Navbar: React.FC = () => {
         <FaWhatsapp className="text-green-500 text-2xl mr-3" />
         <span className="text-gray-500 font-semibold">WhatsApp: <strong>+91-9700049444</strong></span>
       </div>
-      
       <div className="max-w-7xl mx-auto px-4">
-        <div className="flex justify-between items-center h-16">
+        <div className="flex justify-between items-center h-16 relative">
           {/* Logo - hidden on mobile */}
           <Link to="/" className="hidden md:block">
             <img src={cyanlogo} alt="Logo" className="h-16 w-auto" />
@@ -47,6 +53,17 @@ const Navbar: React.FC = () => {
             <img src={cyanlogo} alt="Logo" className="h-8 w-auto" />
           </Link>
 
+          {/* Hamburger for sidebar pages on mobile */}
+          {sidebarPage && toggleSidebar && (
+            <button
+              className="md:hidden absolute left-0 top-1/2 transform -translate-y-1/2 ml-2 text-yellow-600 z-50"
+              onClick={toggleSidebar}
+              aria-label="Open sidebar"
+            >
+              {sidebarOpen ? <FaTimes size={28} /> : <FaBars size={28} />}
+            </button>
+          )}
+
           {/* Desktop Menu */}
           <div className="hidden md:flex items-center space-x-8 p-8">
             <Link to="/" className={`${isActive('/')} transition-colors duration-200`}><strong>Home</strong></Link>
@@ -56,6 +73,10 @@ const Navbar: React.FC = () => {
             <Link to="/contact" className={`${isActive('/contact')} transition-colors duration-200`}><strong>Contact Us</strong></Link>
             {user ? (
               <div className="flex items-center space-x-4">
+                <NotificationBell 
+                  token={localStorage.getItem('token') || ''} 
+                  isAdmin={user.role === 'admin'} 
+                />
                 <span className="text-[#0e1353] text-sm cursor-pointer" onClick={() => {
                   if (user.role === 'admin') navigate('/admin/dashboard');
                   else if (user.role === 'employee') navigate('/employee/dashboard');
@@ -83,9 +104,9 @@ const Navbar: React.FC = () => {
             )}
           </div>
 
-          {/* Mobile Menu Button */}
+          {/* Mobile Menu Button for public pages */}
           <div className="md:hidden flex items-center">
-            {!isSidebarPage && (
+            {!sidebarPage && (
               <button onClick={() => setIsOpen(!isOpen)} className="text-[#0e1353] text-2xl focus:outline-none">
                 {isOpen ? <FaTimes /> : <FaBars />}
               </button>
@@ -94,8 +115,8 @@ const Navbar: React.FC = () => {
         </div>
       </div>
 
-      {/* Mobile Menu */}
-      {!isSidebarPage && isOpen && (
+      {/* Mobile Menu for public pages */}
+      {!sidebarPage && isOpen && (
         <div className="md:hidden bg-white shadow-lg p-8 py-4 px-6 space-y-4 flex flex-col items-center">
           <Link to="/" className={`${isActive('/')} block `} onClick={() => setIsOpen(false)}><strong>Home</strong></Link>
           <Link to="/about" className={`${isActive('/about')} block`} onClick={() => setIsOpen(false)}><strong>About</strong></Link>

@@ -15,6 +15,7 @@ function ForgotPassword() {
   const handleSendOtp = async (e: React.FormEvent) => {
     e.preventDefault();
     setError('');
+    setSuccess('');
     setLoading(true);
     try {
       const res = await fetch('/auth/forgot-password', {
@@ -33,9 +34,32 @@ function ForgotPassword() {
     }
   };
 
+  const handleVerifyOtp = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setError('');
+    setSuccess('');
+    setLoading(true);
+    try {
+      const res = await fetch('/auth/verify-reset-otp', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email, otp })
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.message || 'Failed to verify OTP');
+      setStep(3);
+      setSuccess('OTP verified. Please enter your new password.');
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Failed to verify OTP');
+    } finally {
+      setLoading(false);
+    }
+  };
+
   const handleResetPassword = async (e: React.FormEvent) => {
     e.preventDefault();
     setError('');
+    setSuccess('');
     setLoading(true);
     try {
       const res = await fetch('/auth/reset-password', {
@@ -62,7 +86,8 @@ function ForgotPassword() {
           <h2 className="mt-6 text-3xl font-extrabold text-gray-900">Reset your password</h2>
           <p className="mt-2 text-sm text-gray-600">
             {step === 1 ? "Enter your email address and we'll send you an OTP to reset your password." :
-              "Enter the OTP sent to your email and your new password."}
+              step === 2 ? "Enter the OTP sent to your email." :
+              "Enter your new password."}
           </p>
         </div>
 
@@ -121,7 +146,7 @@ function ForgotPassword() {
               </form>
             )}
             {step === 2 && (
-              <form className="mt-8 space-y-6" onSubmit={handleResetPassword}>
+              <form className="mt-8 space-y-6" onSubmit={handleVerifyOtp}>
                 <div>
                   <label htmlFor="otp" className="block text-sm font-medium text-gray-700">
                     OTP
@@ -136,6 +161,24 @@ function ForgotPassword() {
                     className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-yellow-500 focus:ring focus:ring-yellow-200"
                   />
                 </div>
+                <div>
+                  <button
+                    type="submit"
+                    className="w-full flex justify-center py-2 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-yellow-600 hover:bg-yellow-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-yellow-500"
+                    disabled={loading}
+                  >
+                    {loading ? 'Verifying...' : 'Verify OTP'}
+                  </button>
+                </div>
+                <div className="text-sm text-center">
+                  <Link to="/login" className="font-medium text-yellow-600 hover:text-yellow-500">
+                    Back to login
+                  </Link>
+                </div>
+              </form>
+            )}
+            {step === 3 && (
+              <form className="mt-8 space-y-6" onSubmit={handleResetPassword}>
                 <div>
                   <label htmlFor="newPassword" className="block text-sm font-medium text-gray-700">
                     New Password

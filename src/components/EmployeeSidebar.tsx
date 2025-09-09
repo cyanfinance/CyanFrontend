@@ -48,21 +48,18 @@ const EmployeeSidebar: React.FC<EmployeeSidebarProps> = ({ isOpen, toggleSidebar
 
   return (
     <div className="relative">
-      {/* Mobile menu button and logo */}
-      <div className="lg:hidden fixed top-16 left-0 right-0 bg-white z-[60] border-b">
-        <div className="flex items-center justify-between px-4 py-2">
+      {/* Mobile menu button only (no logo, logo is in Navbar) */}
+      {/* <div className="lg:hidden fixed top-16 left-0 right-0 bg-white z-[60] border-b"> */}
+        {/* <div className="flex items-center justify-between px-4 py-2">
           <button
             onClick={toggleSidebar}
             className="p-2 rounded-md bg-yellow-600 text-white"
           >
             {isOpen ? <X className="w-6 h-6" /> : <Menu className="w-6 h-6" />}
-          </button>
-          <Link to="/" className="absolute left-1/2 transform -translate-x-1/2">
-            <img src={cyanlogo} alt="Logo" className="h-8 w-auto" />
-          </Link>
-          <div className="w-10"></div> {/* Spacer to balance the layout */}
-        </div>
-      </div>
+          </button> */}
+          {/* <div className="w-10"></div> Spacer to balance the layout
+        </div> */}
+      {/* </div> */}
 
       {/* Overlay */}
       {isOpen && (
@@ -74,47 +71,48 @@ const EmployeeSidebar: React.FC<EmployeeSidebarProps> = ({ isOpen, toggleSidebar
 
       {/* Sidebar */}
       <aside
-        className={`fixed top-[5.5rem] lg:top-32 left-0 h-[calc(100vh-5.5rem)] lg:h-[calc(100vh-8rem)] bg-white shadow-xl transform transition-transform duration-300 ease-in-out z-[58] \
+        className={`fixed top-7 left-0 h-screen bg-gradient-to-br from-cyan-50 to-blue-100 shadow-2xl rounded-r-3xl transform transition-transform duration-300 ease-in-out z-[58] \
           ${isOpen ? 'translate-x-0' : '-translate-x-full'} \
-          lg:translate-x-0 lg:relative lg:z-0 w-64`}
+          lg:translate-x-0 lg:relative lg:z-0 w-64 border-r border-blue-100`}
       >
-        <nav className="h-full overflow-y-auto">
+        <nav className="h-full overflow-y-auto flex flex-col">
+          <div className="hidden lg:flex flex-col items-center py-8 bg-white/60 rounded-br-3xl mb-4 shadow-sm">
+            <img src={cyanlogo} alt="Cyan Logo" className="h-14 w-auto mb-2" />
+            <span className="text-lg font-bold text-cyan-800 tracking-wide">CYAN FINANCE</span>
+          </div>
           {/* Show public links on mobile only */}
           <div className="block lg:hidden">
             {publicLinks.map((item) => (
               <Link
                 key={item.path}
                 to={item.path}
-                className={`flex items-center px-6 py-3 text-gray-700 hover:bg-yellow-50 hover:text-yellow-600 transition-colors duration-200
-                  ${location.pathname === item.path ? 'bg-yellow-50 text-yellow-600 border-r-4 border-yellow-600' : ''}`}
+                className={`flex items-center px-6 py-3 rounded-lg mx-2 text-gray-700 hover:bg-blue-50 hover:text-blue-700 transition-colors duration-200
+                  ${location.pathname === item.path ? 'bg-blue-100 text-blue-700 font-bold border-l-4 border-blue-600' : ''}`}
                 onClick={toggleSidebar}
               >
-                {item.icon}
+                {React.cloneElement(item.icon, { className: `w-5 h-5 ${location.pathname === item.path ? 'text-blue-600' : 'text-gray-400'}` })}
                 <span className="ml-3">{item.name}</span>
               </Link>
             ))}
-            <div className="border-t border-gray-200 my-4"></div>
+            <div className="border-t border-blue-100 my-4"></div>
           </div>
           {/* Employee links always visible */}
-          {menuItems.map((item) => (
-            <Link
-              key={item.path}
-              to={item.path}
-              className={`flex items-center px-6 py-3 text-gray-700 hover:bg-yellow-50 hover:text-yellow-600 transition-colors duration-200
-                ${location.pathname === item.path ? 'bg-yellow-50 text-yellow-600 border-r-4 border-yellow-600' : ''}`}
-              onClick={() => {
-                // console.log('[Sidebar Link Click]', {
-                //   user,
-                //   isAuthenticated,
-                //   to: item.path
-                // });
-                if (isOpen) toggleSidebar();
-              }}
-            >
-              {item.icon}
-              <span className="ml-3">{item.name}</span>
-            </Link>
-          ))}
+          <div className="flex-1">
+            {menuItems.map((item) => (
+              <Link
+                key={item.path}
+                to={item.path}
+                className={`flex items-center px-6 py-3 rounded-lg mx-2 my-1 text-gray-700 hover:bg-cyan-50 hover:text-cyan-700 transition-colors duration-200
+                  ${location.pathname === item.path ? 'bg-cyan-100 text-cyan-800 font-bold border-l-4 border-cyan-600 shadow' : ''}`}
+                onClick={() => {
+                  if (isOpen) toggleSidebar();
+                }}
+              >
+                {React.cloneElement(item.icon, { className: `w-6 h-6 ${location.pathname === item.path ? 'text-cyan-600' : 'text-gray-400'}` })}
+                <span className="ml-3">{item.name}</span>
+              </Link>
+            ))}
+          </div>
         </nav>
       </aside>
     </div>

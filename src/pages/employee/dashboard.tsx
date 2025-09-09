@@ -3,6 +3,9 @@ import { Alert, CircularProgress } from '@mui/material';
 import EmployeeSidebar from '../../components/EmployeeSidebar';
 import { useAuth } from '../../context/AuthContext';
 import { API_URL } from '../../config';
+import { calculateDailyInterest, fetchEarlyRepaymentDetails } from '../../utils/api';
+import Navbar from '../../components/Navbar';
+import { useNavigate } from 'react-router-dom';
 
 interface GoldItem {
   description: string;
@@ -12,7 +15,7 @@ interface GoldItem {
 
 interface Loan {
   _id: string;
-  customerId: string;
+  customerId: string | { aadharNumber: string; name: string };
   name: string;
   email: string;
   primaryMobile: string;
@@ -32,6 +35,11 @@ interface Loan {
   totalPayment: number;
   totalPaid: number;
   createdAt: string;
+  createdBy?: {
+    name: string;
+    email: string;
+    role: string;
+  };
 }
 
 interface LoanFormData {
@@ -71,7 +79,7 @@ interface CustomerDetails {
 interface RepaymentModalProps {
   loan: Loan;
   onClose: () => void;
-  onRepay: (amount: number, paymentMethod: string, transactionId?: string) => Promise<void>;
+  onRepay: (amount: number, paymentMethod: string, transactionId?: string, bankName?: string) => Promise<void>;
 }
 
 const RepaymentModal: React.FC<RepaymentModalProps> = ({ loan: _loan, onClose, onRepay }) => {
@@ -80,19 +88,53 @@ const RepaymentModal: React.FC<RepaymentModalProps> = ({ loan: _loan, onClose, o
   const [transactionId, setTransactionId] = useState<string>('');
   const [error, setError] = useState<string>('');
   const [loading, setLoading] = useState<boolean>(false);
+  const [repaymentDate, setRepaymentDate] = useState<string>(() => new Date().toISOString().slice(0, 10));
+  const [calc, setCalc] = useState<any>(null);
+  const [calcLoading, setCalcLoading] = useState(false);
+  const [bankName, setBankName] = useState<string>('');
+
+  const { token } = useAuth();
+
+  useEffect(() => {
+    let mounted = true;
+    async function fetchCalc() {
+      setCalcLoading(true);
+      setError('');
+      try {
+        const data = await fetchEarlyRepaymentDetails({
+          loanId: _loan._id,
+          repaymentDate,
+          token: token || '',
+        });
+        if (mounted) setCalc(data);
+        // Set default amount to totalDue if not set
+        if (mounted && !amount) setAmount(Math.round(data.totalDue));
+      } catch (err: any) {
+        if (mounted) setError(err.message || 'Failed to fetch repayment details');
+      } finally {
+        if (mounted) setCalcLoading(false);
+      }
+    }
+    fetchCalc();
+    return () => { mounted = false; };
+    // eslint-disable-next-line
+  }, [_loan._id, repaymentDate]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError('');
     setLoading(true);
-
     try {
-      // Validate transaction ID for online payments
       if (paymentMethod === 'online' && !transactionId.trim()) {
         throw new Error('Transaction ID is required for online payments');
       }
-
-      await onRepay(amount, paymentMethod, paymentMethod === 'online' ? transactionId : undefined);
+      if (paymentMethod === 'online' && !bankName.trim()) {
+        throw new Error('Bank Name is required for online payments');
+      }
+      if (calc && amount < calc.minimumTotalDue) {
+        throw new Error(`Amount must be at least ₹${calc.minimumTotalDue}`);
+      }
+      await onRepay(amount, paymentMethod, paymentMethod === 'online' ? transactionId : undefined, bankName);
       onClose();
     } catch (err: any) {
       setError(err.message || 'Failed to process repayment');
@@ -102,10 +144,42 @@ const RepaymentModal: React.FC<RepaymentModalProps> = ({ loan: _loan, onClose, o
   };
 
   return (
-    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center">
-      <div className="bg-white p-6 rounded-lg w-96">
-        <h2 className="text-xl font-semibold mb-4">Repay Loan</h2>
+    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-[60]">
+      <div className="bg-white p-6 rounded-lg w-96 shadow-2xl">
+        <h2 className="text-xl font-semibold mb-4 mt-16">Repay Loan</h2>
         <form onSubmit={handleSubmit}>
+          <div className="mb-4">
+            <label className="block text-sm font-medium text-gray-700">Repayment Date</label>
+            <input
+              type="date"
+              value={repaymentDate}
+              onChange={e => setRepaymentDate(e.target.value)}
+              className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-yellow-500 focus:ring-yellow-500"
+              max={new Date().toISOString().slice(0, 10)}
+              required
+            />
+          </div>
+          {calcLoading ? (
+            <div className="mb-4 text-yellow-700 text-sm">Calculating interest...</div>
+          ) : calc && (
+            <div className="mb-4 text-sm bg-yellow-50 border-l-4 border-yellow-400 p-2 rounded">
+              <div><b>Interest (compounded monthly):</b> ₹{calc.interest}</div>
+              <div><b>Minimum interest period:</b> {calc.minimumDays} days</div>
+              <div><b>Minimum interest amount:</b> ₹{calc.minimumInterest}</div>
+              <div><b>Rebate:</b> ₹{calc.rebate || 0}</div>
+              <div><b>Grace period:</b> {calc.gracePeriodDays} days {calc.gracePeriodReason ? `(${calc.gracePeriodReason})` : ''}</div>
+              <div><b>Total Due:</b> <span className="text-lg font-bold">₹{calc.totalDue}</span></div>
+              {calc.minimumTotalDue && (
+                <div className="text-xs text-gray-500">Minimum total due: ₹{calc.minimumTotalDue}</div>
+              )}
+              {calc.breakdown && (
+                <details className="mt-1">
+                  <summary className="cursor-pointer text-yellow-700">Breakdown</summary>
+                  <pre className="text-xs text-gray-700 whitespace-pre-wrap">{JSON.stringify(calc.breakdown, null, 2)}</pre>
+                </details>
+              )}
+            </div>
+          )}
           <div className="mb-4">
             <label className="block text-sm font-medium text-gray-700">Amount</label>
             <input
@@ -114,6 +188,7 @@ const RepaymentModal: React.FC<RepaymentModalProps> = ({ loan: _loan, onClose, o
               onChange={(e) => setAmount(Number(e.target.value))}
               className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-yellow-500 focus:ring-yellow-500"
               required
+              min={calc?.minimumTotalDue || 0}
             />
           </div>
           <div className="mb-4">
@@ -128,6 +203,19 @@ const RepaymentModal: React.FC<RepaymentModalProps> = ({ loan: _loan, onClose, o
               <option value="online">Online Payment</option>
             </select>
           </div>
+          {paymentMethod === 'online' && (
+            <div className="mb-4">
+              <label className="block text-sm font-medium text-gray-700">Bank Name</label>
+              <input
+                type="text"
+                value={bankName}
+                onChange={e => setBankName(e.target.value)}
+                className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
+                placeholder="Enter bank name"
+                required={paymentMethod === 'online'}
+              />
+            </div>
+          )}
           {paymentMethod === 'online' && (
             <div className="mb-4">
               <label className="block text-sm font-medium text-gray-700">Transaction ID</label>
@@ -154,7 +242,7 @@ const RepaymentModal: React.FC<RepaymentModalProps> = ({ loan: _loan, onClose, o
             </button>
             <button
               type="submit"
-              disabled={loading}
+              disabled={loading || calcLoading}
               className="px-4 py-2 text-sm font-medium text-white bg-yellow-600 hover:bg-yellow-700 rounded-md disabled:opacity-50"
             >
               {loading ? 'Processing...' : 'Repay'}
@@ -199,6 +287,43 @@ const EmployeeDashboard = () => {
   const { token: rawToken, user } = useAuth();
   const token = rawToken || '';
   const [search, setSearch] = useState('');
+  const [loanStep, setLoanStep] = useState<1 | 2 | 3>(1); // 1: customer, 2: otp, 3: loan
+  const [customerEmail, setCustomerEmail] = useState('');
+  const [otp, setOtp] = useState('');
+  const [customerVerified, setCustomerVerified] = useState(false);
+  const [customerId, setCustomerId] = useState<string | null>(null);
+  const [earlyDueMap, setEarlyDueMap] = useState<Record<string, number>>({});
+  const navigate = useNavigate();
+
+  // Reset form function
+  const resetForm = () => {
+    setFormData({
+      aadharNumber: '',
+      name: '',
+      email: '',
+      primaryMobile: '',
+      secondaryMobile: '',
+      emergencyContact: {
+        mobile: '',
+        relation: '',
+      },
+      presentAddress: '',
+      permanentAddress: '',
+      goldItems: [{ description: '', grossWeight: 0, netWeight: 0 }],
+      interestRate: 0,
+      loanAmount: 0,
+      totalAmount: 0,
+      monthlyPayment: 0,
+      duration: 1,
+    });
+    setCustomerDetails(null);
+    setLoanStep(1);
+    setCustomerEmail('');
+    setOtp('');
+    setCustomerVerified(false);
+    setCustomerId(null);
+    setError(null);
+  };
 
   // Ensure user is logged in
   if (!user) {
@@ -275,19 +400,14 @@ const EmployeeDashboard = () => {
 
   const calculateLoanDetails = (data: Partial<LoanFormData>) => {
     const principal = data.loanAmount || formData.loanAmount;
-    const ratePerMonth = (data.interestRate || formData.interestRate) / 100;
+    const yearlyRate = data.interestRate || formData.interestRate;
     const months = data.duration || formData.duration;
 
-    if (principal > 0 && ratePerMonth > 0 && months > 0) {
-      // Monthly payment formula: P * r * (1 + r)^n / ((1 + r)^n - 1)
-      const monthlyPayment = (principal * ratePerMonth * Math.pow(1 + ratePerMonth, months)) /
-                            (Math.pow(1 + ratePerMonth, months) - 1);
-      // Total amount is monthly payment times number of months
-      const totalAmount = monthlyPayment * months;
-
+    if (principal > 0 && yearlyRate > 0 && months > 0) {
+      const result = calculateDailyInterest(principal, yearlyRate, months);
       return {
-        monthlyPayment: Math.round(monthlyPayment),
-        totalAmount: Math.round(totalAmount)
+        monthlyPayment: result.monthlyPayment,
+        totalAmount: result.totalAmount
       };
     }
     return { monthlyPayment: 0, totalAmount: 0 };
@@ -295,6 +415,9 @@ const EmployeeDashboard = () => {
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
     const { name, value } = e.target;
+    
+    // Clear any previous mobile number validation errors
+    setError(null);
     
     // Check Aadhar number when it's 12 digits
     if (name === 'aadharNumber' && value.length === 12) {
@@ -311,27 +434,84 @@ const EmployeeDashboard = () => {
         }
       }));
     } else {
-      const newValue = name === 'interestRate' || name === 'loanAmount' || name === 'duration'
-        ? parseFloat(value) || 0
-        : value;
-
-      setFormData(prev => {
-        const updatedData = {
-          ...prev,
-          [name]: newValue
-        };
-
-        // Calculate monthly payment and total amount if relevant fields change
-        if (name === 'interestRate' || name === 'loanAmount' || name === 'duration') {
-          const { monthlyPayment, totalAmount } = calculateLoanDetails(updatedData);
-          updatedData.monthlyPayment = monthlyPayment;
-          updatedData.totalAmount = totalAmount;
-        }
-
-        return updatedData;
-      });
+      setFormData(prev => ({
+        ...prev,
+        [name]: name === 'interestRate' || name === 'loanAmount' || name === 'duration' ? parseFloat(value) || 0 : value
+      }));
     }
+    
+    // Validate mobile numbers after updating form data
+    setTimeout(() => {
+      validateMobileNumbers();
+    }, 0);
   };
+
+  // Validate that mobile numbers are different
+  const validateMobileNumbers = () => {
+    const { primaryMobile, secondaryMobile, emergencyContact } = formData;
+    
+    // Create a set of non-empty mobile numbers
+    const mobileNumbers = new Set([
+      primaryMobile?.trim(),
+      secondaryMobile?.trim(),
+      emergencyContact?.mobile?.trim()
+    ].filter(num => num && num.length > 0));
+    
+    // If we have fewer unique numbers than total non-empty numbers, there are duplicates
+    if (mobileNumbers.size < [primaryMobile, secondaryMobile, emergencyContact?.mobile].filter(num => num && num.length > 0).length) {
+      setError('Primary Mobile, Secondary Mobile, and Emergency Contact Number must be different');
+      return false;
+    }
+    
+    return true;
+  };
+
+  // Recalculate monthlyPayment and totalAmount when relevant fields change
+  useEffect(() => {
+    const recalc = async () => {
+      const principal = formData.loanAmount;
+      const yearlyRate = formData.interestRate;
+      const months = formData.duration;
+      if (principal > 0 && yearlyRate > 0 && months > 0) {
+        try {
+          const disbursementDate = new Date();
+          const closureDate = new Date(disbursementDate.getTime());
+          closureDate.setMonth(closureDate.getMonth() + months);
+          const res = await fetch(`${API_URL}/loans/calculate-interest`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              principal,
+              annualRate: yearlyRate,
+              disbursementDate: disbursementDate.toISOString(),
+              closureDate: closureDate.toISOString()
+            })
+          });
+          const data = await res.json();
+          if (!res.ok) throw new Error(data.message || 'Calculation failed');
+          setFormData(prev => ({
+            ...prev,
+            monthlyPayment: Math.round(data.totalAmount / months),
+            totalAmount: data.totalAmount
+          }));
+        } catch {
+          setFormData(prev => ({
+            ...prev,
+            monthlyPayment: 0,
+            totalAmount: 0
+          }));
+        }
+      } else {
+        setFormData(prev => ({
+          ...prev,
+          monthlyPayment: 0,
+          totalAmount: 0
+        }));
+      }
+    };
+    recalc();
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [formData.loanAmount, formData.interestRate, formData.duration]);
 
   const handleGoldItemChange = (index: number, field: keyof GoldItem, value: string) => {
     setFormData(prev => ({
@@ -356,8 +536,81 @@ const EmployeeDashboard = () => {
     }));
   };
 
+  // Step 1: Add customer and send OTP
+  const handleAddCustomer = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setError(null);
+    
+    // Validate mobile numbers are different before submitting
+    if (!validateMobileNumbers()) {
+      return; // Error is already set by validateMobileNumbers
+    }
+    
+    try {
+      const response = await fetch(`${API_URL}/employee/customers`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'x-auth-token': token
+        },
+        body: JSON.stringify({
+          aadharNumber: formData.aadharNumber,
+          name: formData.name,
+          email: formData.email,
+          primaryMobile: formData.primaryMobile,
+          secondaryMobile: formData.secondaryMobile,
+          presentAddress: formData.presentAddress,
+          permanentAddress: formData.permanentAddress,
+          emergencyContact: formData.emergencyContact
+        })
+      });
+      const data = await response.json();
+      if (!response.ok) {
+        if (data.errors && Array.isArray(data.errors)) {
+          const errorMessage = data.errors.map((error: any) => error.msg).join('\n');
+          throw new Error(errorMessage);
+        } else {
+          throw new Error(data.message || 'Failed to add customer');
+        }
+      }
+      setCustomerEmail(formData.email);
+      setLoanStep(2);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Failed to add customer');
+    }
+  };
+
+  // Step 2: Verify OTP
+  const handleVerifyOtp = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setError(null);
+    try {
+      const response = await fetch(`${API_URL}/employee/verify-customer-otp`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'x-auth-token': token
+        },
+        body: JSON.stringify({ email: customerEmail, otp })
+      });
+      const data = await response.json();
+      if (!response.ok) throw new Error(data.message || 'OTP verification failed');
+      setCustomerVerified(true);
+      setCustomerId(data.customer._id);
+      setLoanStep(3);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'OTP verification failed');
+    }
+  };
+
+  // Step 3: Add loan (existing handleSubmit, but only allow if customerVerified)
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    setError(null);
+    if (!customerVerified) {
+      setError('Customer must be verified before adding a loan.');
+      return;
+    }
     try {
       // Validate Aadhar number
       if (!/^\d{12}$/.test(formData.aadharNumber)) {
@@ -368,6 +621,10 @@ const EmployeeDashboard = () => {
       if (!formData.aadharNumber || !formData.name || !formData.email || !formData.primaryMobile ||
           !formData.presentAddress || !formData.permanentAddress) {
         throw new Error('Please fill in all required fields');
+      }
+      // Validate mobile numbers are different
+      if (!validateMobileNumbers()) {
+        return; // Error is already set by validateMobileNumbers
       }
 
       // Validate gold items
@@ -449,25 +706,7 @@ const EmployeeDashboard = () => {
 
       alert('Loan created successfully');
       setShowLoanForm(false);
-      setFormData({
-        aadharNumber: '',
-        name: '',
-        email: '',
-        primaryMobile: '',
-        secondaryMobile: '',
-        emergencyContact: {
-          mobile: '',
-          relation: '',
-        },
-        presentAddress: '',
-        permanentAddress: '',
-        goldItems: [{ description: '', grossWeight: 0, netWeight: 0 }],
-        interestRate: 0,
-        loanAmount: 0,
-        totalAmount: 0,
-        monthlyPayment: 0,
-        duration: 1,
-      });
+      resetForm();
     } catch (error) {
       console.error('Error creating loan:', error);
       alert(error instanceof Error ? error.message : 'Failed to create loan');
@@ -501,7 +740,7 @@ const EmployeeDashboard = () => {
     return colors[status];
   };
 
-  const handleRepay = async (amount: number, paymentMethod: string, transactionId?: string) => {
+  const handleRepay = async (amount: number, paymentMethod: string, transactionId?: string, bankName?: string) => {
     if (!selectedLoan) return;
     const response = await fetch(`${API_URL}/loans/${selectedLoan._id}/payment`, {
       method: 'POST',
@@ -509,7 +748,7 @@ const EmployeeDashboard = () => {
         'Content-Type': 'application/json',
         'x-auth-token': token
       },
-      body: JSON.stringify({ amount, paymentMethod, transactionId })
+      body: JSON.stringify({ amount, paymentMethod, transactionId, bankName })
     });
     const data = await response.json();
     if (!response.ok) {
@@ -518,467 +757,113 @@ const EmployeeDashboard = () => {
     await fetchLoans();
   };
 
-  // Filter loans based on search
+  // Calculate filteredLoans based on search and statusFilter
   const filteredLoans = loans.filter(loan => {
-    // First filter by status
-    if (statusFilter !== 'all' && loan.status !== statusFilter) {
-      return false;
-    }
-    
-    // Then filter by search term
-    return (
-    loan.name.toLowerCase().includes(search.toLowerCase()) ||
-    loan.email.toLowerCase().includes(search.toLowerCase()) ||
-    loan.primaryMobile.includes(search) ||
-    (loan.customerId && loan.customerId.toString().includes(search)) ||
-    formatCurrency(loan.amount).includes(search)
-  );
+    const matchesStatus = statusFilter === 'all' || loan.status === statusFilter;
+    const searchLower = search.toLowerCase();
+    const matchesAadhar = typeof loan.customerId === 'object' && loan.customerId !== null && loan.customerId.aadharNumber && loan.customerId.aadharNumber.includes(search);
+    const matchesSearch =
+      (typeof loan.customerId === 'object' && loan.customerId !== null && loan.customerId.name && loan.customerId.name.toLowerCase().includes(searchLower)) ||
+      loan.email.toLowerCase().includes(searchLower) ||
+      loan.primaryMobile.includes(searchLower) ||
+      matchesAadhar ||
+      String(loan.amount).includes(searchLower);
+    return matchesStatus && matchesSearch;
   });
 
   // Count loans by status
   const activeLoansCount = loans.filter(loan => loan.status === 'active').length;
   const closedLoansCount = loans.filter(loan => loan.status === 'closed').length;
 
+  useEffect(() => {
+    // Fetch early repayment due for all loans
+    const fetchAllEarlyDue = async () => {
+      const map: Record<string, number> = {};
+      for (const loan of loans) {
+        try {
+          const data = await fetchEarlyRepaymentDetails({
+            loanId: loan._id,
+            repaymentDate: new Date().toISOString().slice(0, 10),
+            token: token || '',
+          });
+          map[loan._id] = data.totalDue;
+        } catch (e) {
+          map[loan._id] = loan.amount; // fallback
+        }
+      }
+      setEarlyDueMap(map);
+    };
+    if (loans.length > 0) fetchAllEarlyDue();
+    // eslint-disable-next-line
+  }, [loans]);
+
   return (
-    <div className="flex h-screen bg-gray-100">
-      <EmployeeSidebar isOpen={sidebarOpen} toggleSidebar={() => setSidebarOpen(!sidebarOpen)} />
-      
-      <div className="flex-1 overflow-auto">
-        <div className="p-8">
-          <div className="flex justify-between items-center mb-6">
-            <h1 className="text-3xl font-bold">Employee Dashboard</h1>
-            <button
-              onClick={() => setShowLoanForm(!showLoanForm)}
-              className="bg-yellow-600 hover:bg-yellow-700 text-white px-4 py-2 rounded"
-            >
-              {showLoanForm ? 'Close Form' : 'Add New Loan'}
-            </button>
+    <div className="bg-gradient-to-br from-blue-50 via-cyan-50 to-blue-100 min-h-screen">
+      <Navbar isSidebarPage={true} sidebarOpen={sidebarOpen} toggleSidebar={() => setSidebarOpen(open => !open)} />
+      <div className="flex flex-1">
+        <EmployeeSidebar isOpen={sidebarOpen} toggleSidebar={() => setSidebarOpen(open => !open)} />
+        <main className={`flex-1 p-8 transition-all duration-300 ${sidebarOpen ? 'lg:ml-64' : 'ml-0'}`}>
+          <h1 className="text-3xl font-bold mb-6 text-blue-900 drop-shadow flex items-center gap-2"><span>📊</span> Employee Dashboard</h1>
+          <div className="mb-8 flex gap-4">
+            <button className={`px-6 py-2 rounded-full font-semibold shadow transition-all ${statusFilter === 'all' ? 'bg-yellow-400 text-white' : 'bg-white text-yellow-700 border border-yellow-300 hover:bg-yellow-100'}`} onClick={() => setStatusFilter('all')}>All Loans ({loans.length})</button>
+            <button className={`px-6 py-2 rounded-full font-semibold shadow transition-all ${statusFilter === 'active' ? 'bg-green-400 text-white' : 'bg-white text-green-700 border border-green-300 hover:bg-green-100'}`} onClick={() => setStatusFilter('active')}>Active Loans ({loans.filter(l => l.status === 'active').length})</button>
+            <button className={`px-6 py-2 rounded-full font-semibold shadow transition-all ${statusFilter === 'closed' ? 'bg-gray-400 text-white' : 'bg-white text-gray-700 border border-gray-300 hover:bg-gray-100'}`} onClick={() => setStatusFilter('closed')}>Closed Loans ({loans.filter(l => l.status === 'closed').length})</button>
+            <button className="ml-auto bg-gradient-to-r from-yellow-400 to-yellow-600 hover:from-yellow-500 hover:to-yellow-700 text-white px-6 py-2 rounded-xl font-bold shadow-lg" onClick={() => navigate('/employee/add-loan')}>Add New Loan</button>
           </div>
-
-          {/* Status Filter Buttons */}
-          <div className="flex flex-wrap gap-4 mb-6">
-            <button
-              onClick={() => setStatusFilter('all')}
-              className={`px-4 py-2 rounded-full ${
-                statusFilter === 'all'
-                  ? 'bg-yellow-600 text-white'
-                  : 'bg-gray-200 text-gray-800 hover:bg-gray-300'
-              }`}
-            >
-              All Loans ({loans.length})
-            </button>
-            <button
-              onClick={() => setStatusFilter('active')}
-              className={`px-4 py-2 rounded-full ${
-                statusFilter === 'active'
-                  ? 'bg-blue-600 text-white'
-                  : 'bg-gray-200 text-gray-800 hover:bg-gray-300'
-              }`}
-            >
-              Active Loans ({activeLoansCount})
-            </button>
-            <button
-              onClick={() => setStatusFilter('closed')}
-              className={`px-4 py-2 rounded-full ${
-                statusFilter === 'closed'
-                  ? 'bg-green-600 text-white'
-                  : 'bg-gray-200 text-gray-800 hover:bg-gray-300'
-              }`}
-            >
-              Closed Loans ({closedLoansCount})
-            </button>
-          </div>
-
-          {showLoanForm && (
-            <form onSubmit={handleSubmit} className="bg-white rounded-lg shadow p-6 space-y-6">
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                {/* Personal Information */}
-                <div className="space-y-4">
-                  <h2 className="text-xl font-semibold">Personal Information</h2>
-                  <input
-                    type="text"
-                    name="aadharNumber"
-                    value={formData.aadharNumber}
-                    onChange={handleInputChange}
-                    placeholder="Aadhar Number"
-                    className="w-full p-2 border rounded"
-                    required
-                  />
-                  {checkingAadhar && (
-                    <div style={{ display: 'flex', justifyContent: 'center', margin: '10px 0' }}>
-                      <CircularProgress size={24} />
-                    </div>
-                  )}
-                  {customerDetails && (
-                    <Alert severity="info" style={{ margin: '10px 0' }}>
-                      <strong>Existing Customer Found:</strong><br />
-                      Name: {customerDetails.name}<br />
-                      {/* Customer ID: {customerDetails.customerId}<br /> */}
-                      Mobile: {customerDetails.primaryMobile}<br />
-                      {customerDetails.secondaryMobile && (<span>Secondary Mobile: {customerDetails.secondaryMobile}<br /></span>)}
-                      {customerDetails.emergencyContact?.mobile && (<span>Emergency Contact: {customerDetails.emergencyContact.mobile}<br /></span>)}
-                      {customerDetails.emergencyContact?.relation && (<span>Relation: {customerDetails.emergencyContact.relation}<br /></span>)}
-                      Email: {customerDetails.email}
-                    </Alert>
-                  )}
-                  <input
-                    type="text"
-                    name="name"
-                    value={formData.name}
-                    onChange={handleInputChange}
-                    placeholder="Full Name"
-                    className="w-full p-2 border rounded"
-                    required
-                  />
-                  <input
-                    type="email"
-                    name="email"
-                    value={formData.email}
-                    onChange={handleInputChange}
-                    placeholder="Email"
-                    className="w-full p-2 border rounded"
-                    required
-                  />
-                </div>
-
-                {/* Contact Information */}
-                <div className="space-y-4">
-                  <h2 className="text-xl font-semibold">Contact Information</h2>
-                  <input
-                    type="tel"
-                    name="primaryMobile"
-                    value={formData.primaryMobile}
-                    onChange={handleInputChange}
-                    placeholder="Primary Mobile Number"
-                    className="w-full p-2 border rounded"
-                    required
-                  />
-                  <input
-                    type="tel"
-                    name="secondaryMobile"
-                    value={formData.secondaryMobile}
-                    onChange={handleInputChange}
-                    placeholder="Secondary Mobile Number"
-                    className="w-full p-2 border rounded"
-                    required
-                  />
-                  <input
-                    type="tel"
-                    name="emergencyContact.mobile"
-                    value={formData.emergencyContact.mobile}
-                    onChange={handleInputChange}
-                    placeholder="Emergency Contact Number"
-                    className="w-full p-2 border rounded"
-                    required
-                  />
-                  <input
-                    type="text"
-                    name="emergencyContact.relation"
-                    value={formData.emergencyContact.relation}
-                    onChange={handleInputChange}
-                    placeholder="Relation with Emergency Contact"
-                    className="w-full p-2 border rounded"
-                    required
-                  />
-                </div>
-              </div>
-
-              {/* Address Information */}
-              <div className="space-y-4">
-                <h2 className="text-xl font-semibold">Address Information</h2>
-                <textarea
-                  name="presentAddress"
-                  value={formData.presentAddress}
-                  onChange={handleInputChange}
-                  placeholder="Present Address"
-                  className="w-full p-2 border rounded"
-                  required
-                />
-                <textarea
-                  name="permanentAddress"
-                  value={formData.permanentAddress}
-                  onChange={handleInputChange}
-                  placeholder="Permanent Address"
-                  className="w-full p-2 border rounded"
-                  required
-                />
-              </div>
-
-              {/* Gold Items */}
-              <div className="space-y-4">
-                <div className="flex justify-between items-center">
-                  <h2 className="text-xl font-semibold">Gold Items</h2>
-                  <button
-                    type="button"
-                    onClick={addGoldItem}
-                    className="bg-green-500 hover:bg-green-600 text-white px-3 py-1 rounded"
-                  >
-                    Add Item
-                  </button>
-                </div>
-                {formData.goldItems.map((item, index) => (
-                  <div key={index} className="space-y-4">
-                    <div className="grid grid-cols-1 gap-4">
-                      <div className="space-y-1">
-                        <label className="block text-sm font-medium text-gray-700">
-                          Item Description
-                        </label>
-                        <input
-                          type="text"
-                          value={item.description}
-                          onChange={(e) => handleGoldItemChange(index, 'description', e.target.value)}
-                          placeholder="Enter item description"
-                          className="w-full p-2 border rounded"
-                          required
-                        />
-                      </div>
-                      
-                      <div className="grid grid-cols-2 gap-4">
-                        <div className="space-y-1">
-                          <label className="block text-sm font-medium text-gray-700">
-                            Gross Weight (in grams)
-                          </label>
-                          <input
-                            type="number"
-                            value={item.grossWeight}
-                            onChange={(e) => handleGoldItemChange(index, 'grossWeight', e.target.value)}
-                            placeholder="Total weight with impurities"
-                            className="w-full p-2 border rounded"
-                            required
-                            min="0"
-                            step="0.01"
-                          />
-                          <p className="text-xs text-gray-500">Total weight including impurities</p>
-                        </div>
-
-                        <div className="space-y-1">
-                          <label className="block text-sm font-medium text-gray-700">
-                            Net Weight (in grams)
-                          </label>
-                          <input
-                            type="number"
-                            value={item.netWeight}
-                            onChange={(e) => handleGoldItemChange(index, 'netWeight', e.target.value)}
-                            placeholder="Pure gold weight"
-                            className="w-full p-2 border rounded"
-                            required
-                            min="0"
-                            step="0.01"
-                          />
-                          <p className="text-xs text-gray-500">Actual gold weight (must be less than gross weight)</p>
-                        </div>
-                      </div>
-                    </div>
-
-                    <div className="flex justify-end">
-                      <button
-                        type="button"
-                        onClick={() => removeGoldItem(index)}
-                        className="bg-red-500 hover:bg-red-600 text-white px-3 py-1 rounded"
-                        disabled={formData.goldItems.length === 1}
-                      >
-                        Remove Item
-                      </button>
-                    </div>
-                  </div>
-                ))}
-              </div>
-
-              {/* Loan Details */}
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                <div className="space-y-4">
-                  <h2 className="text-xl font-semibold">Loan Details</h2>
-                  
-                  <div className="space-y-1">
-                    <label htmlFor="interestRate" className="block text-sm font-medium text-gray-700">
-                      Interest Rate (% per year)
-                    </label>
-                    <input
-                      id="interestRate"
-                      type="number"
-                      name="interestRate"
-                      value={formData.interestRate}
-                      onChange={handleInputChange}
-                      placeholder="Enter annual interest rate"
-                      className="w-full p-2 border rounded"
-                      required
-                      min="0"
-                      step="0.01"
-                    />
-                    <p className="text-sm text-gray-500">Annual interest rate as a percentage (e.g., 12 for 12% per year)</p>
-                  </div>
-
-                  <div className="space-y-1">
-                    <label htmlFor="loanAmount" className="block text-sm font-medium text-gray-700">
-                      Loan Amount (₹)
-                    </label>
-                    <input
-                      id="loanAmount"
-                      type="number"
-                      name="loanAmount"
-                      value={formData.loanAmount}
-                      onChange={handleInputChange}
-                      placeholder="Enter loan amount"
-                      className="w-full p-2 border rounded"
-                      required
-                      min="100"
-                      step="1"
-                    />
-                    <p className="text-sm text-gray-500">Principal amount to be disbursed to the customer (minimum ₹100)</p>
-                  </div>
-
-                  <div className="space-y-1">
-                    <label htmlFor="duration" className="block text-sm font-medium text-gray-700">
-                      Loan Duration
-                    </label>
-                    <input
-                      id="duration"
-                      type="number"
-                      name="duration"
-                      value={formData.duration}
-                      onChange={handleInputChange}
-                      placeholder="Enter number of months"
-                      className="w-full p-2 border rounded"
-                      required
-                      min="1"
-                      step="1"
-                    />
-                    <p className="text-sm text-gray-500">Loan tenure in months (minimum 1 month)</p>
-                  </div>
-
-                  <div className="space-y-1">
-                    <label htmlFor="monthlyPayment" className="block text-sm font-medium text-gray-700">
-                      Monthly Payment (₹)
-                    </label>
-                    <div className="relative">
-                      <input
-                        id="monthlyPayment"
-                        type="number"
-                        name="monthlyPayment"
-                        value={formData.monthlyPayment}
-                        className="w-full p-2 border rounded bg-gray-100"
-                        placeholder="Monthly payment will be calculated automatically"
-                        readOnly
-                      />
-                      <span className="absolute right-3 top-2 text-gray-500 text-sm">Auto-calculated</span>
-                    </div>
-                    <p className="text-sm text-gray-500">Monthly installment amount to be paid by the customer</p>
-                  </div>
-
-                  <div className="space-y-1">
-                    <label htmlFor="totalAmount" className="block text-sm font-medium text-gray-700">
-                      Total Amount to be Paid (₹)
-                    </label>
-                    <div className="relative">
-                      <input
-                        id="totalAmount"
-                        type="number"
-                        name="totalAmount"
-                        value={formData.totalAmount}
-                        className="w-full p-2 border rounded bg-gray-100"
-                        placeholder="Total amount will be calculated automatically"
-                        readOnly
-                      />
-                      <span className="absolute right-3 top-2 text-gray-500 text-sm">Auto-calculated</span>
-                    </div>
-                    <p className="text-sm text-gray-500">Total amount including interest to be repaid by the customer</p>
-                  </div>
-
-                  <div className="mt-2 p-3 bg-blue-50 rounded-md">
-                    <p className="text-sm text-blue-600">
-                      <strong>Note:</strong> The monthly payment and total amount are calculated using compound interest, 
-                      with interest being charged monthly. The interest rate you enter is the <b>annual rate</b> (not monthly rate).
-                    </p>
-                  </div>
-                </div>
-              </div>
-
-              <button
-                type="submit"
-                className="w-full bg-yellow-600 hover:bg-yellow-700 text-white py-2 rounded"
-              >
-                Create Loan
-              </button>
-            </form>
-          )}
-
-          {/* Search Input */}
-          <div className="flex justify-end mb-4">
-            <input
-              type="text"
-              value={search}
-              onChange={e => setSearch(e.target.value)}
-              placeholder="Search by name, email, mobile, customer ID, or amount"
-              className="p-2 border rounded w-80"
-            />
-          </div>
-
-          {/* Loans Table */}
-          <div className="mt-8">
-            <h2 className="text-2xl font-semibold mb-4">Loans</h2>
-            
-            {loading && (
+          <div className="bg-white/70 backdrop-blur-md rounded-2xl shadow-xl p-8 mb-12 border border-blue-100">
+            <h2 className="text-xl font-bold mb-4 text-blue-800">Loans</h2>
+            <div className="flex justify-end mb-4">
+              <input
+                type="text"
+                value={search}
+                onChange={e => setSearch(e.target.value)}
+                placeholder="Search by name, email, mobile, Aadhar"
+                className="p-2 border rounded w-80"
+              />
+            </div>
+            {loading ? (
               <div className="text-center py-4">
                 <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-yellow-600 mx-auto"></div>
               </div>
-            )}
-
-            {error && (
+            ) : error ? (
               <div className="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded mb-4">
                 {error}
               </div>
-            )}
-
-            {!loading && !error && (
+            ) : (
               <div className="overflow-x-auto">
-                <table className="min-w-full bg-white border border-gray-200 rounded-lg">
-                  <thead className="bg-gray-50">
+                <table className="w-full bg-white border border-gray-200 rounded-lg">
+                  <thead className="bg-blue-100">
                     <tr>
-                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Date</th>
-                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Customer</th>
-                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Contact</th>
-                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Loan Details</th>
-                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Status</th>
-                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Actions</th>
+                      <th className="px-6 py-3 text-left text-xs font-medium text-blue-500 uppercase tracking-wider">Date</th>
+                      <th className="px-6 py-3 text-left text-xs font-medium text-blue-500 uppercase tracking-wider">Customer</th>
+                      <th className="px-6 py-3 text-left text-xs font-medium text-blue-500 uppercase tracking-wider">Contact</th>
+                      <th className="px-6 py-3 text-left text-xs font-medium text-blue-500 uppercase tracking-wider">Loan Details</th>
+                      <th className="px-6 py-3 text-left text-xs font-medium text-blue-500 uppercase tracking-wider">Status</th>
+                      <th className="px-6 py-3 text-left text-xs font-medium text-blue-500 uppercase tracking-wider">Actions</th>
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-gray-200">
                     {filteredLoans.map((loan) => (
-                      <tr key={loan._id} className="hover:bg-gray-50">
-                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                          {formatDate(loan.createdAt)}
+                      <tr key={loan._id} className="hover:bg-blue-50">
+                        <td className="px-4 py-3 whitespace-nowrap text-sm text-blue-500">{formatDate(loan.createdAt)}</td>
+                        <td className="px-4 py-3 max-w-[120px] truncate">
+                          <div className="text-sm font-medium text-blue-900 truncate">{typeof loan.customerId === 'object' && loan.customerId !== null ? loan.customerId.name : ''}</div>
+                          <div className="text-xs text-blue-500 truncate">{typeof loan.customerId === 'object' && loan.customerId !== null && loan.customerId.aadharNumber && loan.customerId.aadharNumber.length === 12 ? 'xxxxxxxx' + loan.customerId.aadharNumber.slice(-4) : (typeof loan.customerId === 'object' && loan.customerId !== null ? loan.customerId.aadharNumber : '')}</div>
                         </td>
-                        <td className="px-6 py-4">
-                          <div className="text-sm font-medium text-gray-900">{loan.name}</div>
-                          <div className="text-sm text-gray-500">{loan.customerId}</div>
+                        <td className="px-4 py-3 max-w-[120px] truncate">
+                          <div className="text-sm text-blue-900 truncate">{loan.primaryMobile}</div>
+                          <div className="text-xs text-blue-500 truncate">{loan.email}</div>
                         </td>
-                        <td className="px-6 py-4">
-                          <div className="text-sm text-gray-900">{loan.primaryMobile}</div>
-                          <div className="text-sm text-gray-500">{loan.email}</div>
+                        <td className="px-4 py-3 max-w-[180px] break-words">
+                          <div className="text-sm text-blue-900">Amount: ₹{loan.amount}</div>
+                          <div className="text-xs text-blue-500">Term: {loan.term} months | Interest: {loan.interestRate}% (Daily)</div>
+                          <div className="text-xs text-blue-700">Monthly: ₹{loan.monthlyPayment}</div>
+                          <div className="text-xs text-green-700">Total Paid: ₹{loan.totalPaid || 0}</div>
                         </td>
-                        <td className="px-6 py-4">
-                          <div className="text-sm text-gray-900">
-                            Amount: {formatCurrency(loan.amount)}
-                          </div>
-                          <div className="text-sm text-gray-500">
-                            Term: {loan.term} months | Interest: {loan.interestRate}%
-                          </div>
-                          <div className="text-sm text-gray-500">
-                            Monthly: {formatCurrency(loan.monthlyPayment)}
-                          </div>
-                          <div className="text-sm text-green-700">
-                            Total Paid: {formatCurrency(loan.totalPaid || 0)}
-                          </div>
-                          <div className="text-sm text-red-700">
-                            To Be Paid: {formatCurrency((loan.totalPayment || 0) - (loan.totalPaid || 0))}
-                          </div>
+                        <td className="px-4 py-3 whitespace-nowrap">
+                          <span className={`px-3 py-1 rounded-full text-xs font-bold ${getStatusColor(loan.status)}`}>{loan.status.charAt(0).toUpperCase() + loan.status.slice(1)}</span>
                         </td>
-                        <td className="px-6 py-4 whitespace-nowrap">
-                          <span className={`px-2 inline-flex text-xs leading-5 font-semibold rounded-full ${getStatusColor(loan.status)}`}>
-                            {loan.status.charAt(0).toUpperCase() + loan.status.slice(1)}
-                          </span>
-                        </td>
-                        <td className="px-6 py-4 whitespace-no-wrap border-b border-gray-200 text-sm font-medium">
+                        <td className="px-4 py-3 whitespace-no-wrap border-b border-gray-200 text-sm font-medium">
                           {loan.status === 'active' && (
                             <button
                               onClick={() => {
@@ -995,9 +880,7 @@ const EmployeeDashboard = () => {
                     ))}
                     {filteredLoans.length === 0 && (
                       <tr>
-                        <td colSpan={5} className="px-6 py-4 text-center text-gray-500">
-                          No loans found
-                        </td>
+                        <td colSpan={6} className="px-4 py-4 text-center text-blue-500">No loans found</td>
                       </tr>
                     )}
                   </tbody>
@@ -1005,20 +888,16 @@ const EmployeeDashboard = () => {
               </div>
             )}
           </div>
-        </div>
+        
+          {showRepaymentModal && selectedLoan && (
+            <RepaymentModal
+              loan={selectedLoan}
+              onClose={() => setShowRepaymentModal(false)}
+              onRepay={handleRepay}
+            />
+          )}
+        </main>
       </div>
-
-      {/* Repayment Modal */}
-      {showRepaymentModal && selectedLoan && (
-        <RepaymentModal
-          loan={selectedLoan}
-          onClose={() => {
-            setShowRepaymentModal(false);
-            setSelectedLoan(null);
-          }}
-          onRepay={handleRepay}
-        />
-      )}
     </div>
   );
 };
