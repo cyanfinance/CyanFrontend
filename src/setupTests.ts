@@ -5,7 +5,7 @@
 import '@testing-library/jest-dom';
 
 // Mock IntersectionObserver
-global.IntersectionObserver = class IntersectionObserver {
+(global as any).IntersectionObserver = class IntersectionObserver {
   constructor() {}
   disconnect() {}
   observe() {}
@@ -13,7 +13,7 @@ global.IntersectionObserver = class IntersectionObserver {
 };
 
 // Mock ResizeObserver
-global.ResizeObserver = class ResizeObserver {
+(global as any).ResizeObserver = class ResizeObserver {
   constructor() {}
   disconnect() {}
   observe() {}
@@ -42,7 +42,7 @@ const localStorageMock = {
   removeItem: jest.fn(),
   clear: jest.fn(),
 };
-global.localStorage = localStorageMock;
+(global as any).localStorage = localStorageMock;
 
 // Mock sessionStorage
 const sessionStorageMock = {
@@ -51,10 +51,10 @@ const sessionStorageMock = {
   removeItem: jest.fn(),
   clear: jest.fn(),
 };
-global.sessionStorage = sessionStorageMock;
+(global as any).sessionStorage = sessionStorageMock;
 
 // Mock fetch
-global.fetch = jest.fn();
+(global as any).fetch = jest.fn();
 
 // Mock console methods to reduce noise in tests
 global.console = {
