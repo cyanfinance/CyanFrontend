@@ -2,10 +2,10 @@ import { useState, useEffect } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { useAuth } from '../../context/AuthContext';
 
-const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:5001';
+const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:5001/api';
 
 const Login = () => {
-  const [email, setEmail] = useState('');
+  const [identifier, setIdentifier] = useState('');
   const [otp, setOtp] = useState('');
   const [step, setStep] = useState(1); // 1: request OTP, 2: verify OTP
   const [error, setError] = useState('');
@@ -63,7 +63,7 @@ const Login = () => {
       const response = await fetch(`${API_URL}/auth/send-login-otp`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ identifier: email })
+        body: JSON.stringify({ identifier: identifier.trim() })
       });
       const data = await response.json();
       if (!response.ok) throw new Error(data.message || 'Failed to send OTP');
@@ -86,7 +86,7 @@ const Login = () => {
       const response = await fetch(`${API_URL}/auth/send-login-otp`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ identifier: email })
+        body: JSON.stringify({ identifier: identifier.trim() })
       });
       const data = await response.json();
       if (!response.ok) {
@@ -117,7 +117,7 @@ const Login = () => {
       const response = await fetch(`${API_URL}/auth/verify-otp`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ email, otp })
+        body: JSON.stringify({ identifier: identifier.trim(), otp })
       });
       const data = await response.json();
       if (!response.ok) throw new Error(data.message || 'Invalid OTP');
@@ -175,17 +175,17 @@ const Login = () => {
             )}
             <div className="rounded-md shadow-sm">
               <div>
-                <label htmlFor="email" className="sr-only">Email address</label>
+                <label htmlFor="identifier" className="sr-only">Email address or Mobile number</label>
                 <input
-                  id="email"
-                  name="email"
-                  type="email"
-                  autoComplete="email"
+                  id="identifier"
+                  name="identifier"
+                  type="text"
+                  autoComplete="username"
                   required
-                  value={email}
-                  onChange={(e) => setEmail(e.target.value)}
+                  value={identifier}
+                  onChange={(e) => setIdentifier(e.target.value)}
                   className="appearance-none rounded relative block w-full px-3 py-2 border border-gray-300 placeholder-gray-500 text-gray-900 focus:outline-none focus:ring-blue-500 focus:border-blue-500 focus:z-10 sm:text-sm"
-                  placeholder="Email address"
+                  placeholder="Email address or Mobile number (e.g., user@example.com or 9876543210)"
                   disabled={loading}
                 />
               </div>

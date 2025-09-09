@@ -15,12 +15,12 @@ import {
   InputLabel
 } from '@mui/material';
 
-const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:5001';
+const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:5001/api';
 
 const Login = () => {
   const navigate = useNavigate();
   const { login } = useAuth();
-  const [email, setEmail] = useState('');
+  const [identifier, setIdentifier] = useState('');
   const [otp, setOtp] = useState('');
   const [step, setStep] = useState(1); // 1: request OTP, 2: verify OTP
   const [error, setError] = useState('');
@@ -35,7 +35,7 @@ const Login = () => {
       const response = await fetch(`${API_URL}/auth/send-login-otp`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ identifier: email })
+        body: JSON.stringify({ identifier: identifier.trim() })
       });
       const data = await response.json();
       if (!response.ok) throw new Error(data.message || 'Failed to send OTP');
@@ -55,16 +55,19 @@ const Login = () => {
       const response = await fetch(`${API_URL}/auth/verify-otp`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ email, userType, otp })
+        body: JSON.stringify({ identifier: identifier.trim(), otp })
       });
       const data = await response.json();
       if (!response.ok) throw new Error(data.message || 'Invalid OTP');
       login(data.token, data.user);
       localStorage.setItem('token', data.token);
       localStorage.setItem('user', JSON.stringify(data.user));
-      if (userType === 'employee') {
+      // Navigate based on user role from the response
+      if (data.user.role === 'admin') {
+        navigate('/admin/dashboard');
+      } else if (data.user.role === 'employee') {
         navigate('/employee/dashboard');
-      } else if (userType === 'customer') {
+      } else if (data.user.role === 'customer') {
         navigate('/customer/dashboard');
       } else {
         navigate('/');
@@ -108,7 +111,7 @@ const Login = () => {
                 setUserType(e.target.value);
                 setStep(1);
                 setError('');
-                setEmail('');
+                setIdentifier('');
                 setOtp('');
               }}
               style={{ width: '100%', padding: 10, borderRadius: 6, border: '1px solid #ccc', marginBottom: 8 }}
@@ -128,13 +131,14 @@ const Login = () => {
                 margin="normal"
                 required
                 fullWidth
-                id="email"
-                label="Email Address"
-                name="email"
-                autoComplete="email"
+                id="identifier"
+                label="Email Address or Mobile Number"
+                helperText="Enter your email address or mobile number (e.g., user@example.com or 9876543210)"
+                name="identifier"
+                autoComplete="username"
                 autoFocus
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
+                value={identifier}
+                onChange={(e) => setIdentifier(e.target.value)}
                 disabled={loading}
               />
               <Button

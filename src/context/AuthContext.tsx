@@ -24,7 +24,7 @@ interface AuthContextType extends AuthState {
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
 const STORAGE_KEY = 'authState';
-const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:5001';
+const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:5001/api';
 
 export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const navigate = useNavigate();
