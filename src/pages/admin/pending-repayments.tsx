@@ -54,7 +54,7 @@ const PendingRepayments = () => {
       <Navbar isSidebarPage={true} sidebarOpen={sidebarOpen} toggleSidebar={() => setSidebarOpen(open => !open)} />
       <div className="flex flex-1">
         <AdminSidebar isOpen={sidebarOpen} toggleSidebar={() => setSidebarOpen(open => !open)} />
-        <main className={`flex-1 p-8 transition-all duration-300 ${sidebarOpen ? 'lg:ml-64' : 'ml-0'}`}>
+        <main className={`flex-1 p-8 transition-all duration-300 ${sidebarOpen ? 'md:ml-64' : 'ml-0'}`}>
           <h1 className="text-3xl font-bold mb-6 text-blue-900 drop-shadow flex items-center gap-2"><Clock className="w-7 h-7 text-blue-600" /> Pending Repayments</h1>
           <div className="p-8">
             <div className="flex gap-4 mb-8 items-center">

@@ -29,6 +29,7 @@ import { API_URL } from '../../config';
 import Navbar from '../../components/Navbar';
 import ReactDOMServer from 'react-dom/server';
 import { fetchEarlyRepaymentDetails } from '../../utils/api';
+import PhotoGallery from '../../components/PhotoGallery';
 
 interface GoldItem {
   description: string;
@@ -569,7 +570,7 @@ const LoansPage = () => {
           <AdminSidebar isOpen={sidebarOpen} toggleSidebar={() => setSidebarOpen(open => !open)} />
         )}
         
-        <div className="flex-1 overflow-auto p-8 bg-gradient-to-br from-blue-50 via-white to-cyan-50 min-h-screen">
+        <div className={`flex-1 overflow-auto p-8 bg-gradient-to-br from-blue-50 via-white to-cyan-50 min-h-screen transition-all duration-300 ${sidebarOpen ? 'md:ml-64' : 'ml-0'}`}>
           <div className="bg-white/90 rounded-2xl shadow-xl p-6 border border-blue-100">
             <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
               <div>
@@ -694,26 +695,47 @@ const LoansPage = () => {
                         {expandedRow === loan._id && (
                           <tr className="bg-cyan-50 border-t border-blue-100">
                             <td colSpan={7} className="px-6 py-4">
-                              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                                <div>
-                                  <h4 className="font-semibold mb-2 flex items-center gap-1 text-yellow-700"><span>🪙</span> Gold Items</h4>
-                                  <div className="text-sm">
-                                    {loan.goldItems.map((item, index) => (
-                                      <div key={item.description + index} className="mb-2">
-                                        <p>Item {index + 1}: <span className="font-semibold">{item.description}</span></p>
-                                        <p className="ml-4">Gross Weight: {item.grossWeight}g</p>
-                                        <p className="ml-4">Net Weight: {item.netWeight}g</p>
-                                      </div>
-                                    ))}
+                              <div className="space-y-6">
+                                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                  <div>
+                                    <h4 className="font-semibold mb-2 flex items-center gap-1 text-yellow-700"><span>🪙</span> Gold Items</h4>
+                                    <div className="text-sm">
+                                      {loan.goldItems.map((item, index) => (
+                                        <div key={item.description + index} className="mb-2">
+                                          <p>Item {index + 1}: <span className="font-semibold">{item.description}</span></p>
+                                          <p className="ml-4">Gross Weight: {item.grossWeight}g</p>
+                                          <p className="ml-4">Net Weight: {item.netWeight}g</p>
+                                        </div>
+                                      ))}
+                                    </div>
+                                  </div>
+                                  <div>
+                                    {loan.depositedBank && (
+                                      <p className="text-sm">Deposited Bank: <span className="font-semibold">{loan.depositedBank}</span></p>
+                                    )}
+                                    {loan.renewalDate && (
+                                      <p className="text-sm">Renewal Date: <span className="font-semibold">{formatDate(loan.renewalDate)}</span></p>
+                                    )}
                                   </div>
                                 </div>
-                                <div>
-                                  {loan.depositedBank && (
-                                    <p className="text-sm">Deposited Bank: <span className="font-semibold">{loan.depositedBank}</span></p>
-                                  )}
-                                  {loan.renewalDate && (
-                                    <p className="text-sm">Renewal Date: <span className="font-semibold">{formatDate(loan.renewalDate)}</span></p>
-                                  )}
+                                
+                                {/* Photos Section */}
+                                <div className="border-t border-blue-200 pt-4">
+                                  <h4 className="font-semibold mb-4 flex items-center gap-1 text-blue-700"><span>📸</span> Gold Item Photos</h4>
+                                  
+                                  {loan.goldItems.map((item, index) => (
+                                    <div key={`photos-${index}`} className="mb-6 bg-white rounded-lg p-4 border border-blue-100">
+                                      <h5 className="font-medium text-gray-700 mb-3">
+                                        {item.description} (Item {index + 1})
+                                      </h5>
+                                      <PhotoGallery
+                                        loanId={loan._id}
+                                        goldItemIndex={index}
+                                        token={token || ''}
+                                        className="max-w-full"
+                                      />
+                                    </div>
+                                  ))}
                                 </div>
                               </div>
                             </td>

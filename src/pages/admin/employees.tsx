@@ -145,7 +145,7 @@ const EmployeesPage = () => {
       <Navbar isSidebarPage={true} sidebarOpen={sidebarOpen} toggleSidebar={() => setSidebarOpen(open => !open)} />
       <div className="flex h-screen bg-gray-100">
         <AdminSidebar isOpen={sidebarOpen} toggleSidebar={() => setSidebarOpen(open => !open)} />
-        <div className="flex-1 overflow-auto">
+        <div className={`flex-1 overflow-auto transition-all duration-300 ${sidebarOpen ? 'md:ml-64' : 'ml-0'}`}>
           <div className="p-8">
             <div className="max-w-4xl mx-auto mt-8 bg-white rounded-xl shadow-lg p-6">
               <div className="flex justify-between items-center mb-4">

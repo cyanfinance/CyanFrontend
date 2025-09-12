@@ -172,7 +172,7 @@ const CustomersPage = () => {
           <AdminSidebar isOpen={sidebarOpen} toggleSidebar={() => setSidebarOpen(open => !open)} />
         )}
         
-        <div className="flex-1 overflow-auto">
+        <div className={`flex-1 overflow-auto transition-all duration-300 ${sidebarOpen ? 'md:ml-64' : 'ml-0'}`}>
           <div className="p-8">
             <div className="bg-gradient-to-r from-blue-100 via-cyan-50 to-white rounded-b-3xl shadow p-4 mb-4">
               <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">

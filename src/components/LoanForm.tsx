@@ -1,11 +1,13 @@
 import React, { useState, useEffect } from 'react';
 import axios from 'axios';
+import PhotoUpload from './PhotoUpload';
+import LoanPrintout from './LoanPrintout';
 
 // Types for props
 interface GoldItem {
   description: string;
-  grossWeight: number;
-  netWeight: number;
+  grossWeight: string | number;
+  netWeight: string | number;
 }
 
 interface LoanFormData {
@@ -21,11 +23,11 @@ interface LoanFormData {
   presentAddress: string;
   permanentAddress: string;
   goldItems: GoldItem[];
-  interestRate: number;
-  loanAmount: number;
-  totalAmount: number;
-  monthlyPayment: number;
-  duration: number;
+  interestRate: string | number;
+  loanAmount: string | number;
+  totalAmount: string | number;
+  monthlyPayment: string | number;
+  duration: string | number;
 }
 
 interface CustomerDetails {
@@ -59,16 +61,16 @@ const LoanForm: React.FC<LoanFormProps> = ({ apiPrefix, token, user, onSuccess }
     emergencyContact: { mobile: '', relation: '' },
     presentAddress: '',
     permanentAddress: '',
-    goldItems: [{ description: '', grossWeight: 0, netWeight: 0 }],
-    interestRate: 0,
-    loanAmount: 0,
-    totalAmount: 0,
-    monthlyPayment: 0,
-    duration: 1,
+    goldItems: [{ description: '', grossWeight: '', netWeight: '' }],
+    interestRate: '',
+    loanAmount: '',
+    totalAmount: '',
+    monthlyPayment: '',
+    duration: '',
   });
   const [customerDetails, setCustomerDetails] = useState<CustomerDetails | null>(null);
   const [checkingAadhar, setCheckingAadhar] = useState(false);
-  const [loanStep, setLoanStep] = useState<1 | 2 | 3>(1);
+  const [loanStep, setLoanStep] = useState<1 | 2 | 3 | 4>(1);
   const [customerEmail, setCustomerEmail] = useState('');
   const [otp, setOtp] = useState('');
   const [customerVerified, setCustomerVerified] = useState(false);
@@ -79,6 +81,10 @@ const LoanForm: React.FC<LoanFormProps> = ({ apiPrefix, token, user, onSuccess }
   const [loanOtpError, setLoanOtpError] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
+  const [createdLoanId, setCreatedLoanId] = useState<string | null>(null);
+  const [goldItemPhotos, setGoldItemPhotos] = useState<{[key: number]: any[]}>({});
+  const [showPrintout, setShowPrintout] = useState(false);
+  const [createdLoanData, setCreatedLoanData] = useState<any>(null);
 
   const API_URL = import.meta.env.VITE_API_URL || '';
 
@@ -86,12 +92,12 @@ const LoanForm: React.FC<LoanFormProps> = ({ apiPrefix, token, user, onSuccess }
   const steps = [
     { label: 'Customer Info', icon: '👤' },
     { label: 'Verify OTP', icon: '🔒' },
-    { label: 'Loan Details', icon: '💰' },
+    { label: 'Loan Details & Photos', icon: '💰' },
   ];
 
   // Handler for input changes
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
-    const { name, value } = e.target;
+    const { name, value, type } = e.target;
     
     // Clear any previous mobile number validation errors
     setError(null);
@@ -110,9 +116,12 @@ const LoanForm: React.FC<LoanFormProps> = ({ apiPrefix, token, user, onSuccess }
         }
       }));
     } else {
+      // Handle number inputs properly - store as string to avoid leading zeros
+      const isNumberField = name === 'interestRate' || name === 'loanAmount' || name === 'duration' || name === 'monthlyPayment' || name === 'totalAmount';
+      
       setFormData(prev => ({
         ...prev,
-        [name]: name === 'interestRate' || name === 'loanAmount' || name === 'duration' ? parseFloat(value) || 0 : value
+        [name]: isNumberField ? (value === '' ? '' : value) : value
       }));
     }
     
@@ -147,14 +156,17 @@ const LoanForm: React.FC<LoanFormProps> = ({ apiPrefix, token, user, onSuccess }
     setFormData(prev => ({
       ...prev,
       goldItems: prev.goldItems.map((item, i) => 
-        i === index ? { ...item, [field]: field === 'description' ? value : parseFloat(value) || 0 } : item
+        i === index ? { 
+          ...item, 
+          [field]: field === 'description' ? value : (value === '' ? '' : value)
+        } : item
       )
     }));
   };
   const addGoldItem = () => {
     setFormData(prev => ({
       ...prev,
-      goldItems: [...prev.goldItems, { description: '', grossWeight: 0, netWeight: 0 }]
+      goldItems: [...prev.goldItems, { description: '', grossWeight: '', netWeight: '' }]
     }));
   };
   const removeGoldItem = (index: number) => {
@@ -162,6 +174,96 @@ const LoanForm: React.FC<LoanFormProps> = ({ apiPrefix, token, user, onSuccess }
       ...prev,
       goldItems: prev.goldItems.filter((_, i) => i !== index)
     }));
+    
+    // Remove photos for this gold item
+    setGoldItemPhotos(prev => {
+      const newPhotos = { ...prev };
+      delete newPhotos[index];
+      return newPhotos;
+    });
+  };
+
+  // Handle photo changes for a specific gold item
+  const handleGoldItemPhotosChange = (goldItemIndex: number, photos: any[]) => {
+    setGoldItemPhotos(prev => ({
+      ...prev,
+      [goldItemIndex]: photos
+    }));
+  };
+
+  // Upload photos for all gold items
+  const uploadPhotosForLoan = async (loanId: string) => {
+    const uploadPromises: Promise<any>[] = [];
+
+    Object.entries(goldItemPhotos).forEach(([goldItemIndex, photos]) => {
+      if (photos && photos.length > 0) {
+        const uploadFormData = new FormData();
+        uploadFormData.append('goldItemIndex', goldItemIndex);
+        uploadFormData.append('description', `Photos for ${formData.goldItems[parseInt(goldItemIndex)]?.description || 'gold item'}`);
+
+        photos.forEach(photo => {
+          if (photo.file && !photo.uploaded) {
+            uploadFormData.append('photos', photo.file);
+          }
+        });
+
+        if (uploadFormData.getAll('photos').length > 0) {
+          const uploadPromise = fetch(`${API_URL}/loans/${loanId}/photos`, {
+            method: 'POST',
+            headers: {
+              'x-auth-token': token
+            },
+            body: uploadFormData
+          }).then(response => {
+            if (!response.ok) {
+              throw new Error(`Failed to upload photos for gold item ${parseInt(goldItemIndex) + 1}`);
+            }
+            return response.json();
+          });
+          uploadPromises.push(uploadPromise);
+        }
+      }
+    });
+
+    if (uploadPromises.length > 0) {
+      await Promise.all(uploadPromises);
+    }
+  };
+
+  // Reset form to initial state
+  const resetForm = () => {
+    setFormData({
+      aadharNumber: '',
+      name: '',
+      email: '',
+      primaryMobile: '',
+      secondaryMobile: '',
+      emergencyContact: { mobile: '', relation: '' },
+      presentAddress: '',
+      permanentAddress: '',
+      goldItems: [{ description: '', grossWeight: '', netWeight: '' }],
+      interestRate: '',
+      loanAmount: '',
+      totalAmount: '',
+      monthlyPayment: '',
+      duration: '',
+    });
+    setCustomerDetails(null);
+    setLoanStep(1);
+    setCustomerEmail('');
+    setOtp('');
+    setCustomerVerified(false);
+    setCustomerId(null);
+    setCreatedLoanId(null);
+    setGoldItemPhotos({});
+    setShowPrintout(false);
+    setCreatedLoanData(null);
+    if (onSuccess) onSuccess();
+  };
+
+  const handlePrintoutClose = () => {
+    setShowPrintout(false);
+    resetForm();
   };
 
   // Check Aadhar
@@ -291,7 +393,8 @@ const LoanForm: React.FC<LoanFormProps> = ({ apiPrefix, token, user, onSuccess }
       }
       // Validate gold items
       if (!formData.goldItems.length || !formData.goldItems[0].description ||
-          !formData.goldItems[0].grossWeight || !formData.goldItems[0].netWeight) {
+          !formData.goldItems[0].grossWeight || !formData.goldItems[0].netWeight ||
+          formData.goldItems[0].grossWeight === '' || formData.goldItems[0].netWeight === '') {
         throw new Error('Please add at least one gold item with complete details');
       }
       // Convert numeric values
@@ -326,7 +429,11 @@ const LoanForm: React.FC<LoanFormProps> = ({ apiPrefix, token, user, onSuccess }
         presentAddress: formData.presentAddress,
         permanentAddress: formData.permanentAddress,
         emergencyContact: formData.emergencyContact,
-        goldItems: formData.goldItems,
+        goldItems: formData.goldItems.map(item => ({
+          ...item,
+          grossWeight: Number(item.grossWeight),
+          netWeight: Number(item.netWeight)
+        })),
         interestRate,
         amount,
         term,
@@ -351,30 +458,23 @@ const LoanForm: React.FC<LoanFormProps> = ({ apiPrefix, token, user, onSuccess }
           throw new Error(data.message || 'Failed to create loan');
         }
       }
-      alert('Loan created successfully');
-      setFormData({
-        aadharNumber: '',
-        name: '',
-        email: '',
-        primaryMobile: '',
-        secondaryMobile: '',
-        emergencyContact: { mobile: '', relation: '' },
-        presentAddress: '',
-        permanentAddress: '',
-        goldItems: [{ description: '', grossWeight: 0, netWeight: 0 }],
-        interestRate: 0,
-        loanAmount: 0,
-        totalAmount: 0,
-        monthlyPayment: 0,
-        duration: 1,
+      // Store the created loan ID for photo uploads
+      setCreatedLoanId(data.data._id);
+      
+      // Upload photos if any were selected
+      await uploadPhotosForLoan(data.data._id);
+      
+      // Store loan data for printout
+      setCreatedLoanData({
+        ...data.data,
+        createdBy: {
+          name: user.name,
+          email: user.email
+        }
       });
-      setCustomerDetails(null);
-      setLoanStep(1);
-      setCustomerEmail('');
-      setOtp('');
-      setCustomerVerified(false);
-      setCustomerId(null);
-      if (onSuccess) onSuccess();
+      
+      // Show printout instead of alert
+      setShowPrintout(true);
     } catch (error) {
       setError(error instanceof Error ? error.message : 'Failed to create loan');
     }
@@ -382,9 +482,9 @@ const LoanForm: React.FC<LoanFormProps> = ({ apiPrefix, token, user, onSuccess }
 
   useEffect(() => {
     const recalc = async () => {
-      const principal = formData.loanAmount;
-      const yearlyRate = formData.interestRate;
-      const months = formData.duration;
+      const principal = Number(formData.loanAmount);
+      const yearlyRate = Number(formData.interestRate);
+      const months = Number(formData.duration);
       if (principal > 0 && yearlyRate > 0 && months > 0) {
         try {
           const disbursementDate = new Date();
@@ -404,21 +504,21 @@ const LoanForm: React.FC<LoanFormProps> = ({ apiPrefix, token, user, onSuccess }
           if (!res.ok) throw new Error(data.message || 'Calculation failed');
           setFormData(prev => ({
             ...prev,
-            monthlyPayment: Math.round(data.totalAmount / months),
-            totalAmount: data.totalAmount
+            monthlyPayment: Math.round(data.totalAmount / months).toString(),
+            totalAmount: data.totalAmount.toString()
           }));
         } catch {
           setFormData(prev => ({
             ...prev,
-            monthlyPayment: 0,
-            totalAmount: 0
+            monthlyPayment: '',
+            totalAmount: ''
           }));
         }
       } else {
         setFormData(prev => ({
           ...prev,
-          monthlyPayment: 0,
-          totalAmount: 0
+          monthlyPayment: '',
+          totalAmount: ''
         }));
       }
     };
@@ -561,21 +661,39 @@ const LoanForm: React.FC<LoanFormProps> = ({ apiPrefix, token, user, onSuccess }
             <div className="mt-8">
                 <h2 className="flex items-center gap-2 text-xl font-bold text-yellow-700 mb-2"><span>🪙</span> Gold Items</h2>
                 {formData.goldItems.map((item, index) => (
-                  <div key={index} className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4 p-4 bg-yellow-50 rounded-lg border border-yellow-200">
-                    <div>
-                      <label className="block text-sm font-semibold text-gray-700">Description</label>
-                      <input type="text" value={item.description} onChange={e => handleGoldItemChange(index, 'description', e.target.value)} placeholder="Gold Item Description" className="w-full p-3 border rounded-xl focus:ring-2 focus:ring-yellow-300 focus:border-yellow-400 transition-all duration-200 bg-white/80" required />
+                  <div key={index} className="mb-6 p-4 bg-yellow-50 rounded-lg border border-yellow-200">
+                    <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
+                      <div>
+                        <label className="block text-sm font-semibold text-gray-700">Description</label>
+                        <input type="text" value={item.description} onChange={e => handleGoldItemChange(index, 'description', e.target.value)} placeholder="Gold Item Description" className="w-full p-3 border rounded-xl focus:ring-2 focus:ring-yellow-300 focus:border-yellow-400 transition-all duration-200 bg-white/80" required />
+                      </div>
+                      <div>
+                        <label className="block text-sm font-semibold text-gray-700">Gross Weight (g)</label>
+                        <input type="number" value={item.grossWeight} onChange={e => handleGoldItemChange(index, 'grossWeight', e.target.value)} placeholder="Gross Weight" className="w-full p-3 border rounded-xl focus:ring-2 focus:ring-yellow-300 focus:border-yellow-400 transition-all duration-200 bg-white/80" min="0" step="0.01" required />
+                      </div>
+                      <div>
+                        <label className="block text-sm font-semibold text-gray-700">Net Weight (g)</label>
+                        <input type="number" value={item.netWeight} onChange={e => handleGoldItemChange(index, 'netWeight', e.target.value)} placeholder="Net Weight" className="w-full p-3 border rounded-xl focus:ring-2 focus:ring-yellow-300 focus:border-yellow-400 transition-all duration-200 bg-white/80" min="0" step="0.01" required />
+                      </div>
                     </div>
-                    <div>
-                      <label className="block text-sm font-semibold text-gray-700">Gross Weight (g)</label>
-                      <input type="number" value={item.grossWeight} onChange={e => handleGoldItemChange(index, 'grossWeight', e.target.value)} placeholder="Gross Weight" className="w-full p-3 border rounded-xl focus:ring-2 focus:ring-yellow-300 focus:border-yellow-400 transition-all duration-200 bg-white/80" min="0" step="0.01" required />
+                    
+                    {/* Photo Upload Section for this Gold Item */}
+                    <div className="border-t border-yellow-300 pt-4">
+                      <h3 className="text-lg font-semibold text-yellow-800 mb-3 flex items-center gap-2">
+                        <span>📸</span> Photos for {item.description || `Gold Item ${index + 1}`}
+                      </h3>
+                      <PhotoUpload
+                        loanId="temp" // Will be replaced when loan is created
+                        goldItemIndex={index}
+                        token={token}
+                        onPhotosChange={(photos) => handleGoldItemPhotosChange(index, photos)}
+                        maxPhotos={3}
+                        className="max-w-full"
+                      />
                     </div>
-                    <div>
-                      <label className="block text-sm font-semibold text-gray-700">Net Weight (g)</label>
-                      <input type="number" value={item.netWeight} onChange={e => handleGoldItemChange(index, 'netWeight', e.target.value)} placeholder="Net Weight" className="w-full p-3 border rounded-xl focus:ring-2 focus:ring-yellow-300 focus:border-yellow-400 transition-all duration-200 bg-white/80" min="0" step="0.01" required />
-                    </div>
-                    <div className="col-span-3 flex justify-end">
-                      <button type="button" onClick={() => removeGoldItem(index)} className="text-red-600 hover:underline font-semibold" disabled={formData.goldItems.length === 1}>Remove</button>
+                    
+                    <div className="flex justify-end mt-4">
+                      <button type="button" onClick={() => removeGoldItem(index)} className="text-red-600 hover:underline font-semibold" disabled={formData.goldItems.length === 1}>Remove Gold Item</button>
                     </div>
                   </div>
                 ))}
@@ -609,12 +727,21 @@ const LoanForm: React.FC<LoanFormProps> = ({ apiPrefix, token, user, onSuccess }
             </div>
             <div className="flex justify-end mt-10">
               <button type="submit" className="bg-gradient-to-r from-cyan-400 to-blue-600 hover:from-cyan-500 hover:to-blue-700 text-white px-10 py-4 rounded-2xl text-lg font-bold shadow-xl flex items-center gap-2 transition-all duration-200">
-                <span>🚀</span> Create Loan
+                <span>🚀</span> Create Loan with Photos
               </button>
             </div>
           </form>
         )}
+
       </div>
+
+      {/* Loan Printout Modal */}
+      {showPrintout && createdLoanData && (
+        <LoanPrintout
+          loanData={createdLoanData}
+          onClose={handlePrintoutClose}
+        />
+      )}
     </div>
   );
 };

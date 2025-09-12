@@ -353,7 +353,7 @@ const GoldReturns: React.FC = () => {
       <div className="flex h-screen bg-gray-100">
         <AdminSidebar isOpen={sidebarOpen} toggleSidebar={() => setSidebarOpen(open => !open)} />
         
-        <div className="flex-1 overflow-auto p-8 bg-gradient-to-br from-yellow-50 via-white to-orange-50 min-h-screen">
+        <div className={`flex-1 overflow-auto p-8 bg-gradient-to-br from-yellow-50 via-white to-orange-50 min-h-screen transition-all duration-300 ${sidebarOpen ? 'md:ml-64' : 'ml-0'}`}>
           <div className="bg-white/90 rounded-2xl shadow-xl p-6 border border-yellow-100">
             <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4 mb-6">
               <div>

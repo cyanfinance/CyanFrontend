@@ -66,7 +66,7 @@ export const generatePaymentReceipt = (data: PaymentReceiptData): jsPDF => {
   // Footer
   doc.setFontSize(8);
   doc.setTextColor(128, 128, 128);
-  doc.text('This is a computer-generated receipt and does not require a signature.', pageWidth / 2, 260, { align: 'center' });
+  // doc.text('This is a computer-generated receipt and does not require a signature.', pageWidth / 2, 260, { align: 'center' });
   doc.text('Thank you for your business!', pageWidth / 2, 265, { align: 'center' });
   
   return doc;

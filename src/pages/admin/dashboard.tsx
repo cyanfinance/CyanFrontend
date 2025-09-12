@@ -991,7 +991,7 @@ const AdminDashboard = () => {
       <Navbar isSidebarPage={true} sidebarOpen={sidebarOpen} toggleSidebar={() => setSidebarOpen(open => !open)} />
       <div className="flex flex-1 relative">
         <AdminSidebar isOpen={sidebarOpen} toggleSidebar={() => setSidebarOpen(open => !open)} />
-        <main className={`flex-1 p-8 transition-all duration-300 relative z-10 ${sidebarOpen ? 'lg:ml-64' : 'ml-0'}`}>
+        <main className={`flex-1 p-8 transition-all duration-300 relative z-10 ${sidebarOpen ? 'md:ml-64' : 'ml-0'}`}>
           {/* Header Section */}
           <div className="text-center mb-8">
             <div className="flex items-center justify-center space-x-3 mb-4">

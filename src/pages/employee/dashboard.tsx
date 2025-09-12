@@ -802,7 +802,7 @@ const EmployeeDashboard = () => {
       <Navbar isSidebarPage={true} sidebarOpen={sidebarOpen} toggleSidebar={() => setSidebarOpen(open => !open)} />
       <div className="flex flex-1">
         <EmployeeSidebar isOpen={sidebarOpen} toggleSidebar={() => setSidebarOpen(open => !open)} />
-        <main className={`flex-1 p-8 transition-all duration-300 ${sidebarOpen ? 'lg:ml-64' : 'ml-0'}`}>
+        <main className={`flex-1 p-8 transition-all duration-300 ${sidebarOpen ? 'md:ml-64' : 'ml-0'}`}>
           <h1 className="text-3xl font-bold mb-6 text-blue-900 drop-shadow flex items-center gap-2"><span>📊</span> Employee Dashboard</h1>
           <div className="mb-8 flex gap-4">
             <button className={`px-6 py-2 rounded-full font-semibold shadow transition-all ${statusFilter === 'all' ? 'bg-yellow-400 text-white' : 'bg-white text-yellow-700 border border-yellow-300 hover:bg-yellow-100'}`} onClick={() => setStatusFilter('all')}>All Loans ({loans.length})</button>

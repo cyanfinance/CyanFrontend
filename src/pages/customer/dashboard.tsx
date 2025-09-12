@@ -65,20 +65,6 @@ const CustomerDashboard = () => {
         const data = await response.json();
         if (!response.ok) throw new Error(data.message || 'Failed to fetch loans');
         
-        // Debug: Log the received data to check calculations
-        console.log('Received loan data:', data.data);
-        data.data.forEach((loan: Loan, index: number) => {
-          console.log(`Loan ${index + 1}:`, {
-            loanId: loan.loanId,
-            amount: loan.amount,
-            totalPaid: loan.totalPaid,
-            remainingBalance: loan.remainingBalance,
-            calculatedRemaining: calculateRemainingBalance(loan),
-            payments: loan.payments?.length || 0,
-            amountType: typeof loan.amount,
-            totalPaidType: typeof loan.totalPaid
-          });
-        });
         
         setLoans(data.data);
       } catch (err) {

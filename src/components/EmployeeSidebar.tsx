@@ -64,7 +64,7 @@ const EmployeeSidebar: React.FC<EmployeeSidebarProps> = ({ isOpen, toggleSidebar
       {/* Overlay */}
       {isOpen && (
         <div
-          className="fixed inset-0 bg-black bg-opacity-50 z-[55] lg:hidden"
+          className="fixed inset-0 bg-black bg-opacity-50 z-[55] xl:hidden"
           onClick={toggleSidebar}
         />
       )}
@@ -73,15 +73,15 @@ const EmployeeSidebar: React.FC<EmployeeSidebarProps> = ({ isOpen, toggleSidebar
       <aside
         className={`fixed top-7 left-0 h-screen bg-gradient-to-br from-cyan-50 to-blue-100 shadow-2xl rounded-r-3xl transform transition-transform duration-300 ease-in-out z-[58] \
           ${isOpen ? 'translate-x-0' : '-translate-x-full'} \
-          lg:translate-x-0 lg:relative lg:z-0 w-64 border-r border-blue-100`}
+          md:translate-x-0 md:relative md:z-0 w-64 border-r border-blue-100`}
       >
         <nav className="h-full overflow-y-auto flex flex-col">
-          <div className="hidden lg:flex flex-col items-center py-8 bg-white/60 rounded-br-3xl mb-4 shadow-sm">
+          <div className="hidden md:flex flex-col items-center py-8 bg-white/60 rounded-br-3xl mb-4 shadow-sm">
             <img src={cyanlogo} alt="Cyan Logo" className="h-14 w-auto mb-2" />
             <span className="text-lg font-bold text-cyan-800 tracking-wide">CYAN FINANCE</span>
           </div>
           {/* Show public links on mobile only */}
-          <div className="block lg:hidden">
+          <div className="block md:hidden">
             {publicLinks.map((item) => (
               <Link
                 key={item.path}
