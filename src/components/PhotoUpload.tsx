@@ -7,6 +7,7 @@ interface Photo {
   preview: string;
   uploaded?: boolean;
   photoId?: string;
+  readyForUpload?: boolean;
 }
 
 interface PhotoUploadProps {
