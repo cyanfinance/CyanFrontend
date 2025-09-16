@@ -10,7 +10,8 @@ import {
   X,
   Clock,
   Mail,
-  Package
+  Package,
+  Gavel
 } from 'lucide-react';
 import cyanlogo from '../pages/cyanlogo.png';
 
@@ -61,6 +62,11 @@ const AdminSidebar: React.FC<AdminSidebarProps> = ({ isOpen, toggleSidebar }) =>
       path: '/admin/gold-returns',
       name: 'Gold Returns',
       icon: <Package className="w-5 h-5" />
+    },
+    {
+      path: '/admin/auction-management',
+      name: 'Auction Management',
+      icon: <Gavel className="w-5 h-5" />
     },
     ...(userRole === 'admin' ? [{
       path: '/admin/employees',

@@ -334,6 +334,8 @@ const AdminDashboard = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [sidebarOpen, setSidebarOpen] = useState(false);
+  const [upgradeLoading, setUpgradeLoading] = useState(false);
+  const [upgradeMessage, setUpgradeMessage] = useState<string | null>(null);
   const [statusFilter, setStatusFilter] = useState<'all' | 'active' | 'closed'>('all');
   const [formData, setFormData] = useState<LoanFormData>({
     aadharNumber: '',

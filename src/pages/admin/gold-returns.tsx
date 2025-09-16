@@ -78,6 +78,12 @@ interface GoldReturnDetails {
   notes: string;
 }
 
+interface Photo {
+  _id: string;
+  description?: string;
+  uploadedAt: string;
+}
+
 const GoldReturns: React.FC = () => {
   const { token } = useAuth();
   const [sidebarOpen, setSidebarOpen] = useState(false);
@@ -95,6 +101,8 @@ const GoldReturns: React.FC = () => {
   const [processing, setProcessing] = useState(false);
   const [searchTerm, setSearchTerm] = useState('');
   const [statusFilter, setStatusFilter] = useState('all');
+  const [photos, setPhotos] = useState<{[key: number]: Photo[]}>({});
+  const [loadingPhotos, setLoadingPhotos] = useState(false);
 
   const fetchGoldReturns = async () => {
     try {
@@ -142,6 +150,9 @@ const GoldReturns: React.FC = () => {
 
   const fetchGoldReturnDetails = async (loanId: string) => {
     try {
+      setLoadingPhotos(true);
+      
+      // Fetch gold return details
       const response = await fetch(`${API_URL}/gold-returns/${loanId}`, {
         headers: {
           'x-auth-token': token || '',
@@ -155,10 +166,40 @@ const GoldReturns: React.FC = () => {
       
       const data = await response.json();
       setSelectedDetails(data.data);
+      
+      // Fetch photos for the loan
+      try {
+        const photosResponse = await fetch(`${API_URL}/loans/${loanId}/photos/public`);
+        
+        if (photosResponse.ok) {
+          const photosData = await photosResponse.json();
+          if (photosData.success && photosData.data) {
+            // Group photos by item index - distribute evenly across items
+            const groupedPhotos: {[key: number]: Photo[]} = {};
+            const itemCount = data.data.goldItems.length;
+            const photosPerItem = Math.ceil(photosData.data.length / itemCount);
+            
+            photosData.data.forEach((photo: Photo, index: number) => {
+              const itemIndex = Math.floor(index / photosPerItem);
+              if (!groupedPhotos[itemIndex]) {
+                groupedPhotos[itemIndex] = [];
+              }
+              groupedPhotos[itemIndex].push(photo);
+            });
+            setPhotos(groupedPhotos);
+          }
+        }
+      } catch (photoError) {
+        console.error('Error fetching photos:', photoError);
+        // Don't show error for photos, just continue without them
+      }
+      
       setShowDetailsModal(true);
     } catch (error: any) {
       console.error('Error fetching gold return details:', error);
       alert(error.message || 'Failed to fetch details');
+    } finally {
+      setLoadingPhotos(false);
     }
   };
 
@@ -332,6 +373,11 @@ const GoldReturns: React.FC = () => {
       currency: 'INR',
       maximumFractionDigits: 0
     }).format(amount);
+  };
+
+  const getImageUrl = (photo: Photo) => {
+    if (!selectedDetails) return '';
+    return `${API_URL}/loans/${selectedDetails.loanId}/photos/${photo._id}/image`;
   };
 
   // Filter gold returns based on search term and status
@@ -571,9 +617,21 @@ const GoldReturns: React.FC = () => {
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-[60]">
           <div className="bg-white p-6 rounded-lg w-full max-w-4xl max-h-[90vh] overflow-y-auto">
             <div className="flex justify-between items-center mb-6">
-              <h2 className="text-2xl font-semibold text-gray-800">Gold Return Details</h2>
+              <div className="flex items-center gap-3">
+                <h2 className="text-2xl font-semibold text-gray-800">Gold Return Details</h2>
+                {loadingPhotos && (
+                  <div className="flex items-center gap-2 text-sm text-blue-600">
+                    <RefreshCw className="w-4 h-4 animate-spin" />
+                    Loading photos...
+                  </div>
+                )}
+              </div>
               <button
-                onClick={() => setShowDetailsModal(false)}
+                onClick={() => {
+                  setShowDetailsModal(false);
+                  setPhotos({});
+                  setSelectedDetails(null);
+                }}
                 className="text-gray-500 hover:text-gray-700"
               >
                 ✕
@@ -637,14 +695,52 @@ const GoldReturns: React.FC = () => {
                     <Package className="w-5 h-5" />
                     Gold Items ({selectedDetails.goldItems.length})
                   </h3>
-                  <div className="space-y-3">
+                  <div className="space-y-4">
                     {selectedDetails.goldItems.map((item, index) => (
-                      <div key={index} className="bg-white p-3 rounded border">
-                        <div className="font-medium text-sm">{item.description}</div>
-                        <div className="text-xs text-gray-600 space-y-1">
+                      <div key={index} className="bg-white p-4 rounded border">
+                        <div className="font-medium text-sm mb-2">{item.description}</div>
+                        <div className="text-xs text-gray-600 space-y-1 mb-3">
                           <div>Gross Weight: {item.grossWeight}g</div>
                           <div>Net Weight: {item.netWeight}g</div>
                         </div>
+                        
+                        {/* Display photos for this item */}
+                        {photos[index] && photos[index].length > 0 ? (
+                          <div className="mt-3">
+                            <h4 className="text-sm font-medium text-gray-700 mb-2">Photos:</h4>
+                            <div className="grid grid-cols-2 gap-2">
+                              {photos[index].map((photo, photoIndex) => (
+                                <div key={photoIndex} className="relative">
+                                  <img
+                                    src={getImageUrl(photo)}
+                                    alt={`${item.description} - Photo ${photoIndex + 1}`}
+                                    className="w-full h-24 object-cover rounded border"
+                                    onError={(e) => {
+                                      const target = e.target as HTMLImageElement;
+                                      target.style.display = 'none';
+                                    }}
+                                  />
+                                  {photo.description && (
+                                    <div className="text-xs text-gray-500 mt-1 truncate">
+                                      {photo.description}
+                                    </div>
+                                  )}
+                                </div>
+                              ))}
+                            </div>
+                          </div>
+                        ) : (
+                          <div className="text-xs text-gray-500 italic bg-gray-50 p-2 rounded">
+                            {loadingPhotos ? (
+                              <div className="flex items-center gap-2">
+                                <RefreshCw className="w-3 h-3 animate-spin" />
+                                Loading photos...
+                              </div>
+                            ) : (
+                              'No photos available for this item'
+                            )}
+                          </div>
+                        )}
                       </div>
                     ))}
                   </div>
@@ -695,7 +791,11 @@ const GoldReturns: React.FC = () => {
 
             <div className="flex justify-end mt-6">
               <button
-                onClick={() => setShowDetailsModal(false)}
+                onClick={() => {
+                  setShowDetailsModal(false);
+                  setPhotos({});
+                  setSelectedDetails(null);
+                }}
                 className="px-4 py-2 bg-gray-600 text-white rounded-md hover:bg-gray-700"
               >
                 Close

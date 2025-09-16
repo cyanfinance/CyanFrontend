@@ -30,6 +30,7 @@ import EmployeeAddLoan from './pages/employee/AddLoan';
 import PendingRepayments from './pages/admin/pending-repayments';
 import PaymentReminders from './pages/admin/payment-reminders';
 import GoldReturns from './pages/admin/gold-returns';
+import AuctionManagement from './pages/admin/auction-management';
 
 // Protected Route component
 const ProtectedRoute = ({ children, allowedRoles = [] }: { children: React.ReactNode, allowedRoles?: string[] }) => {
@@ -120,6 +121,7 @@ const AppRoutes: React.FC = () => {
             <Route path="/admin/pending-repayments" element={<PendingRepayments />} />
             <Route path="/admin/payment-reminders" element={<PaymentReminders />} />
             <Route path="/admin/gold-returns" element={<GoldReturns />} />
+            <Route path="/admin/auction-management" element={<AuctionManagement />} />
           </Route>
 
           {/* Employee routes */}

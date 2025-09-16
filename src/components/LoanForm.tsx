@@ -96,7 +96,7 @@ const LoanForm: React.FC<LoanFormProps> = ({ apiPrefix, token, user, onSuccess }
   ];
 
   // Handler for input changes
-  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
+  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
     const { name, value, type } = e.target;
     
     // Clear any previous mobile number validation errors
@@ -704,7 +704,12 @@ const LoanForm: React.FC<LoanFormProps> = ({ apiPrefix, token, user, onSuccess }
               <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
                 <div>
                   <label className="block text-sm font-semibold text-gray-700">Interest Rate (%)</label>
-                  <input type="number" name="interestRate" value={formData.interestRate} onChange={handleInputChange} placeholder="Annual Interest Rate" className="w-full p-3 border rounded-xl focus:ring-2 focus:ring-yellow-300 focus:border-yellow-400 transition-all duration-200 bg-white/80" min="0" step="0.01" required />
+                  <select name="interestRate" value={formData.interestRate} onChange={handleInputChange} className="w-full p-3 border rounded-xl focus:ring-2 focus:ring-yellow-300 focus:border-yellow-400 transition-all duration-200 bg-white/80" required>
+                    <option value="">Select Interest Rate</option>
+                    <option value="18">18% per annum</option>
+                    <option value="24">24% per annum</option>
+                    <option value="30">30% per annum</option>
+                  </select>
                 </div>
                 <div>
                   <label className="block text-sm font-semibold text-gray-700">Loan Amount (₹)</label>
@@ -712,7 +717,12 @@ const LoanForm: React.FC<LoanFormProps> = ({ apiPrefix, token, user, onSuccess }
                 </div>
                 <div>
                   <label className="block text-sm font-semibold text-gray-700">Duration (months)</label>
-                  <input type="number" name="duration" value={formData.duration} onChange={handleInputChange} placeholder="Loan Duration" className="w-full p-3 border rounded-xl focus:ring-2 focus:ring-yellow-300 focus:border-yellow-400 transition-all duration-200 bg-white/80" min="1" step="1" required />
+                  <select name="duration" value={formData.duration} onChange={handleInputChange} className="w-full p-3 border rounded-xl focus:ring-2 focus:ring-yellow-300 focus:border-yellow-400 transition-all duration-200 bg-white/80" required>
+                    <option value="">Select Duration</option>
+                    <option value="3">3 months</option>
+                    <option value="6">6 months</option>
+                    <option value="12">12 months</option>
+                  </select>
                 </div>
                 <div>
                   <label className="block text-sm font-semibold text-gray-700">Monthly Payment (₹)</label>
@@ -739,6 +749,7 @@ const LoanForm: React.FC<LoanFormProps> = ({ apiPrefix, token, user, onSuccess }
       {showPrintout && createdLoanData && (
         <LoanPrintout
           loanData={createdLoanData}
+          token={token}
           onClose={handlePrintoutClose}
         />
       )}
