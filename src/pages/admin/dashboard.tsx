@@ -220,7 +220,7 @@ const RepaymentModal: React.FC<RepaymentModalProps> = ({ loan: _loan, onClose, o
                 </div>
                 <div className="flex justify-between">
                   <span>Total Payment (with interest):</span>
-                  <span className="font-bold text-blue-700">₹{_loan.totalPayment?.toLocaleString() || 'N/A'}</span>
+                  <span className="font-bold text-blue-700">₹{calc?.totalDue?.toLocaleString() || _loan.totalPayment?.toLocaleString() || 'N/A'}</span>
                 </div>
                 <div className="flex justify-between">
                   <span>Already Paid:</span>
@@ -228,7 +228,7 @@ const RepaymentModal: React.FC<RepaymentModalProps> = ({ loan: _loan, onClose, o
                 </div>
                 <div className="flex justify-between border-t border-blue-200 pt-1">
                   <span>Remaining Balance:</span>
-                  <span className="font-bold text-red-600">₹{((_loan.totalPayment || 0) - (_loan.totalPaid || 0)).toLocaleString()}</span>
+                  <span className="font-bold text-red-600">₹{((calc?.totalDue || _loan.totalPayment || 0) - (_loan.totalPaid || 0)).toLocaleString()}</span>
                 </div>
               </div>
               <div className="mt-2 text-xs text-blue-600 bg-blue-100 p-2 rounded">
@@ -249,10 +249,10 @@ const RepaymentModal: React.FC<RepaymentModalProps> = ({ loan: _loan, onClose, o
                 </button>
                 <button
                   type="button"
-                  onClick={() => setAmount((_loan.totalPayment || 0) - (_loan.totalPaid || 0))}
+                  onClick={() => setAmount((calc?.totalDue || _loan.totalPayment || 0) - (_loan.totalPaid || 0))}
                   className="px-3 py-1 text-xs bg-green-100 text-green-700 rounded hover:bg-green-200 border border-green-300"
                 >
-                  Set Full Balance (₹{((_loan.totalPayment || 0) - (_loan.totalPaid || 0)).toLocaleString()})
+                  Set Full Balance (₹{((calc?.totalDue || _loan.totalPayment || 0) - (_loan.totalPaid || 0)).toLocaleString()})
                 </button>
               </div>
               <input
@@ -526,7 +526,7 @@ const AdminDashboard = () => {
   const capitalizeWords = (str: string) =>
     str.replace(/\b\w/g, c => c.toUpperCase());
 
-  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
+  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
     const { name, value } = e.target;
 
     // Always process the value for name and relation fields
@@ -1454,7 +1454,13 @@ const AdminDashboard = () => {
                         <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
                           <div>
                             <label className="block text-sm font-semibold text-gray-700">Interest Rate (%)</label>
-                            <input type="number" name="interestRate" value={formData.interestRate} onChange={handleInputChange} placeholder="Annual Interest Rate" className="w-full p-3 border rounded-lg focus:ring-2 focus:ring-yellow-300 focus:border-yellow-400 transition" min="0" step="0.01" required autoComplete="off" />
+                            <select name="interestRate" value={formData.interestRate} onChange={handleInputChange} className="w-full p-3 border rounded-lg focus:ring-2 focus:ring-yellow-300 focus:border-yellow-400 transition bg-white/80" required>
+                              <option value="">Select Interest Rate</option>
+                              <option value="18">18% per annum</option>
+                              <option value="24">24% per annum</option>
+                              <option value="30">30% per annum</option>
+                              <option value="36">36% per annum</option>
+                            </select>
                           </div>
                           <div>
                             <label className="block text-sm font-semibold text-gray-700">Loan Amount (₹)</label>

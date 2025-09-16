@@ -189,6 +189,7 @@ const RepaymentModal: React.FC<RepaymentModalProps> = ({ loan: _loan, onClose, o
               className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-yellow-500 focus:ring-yellow-500"
               required
               min={calc?.minimumTotalDue || 0}
+              max={calc?.totalDue || _loan.totalPayment || 0}
             />
           </div>
           <div className="mb-4">

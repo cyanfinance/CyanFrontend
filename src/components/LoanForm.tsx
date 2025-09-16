@@ -754,12 +754,13 @@ const LoanForm: React.FC<LoanFormProps> = ({ apiPrefix, token, user, onSuccess }
               <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
                 <div>
                   <label className="block text-sm font-semibold text-gray-700">Interest Rate (%)</label>
-                  <select name="interestRate" value={formData.interestRate} onChange={handleInputChange} className="w-full p-3 border rounded-xl focus:ring-2 focus:ring-yellow-300 focus:border-yellow-400 transition-all duration-200 bg-white/80" required>
-                    <option value="">Select Interest Rate</option>
-                    <option value="18">18% per annum</option>
-                    <option value="24">24% per annum</option>
-                    <option value="30">30% per annum</option>
-                  </select>
+              <select name="interestRate" value={formData.interestRate} onChange={handleInputChange} className="w-full p-3 border rounded-xl focus:ring-2 focus:ring-yellow-300 focus:border-yellow-400 transition-all duration-200 bg-white/80" required>
+                <option value="">Select Interest Rate</option>
+                <option value="18">18% per annum</option>
+                <option value="24">24% per annum</option>
+                <option value="30">30% per annum</option>
+                <option value="36">36% per annum</option>
+              </select>
                 </div>
                 <div>
                   <label className="block text-sm font-semibold text-gray-700">Loan Amount (₹)</label>
