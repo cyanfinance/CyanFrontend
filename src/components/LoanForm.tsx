@@ -70,6 +70,7 @@ const LoanForm: React.FC<LoanFormProps> = ({ apiPrefix, token, user, onSuccess }
   });
   const [customerDetails, setCustomerDetails] = useState<CustomerDetails | null>(null);
   const [checkingAadhar, setCheckingAadhar] = useState(false);
+  const [verifyingOtp, setVerifyingOtp] = useState(false);
   const [loanStep, setLoanStep] = useState<1 | 2 | 3 | 4>(1);
   const [customerEmail, setCustomerEmail] = useState('');
   const [otp, setOtp] = useState('');
@@ -312,6 +313,7 @@ const LoanForm: React.FC<LoanFormProps> = ({ apiPrefix, token, user, onSuccess }
       return; // Error is already set by validateMobileNumbers
     }
     
+    setCheckingAadhar(true);
     try {
       const response = await fetch(`${API_URL}/${apiPrefix}/customers`, {
         method: 'POST',
@@ -343,6 +345,8 @@ const LoanForm: React.FC<LoanFormProps> = ({ apiPrefix, token, user, onSuccess }
       setLoanStep(2);
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to add customer');
+    } finally {
+      setCheckingAadhar(false);
     }
   };
 
@@ -350,6 +354,7 @@ const LoanForm: React.FC<LoanFormProps> = ({ apiPrefix, token, user, onSuccess }
   const handleVerifyOtp = async (e: React.FormEvent) => {
     e.preventDefault();
     setError(null);
+    setVerifyingOtp(true);
     try {
       const response = await fetch(`${API_URL}/${apiPrefix}/verify-customer-otp`, {
         method: 'POST',
@@ -366,6 +371,8 @@ const LoanForm: React.FC<LoanFormProps> = ({ apiPrefix, token, user, onSuccess }
       setLoanStep(3);
     } catch (err) {
       setError(err instanceof Error ? err.message : 'OTP verification failed');
+    } finally {
+      setVerifyingOtp(false);
     }
   };
 
@@ -377,6 +384,7 @@ const LoanForm: React.FC<LoanFormProps> = ({ apiPrefix, token, user, onSuccess }
       setError('Customer must be verified before adding a loan.');
       return;
     }
+    setLoading(true);
     try {
       // Validate Aadhar number
       if (!/^\d{12}$/.test(formData.aadharNumber)) {
@@ -477,6 +485,8 @@ const LoanForm: React.FC<LoanFormProps> = ({ apiPrefix, token, user, onSuccess }
       setShowPrintout(true);
     } catch (error) {
       setError(error instanceof Error ? error.message : 'Failed to create loan');
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -592,8 +602,28 @@ const LoanForm: React.FC<LoanFormProps> = ({ apiPrefix, token, user, onSuccess }
               <textarea name="permanentAddress" value={formData.permanentAddress} onChange={handleInputChange} placeholder="Permanent Address" className="w-full p-3 border rounded-xl focus:ring-2 focus:ring-blue-300 focus:border-blue-400 transition-all duration-200 bg-white/80" required />
             </div>
             <div className="flex justify-end mt-8">
-              <button type="submit" className="bg-gradient-to-r from-cyan-400 to-blue-600 hover:from-cyan-500 hover:to-blue-700 text-white px-10 py-4 rounded-2xl text-lg font-bold shadow-xl flex items-center gap-2 transition-all duration-200">
-                <span>📧</span> Add Customer & Send OTP
+              <button 
+                type="submit" 
+                disabled={checkingAadhar}
+                className={`px-10 py-4 rounded-2xl text-lg font-bold shadow-xl flex items-center gap-2 transition-all duration-200 ${
+                  checkingAadhar 
+                    ? 'bg-gray-400 cursor-not-allowed' 
+                    : 'bg-gradient-to-r from-cyan-400 to-blue-600 hover:from-cyan-500 hover:to-blue-700'
+                } text-white`}
+              >
+                {checkingAadhar ? (
+                  <>
+                    <svg className="animate-spin h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                      <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                      <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                    </svg>
+                    Creating Customer...
+                  </>
+                ) : (
+                  <>
+                    <span>📧</span> Add Customer & Send OTP
+                  </>
+                )}
               </button>
             </div>
           </form>
@@ -617,8 +647,28 @@ const LoanForm: React.FC<LoanFormProps> = ({ apiPrefix, token, user, onSuccess }
               />
               <p className="text-xs text-gray-400 mt-1">Didn't receive the OTP? Ask the customer to check their mobile phone or resend the OTP.</p>
             </div>
-            <button type="submit" className="w-full bg-gradient-to-r from-cyan-400 to-blue-600 hover:from-cyan-500 hover:to-blue-700 text-white py-4 rounded-2xl text-lg font-bold shadow-xl flex items-center gap-2 justify-center transition-all duration-200">
-              <span>✅</span> Verify OTP
+            <button 
+              type="submit" 
+              disabled={verifyingOtp}
+              className={`w-full py-4 rounded-2xl text-lg font-bold shadow-xl flex items-center gap-2 justify-center transition-all duration-200 ${
+                verifyingOtp 
+                  ? 'bg-gray-400 cursor-not-allowed' 
+                  : 'bg-gradient-to-r from-cyan-400 to-blue-600 hover:from-cyan-500 hover:to-blue-700'
+              } text-white`}
+            >
+              {verifyingOtp ? (
+                <>
+                  <svg className="animate-spin h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                    <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                    <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                  </svg>
+                  Verifying OTP...
+                </>
+              ) : (
+                <>
+                  <span>✅</span> Verify OTP
+                </>
+              )}
             </button>
           </form>
         )}
@@ -736,8 +786,28 @@ const LoanForm: React.FC<LoanFormProps> = ({ apiPrefix, token, user, onSuccess }
               
             </div>
             <div className="flex justify-end mt-10">
-              <button type="submit" className="bg-gradient-to-r from-cyan-400 to-blue-600 hover:from-cyan-500 hover:to-blue-700 text-white px-10 py-4 rounded-2xl text-lg font-bold shadow-xl flex items-center gap-2 transition-all duration-200">
-                <span>🚀</span> Create Loan with Photos
+              <button 
+                type="submit" 
+                disabled={loading}
+                className={`px-10 py-4 rounded-2xl text-lg font-bold shadow-xl flex items-center gap-2 transition-all duration-200 ${
+                  loading 
+                    ? 'bg-gray-400 cursor-not-allowed' 
+                    : 'bg-gradient-to-r from-cyan-400 to-blue-600 hover:from-cyan-500 hover:to-blue-700'
+                } text-white`}
+              >
+                {loading ? (
+                  <>
+                    <svg className="animate-spin h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                      <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                      <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                    </svg>
+                    Creating Loan...
+                  </>
+                ) : (
+                  <>
+                    <span>🚀</span> Create Loan with Photos
+                  </>
+                )}
               </button>
             </div>
           </form>

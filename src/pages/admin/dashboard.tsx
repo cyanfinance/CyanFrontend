@@ -336,6 +336,9 @@ const AdminDashboard = () => {
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [upgradeLoading, setUpgradeLoading] = useState(false);
   const [upgradeMessage, setUpgradeMessage] = useState<string | null>(null);
+  const [customerCreationLoading, setCustomerCreationLoading] = useState(false);
+  const [otpVerificationLoading, setOtpVerificationLoading] = useState(false);
+  const [loanCreationLoading, setLoanCreationLoading] = useState(false);
   const [statusFilter, setStatusFilter] = useState<'all' | 'active' | 'closed'>('all');
   const [formData, setFormData] = useState<LoanFormData>({
     aadharNumber: '',
@@ -643,6 +646,7 @@ const AdminDashboard = () => {
   const handleAddCustomer = async (e: React.FormEvent) => {
     e.preventDefault();
     setError(null);
+    setCustomerCreationLoading(true);
     try {
       const response = await fetch(`${API_URL}/admin/customers`, {
         method: 'POST',
@@ -674,6 +678,8 @@ const AdminDashboard = () => {
       setLoanStep(2);
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to add customer');
+    } finally {
+      setCustomerCreationLoading(false);
     }
   };
 
@@ -681,6 +687,7 @@ const AdminDashboard = () => {
   const handleVerifyOtp = async (e: React.FormEvent) => {
     e.preventDefault();
     setError(null);
+    setOtpVerificationLoading(true);
     try {
       const response = await fetch(`${API_URL}/admin/verify-customer-otp`, {
         method: 'POST',
@@ -698,12 +705,15 @@ const AdminDashboard = () => {
       setJustVerified(true);
     } catch (err) {
       setError(err instanceof Error ? err.message : 'OTP verification failed');
+    } finally {
+      setOtpVerificationLoading(false);
     }
   };
 
   // Step 3: Send OTP for loan creation
   const handleSendLoanOtp = async () => {
     setLoanOtpError(null);
+    setOtpVerificationLoading(true);
     try {
       const response = await fetch(`${API_URL}/loans/send-otp`, {
         method: 'POST',
@@ -718,12 +728,15 @@ const AdminDashboard = () => {
       setLoanOtpSent(true);
     } catch (err) {
       setLoanOtpError(err instanceof Error ? err.message : 'Failed to send OTP');
+    } finally {
+      setOtpVerificationLoading(false);
     }
   };
 
   const handleVerifyLoanOtp = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoanOtpError(null);
+    setOtpVerificationLoading(true);
     try {
       const response = await fetch(`${API_URL}/loans/verify-otp`, {
         method: 'POST',
@@ -738,6 +751,8 @@ const AdminDashboard = () => {
       setLoanOtpVerified(true);
     } catch (err) {
       setLoanOtpError(err instanceof Error ? err.message : 'Failed to verify OTP');
+    } finally {
+      setOtpVerificationLoading(false);
     }
   };
 
@@ -749,6 +764,7 @@ const AdminDashboard = () => {
       setError('Customer must be verified before adding a loan.');
       return;
     }
+    setLoanCreationLoading(true);
     try {
       // Validate Aadhar number
       if (!/^\d{12}$/.test(formData.aadharNumber)) {
@@ -862,6 +878,8 @@ const AdminDashboard = () => {
     } catch (error) {
       console.error('Error creating loan:', error);
       alert(error instanceof Error ? error.message : 'Failed to create loan');
+    } finally {
+      setLoanCreationLoading(false);
     }
   };
 
@@ -1220,8 +1238,28 @@ const AdminDashboard = () => {
                         <textarea name="permanentAddress" value={formData.permanentAddress} onChange={handleInputChange} placeholder="Permanent Address" className="w-full p-3 border rounded-lg focus:ring-2 focus:ring-blue-300 focus:border-blue-400 transition" required autoComplete="address-line2" />
                       </div>
                       <div className="flex justify-end mt-8">
-                        <button type="submit" className="bg-gradient-to-r from-yellow-400 to-yellow-600 hover:from-yellow-500 hover:to-yellow-700 text-white px-8 py-3 rounded-xl text-lg font-bold shadow-lg flex items-center gap-2">
-                          <span>📧</span> Add Customer & Send OTP
+                        <button 
+                          type="submit" 
+                          disabled={customerCreationLoading}
+                          className={`px-8 py-3 rounded-xl text-lg font-bold shadow-lg flex items-center gap-2 transition-all duration-200 ${
+                            customerCreationLoading 
+                              ? 'bg-gray-400 cursor-not-allowed' 
+                              : 'bg-gradient-to-r from-yellow-400 to-yellow-600 hover:from-yellow-500 hover:to-yellow-700'
+                          } text-white`}
+                        >
+                          {customerCreationLoading ? (
+                            <>
+                              <svg className="animate-spin h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                                <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                                <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                              </svg>
+                              Creating Customer...
+                            </>
+                          ) : (
+                            <>
+                              <span>📧</span> Add Customer & Send OTP
+                            </>
+                          )}
                         </button>
                       </div>
                     </form>
@@ -1246,8 +1284,28 @@ const AdminDashboard = () => {
                         />
                         <p className="text-xs text-gray-400 mt-1">Didn't receive the OTP? Ask the customer to check their mobile phone or resend the OTP.</p>
                       </div>
-                      <button type="submit" className="w-full bg-gradient-to-r from-yellow-400 to-yellow-600 hover:from-yellow-500 hover:to-yellow-700 text-white py-3 rounded-xl text-lg font-bold shadow-lg flex items-center gap-2 justify-center">
-                        <span>✅</span> Verify OTP
+                      <button 
+                        type="submit" 
+                        disabled={otpVerificationLoading}
+                        className={`w-full py-3 rounded-xl text-lg font-bold shadow-lg flex items-center gap-2 justify-center transition-all duration-200 ${
+                          otpVerificationLoading 
+                            ? 'bg-gray-400 cursor-not-allowed' 
+                            : 'bg-gradient-to-r from-yellow-400 to-yellow-600 hover:from-yellow-500 hover:to-yellow-700'
+                        } text-white`}
+                      >
+                        {otpVerificationLoading ? (
+                          <>
+                            <svg className="animate-spin h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                              <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                              <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                            </svg>
+                            Verifying OTP...
+                          </>
+                        ) : (
+                          <>
+                            <span>✅</span> Verify OTP
+                          </>
+                        )}
                       </button>
                     </form>
                   </div>
@@ -1262,9 +1320,26 @@ const AdminDashboard = () => {
                         <p className="text-sm text-gray-600">Click the button below to send OTP to customer's mobile number.</p>
                         <button 
                           onClick={handleSendLoanOtp}
-                          className="w-full bg-gradient-to-r from-orange-400 to-orange-600 hover:from-orange-500 hover:to-orange-700 text-white py-3 rounded-xl text-lg font-bold shadow-lg flex items-center gap-2 justify-center"
+                          disabled={otpVerificationLoading}
+                          className={`w-full py-3 rounded-xl text-lg font-bold shadow-lg flex items-center gap-2 justify-center transition-all duration-200 ${
+                            otpVerificationLoading 
+                              ? 'bg-gray-400 cursor-not-allowed' 
+                              : 'bg-gradient-to-r from-orange-400 to-orange-600 hover:from-orange-500 hover:to-orange-700'
+                          } text-white`}
                         >
-                          <span>📱</span> Send SMS OTP to Customer
+                          {otpVerificationLoading ? (
+                            <>
+                              <svg className="animate-spin h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                                <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                                <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                              </svg>
+                              Sending OTP...
+                            </>
+                          ) : (
+                            <>
+                              <span>📱</span> Send SMS OTP to Customer
+                            </>
+                          )}
                         </button>
                         {loanOtpError && (
                           <div className="text-red-600 text-sm bg-red-50 p-3 rounded-lg">
@@ -1288,8 +1363,28 @@ const AdminDashboard = () => {
                           />
                           <p className="text-xs text-gray-400 mt-1">Check the customer's mobile phone for the SMS OTP.</p>
                         </div>
-                        <button type="submit" className="w-full bg-gradient-to-r from-orange-400 to-orange-600 hover:from-orange-500 hover:to-orange-700 text-white py-3 rounded-xl text-lg font-bold shadow-lg flex items-center gap-2 justify-center">
-                          <span>✅</span> Verify OTP & Proceed
+                        <button 
+                          type="submit" 
+                          disabled={otpVerificationLoading}
+                          className={`w-full py-3 rounded-xl text-lg font-bold shadow-lg flex items-center gap-2 justify-center transition-all duration-200 ${
+                            otpVerificationLoading 
+                              ? 'bg-gray-400 cursor-not-allowed' 
+                              : 'bg-gradient-to-r from-orange-400 to-orange-600 hover:from-orange-500 hover:to-orange-700'
+                          } text-white`}
+                        >
+                          {otpVerificationLoading ? (
+                            <>
+                              <svg className="animate-spin h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                                <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                                <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                              </svg>
+                              Verifying OTP...
+                            </>
+                          ) : (
+                            <>
+                              <span>✅</span> Verify OTP & Proceed
+                            </>
+                          )}
                         </button>
                       </form>
                     )}
@@ -1381,8 +1476,28 @@ const AdminDashboard = () => {
                         
                       </div>
                       <div className="flex justify-end mt-10">
-                        <button type="submit" className="bg-gradient-to-r from-yellow-400 to-yellow-600 hover:from-yellow-500 hover:to-yellow-700 text-white px-8 py-3 rounded-xl text-lg font-bold shadow-lg flex items-center gap-2">
-                          <span>🚀</span> Create Loan
+                        <button 
+                          type="submit" 
+                          disabled={loanCreationLoading}
+                          className={`px-8 py-3 rounded-xl text-lg font-bold shadow-lg flex items-center gap-2 transition-all duration-200 ${
+                            loanCreationLoading 
+                              ? 'bg-gray-400 cursor-not-allowed' 
+                              : 'bg-gradient-to-r from-yellow-400 to-yellow-600 hover:from-yellow-500 hover:to-yellow-700'
+                          } text-white`}
+                        >
+                          {loanCreationLoading ? (
+                            <>
+                              <svg className="animate-spin h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                                <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                                <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                              </svg>
+                              Creating Loan...
+                            </>
+                          ) : (
+                            <>
+                              <span>🚀</span> Create Loan
+                            </>
+                          )}
                         </button>
                       </div>
                     </form>
