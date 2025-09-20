@@ -61,6 +61,15 @@ const CustomersPage = () => {
   const token = rawToken || '';
   const [originalAadharNumber, setOriginalAadharNumber] = useState<string | null>(null);
 
+  // Function to mask Aadhar number for employees
+  const maskAadharNumber = (aadharNumber: string) => {
+    if (user?.role === 'employee' && aadharNumber) {
+      // Show only last 4 digits, mask the rest with asterisks
+      return '****-****-' + aadharNumber.slice(-4);
+    }
+    return aadharNumber;
+  };
+
   useEffect(() => {
     // console.log('Admin Customers Page Token:', token);
     fetchCustomers();
@@ -173,79 +182,79 @@ const CustomersPage = () => {
         )}
         
         <div className={`flex-1 overflow-auto transition-all duration-300 ${sidebarOpen ? 'md:ml-64' : 'ml-0'}`}>
-          <div className="p-8">
-            <div className="bg-gradient-to-r from-blue-100 via-cyan-50 to-white rounded-b-3xl shadow p-4 mb-4">
-              <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
+          <div className="p-4">
+            <div className="bg-gradient-to-r from-blue-100 via-cyan-50 to-white rounded-xl shadow p-3 mb-3">
+              <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-3">
                 <div>
-                  <h1 className="text-2xl font-bold text-blue-800 mb-1 flex items-center gap-2">
+                  <h1 className="text-xl font-bold text-blue-800 mb-1 flex items-center gap-2">
                     <span>👥</span> Customers
                   </h1>
-                  <p className="text-gray-600 text-base">Manage all your customers and their loan activity here.</p>
+                  <p className="text-gray-600 text-sm">Manage all your customers and their loan activity here.</p>
                 </div>
-                <div className="relative w-full md:w-96 mt-4 md:mt-0">
-                  <span className="absolute left-3 top-1/2 -translate-y-1/2 text-blue-300 text-lg">🔍</span>
+                <div className="relative w-full md:w-80 mt-3 md:mt-0">
+                  <span className="absolute left-3 top-1/2 -translate-y-1/2 text-blue-300 text-sm">🔍</span>
                   <input
                     type="text"
                     value={search}
                     onChange={e => setSearch(e.target.value)}
                     placeholder="Search by Name, Aadhar, Mobile, or Email"
-                    className="pl-10 pr-4 py-2 w-full rounded-full border border-blue-100 bg-blue-50 focus:ring-2 focus:ring-blue-200 focus:border-blue-300 transition text-gray-700 shadow-sm"
+                    className="pl-8 pr-4 py-2 w-full rounded-lg border border-blue-100 bg-blue-50 focus:ring-2 focus:ring-blue-200 focus:border-blue-300 transition text-gray-700 shadow-sm text-sm"
                   />
                 </div>
               </div>
             </div>
-            <div className="bg-white/90 rounded-2xl shadow-xl p-6">
+            <div className="bg-white/90 rounded-xl shadow-lg p-4">
               <div className="overflow-x-auto">
                 <table className="min-w-full bg-white rounded-xl">
                   <thead className="bg-blue-100">
                     <tr>
-                      <th className="px-2 py-3 text-left text-xs font-bold text-blue-700 uppercase tracking-wider">Customer ID</th>
-                      <th className="px-2 py-3 text-left text-xs font-bold text-blue-700 uppercase tracking-wider">Basic Info</th>
-                      <th className="px-2 py-3 text-left text-xs font-bold text-blue-700 uppercase tracking-wider">Contact Details</th>
-                      <th className="px-2 py-3 text-left text-xs font-bold text-blue-700 uppercase tracking-wider">Address</th>
-                      <th className="px-2 py-3 text-left text-xs font-bold text-blue-700 uppercase tracking-wider">Loan Summary</th>
-                      <th className="px-2 py-3 text-left text-xs font-bold text-blue-700 uppercase tracking-wider">Actions</th>
+                      <th className="px-3 py-2 text-left text-xs font-bold text-blue-700 uppercase tracking-wider w-32">Customer ID</th>
+                      <th className="px-3 py-2 text-left text-xs font-bold text-blue-700 uppercase tracking-wider w-48">Basic Info</th>
+                      <th className="px-3 py-2 text-left text-xs font-bold text-blue-700 uppercase tracking-wider w-40">Contact Details</th>
+                      <th className="px-3 py-2 text-left text-xs font-bold text-blue-700 uppercase tracking-wider w-64">Address</th>
+                      <th className="px-3 py-2 text-left text-xs font-bold text-blue-700 uppercase tracking-wider w-32">Loan Summary</th>
+                      <th className="px-2 py-2 text-left text-xs font-bold text-blue-700 uppercase tracking-wider w-24 sticky right-0 bg-blue-100 z-10">Actions</th>
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-blue-50">
                     {filteredCustomers.map((customer, idx) => (
                       <React.Fragment key={customer.mongoId || customer.customerId}>
                         <tr className={`transition group ${idx % 2 === 0 ? 'bg-blue-50' : 'bg-white'} hover:bg-cyan-50`}>
-                          <td className="px-5 py-4 whitespace-nowrap text-sm text-gray-900 font-semibold">
-                            {customer.customerId}
-                            <div className="text-xs text-gray-500">{customer.aadharNumber}</div>
+                          <td className="px-3 py-3 whitespace-nowrap text-sm text-gray-900 font-semibold">
+                            <div className="text-xs">{customer.customerId}</div>
+                            <div className="text-xs text-gray-500">{maskAadharNumber(customer.aadharNumber)}</div>
                           </td>
-                          <td className="px-5 py-4 whitespace-nowrap">
-                            <div className="text-sm font-bold text-blue-800 flex items-center gap-1">{customer.name}</div>
-                            <div className="text-xs text-gray-500">{customer.email}</div>
+                          <td className="px-3 py-3 whitespace-nowrap">
+                            <div className="text-sm font-bold text-blue-800">{customer.name}</div>
+                            <div className="text-xs text-gray-500 truncate max-w-40">{customer.email}</div>
                           </td>
-                          <td className="px-5 py-4 whitespace-nowrap">
-                            <div className="text-sm text-gray-900">Primary: {customer.primaryMobile}</div>
+                          <td className="px-3 py-3 whitespace-nowrap">
+                            <div className="text-sm text-gray-900">{customer.primaryMobile}</div>
                             {customer.secondaryMobile && (
-                              <div className="text-xs text-gray-500">Secondary: {customer.secondaryMobile}</div>
+                              <div className="text-xs text-gray-500">{customer.secondaryMobile}</div>
                             )}
                             {customer.emergencyContact && (
                               <div className="text-xs text-gray-500">
-                                Emergency: {customer.emergencyContact.mobile} ({customer.emergencyContact.relation})
+                                {customer.emergencyContact.mobile} ({customer.emergencyContact.relation})
                               </div>
                             )}
                           </td>
-                          <td className="px-5 py-4">
-                            <div className="text-sm text-gray-900">Present: {customer.presentAddress}</div>
-                            <div className="text-xs text-gray-500">Permanent: {customer.permanentAddress}</div>
+                          <td className="px-3 py-3">
+                            <div className="text-sm text-gray-900 truncate max-w-60">{customer.presentAddress}</div>
+                            <div className="text-xs text-gray-500 truncate max-w-60">{customer.permanentAddress}</div>
                           </td>
-                          <td className="px-5 py-4 whitespace-nowrap">
-                            <div className="text-sm text-green-700 font-semibold">Active Loans: {customer.activeLoans}</div>
-                            <div className="text-xs text-gray-500">Total Loans: {customer.totalLoans}</div>
+                          <td className="px-3 py-3 whitespace-nowrap">
+                            <div className="text-sm text-green-700 font-semibold">Active: {customer.activeLoans}</div>
+                            <div className="text-xs text-gray-500">Total: {customer.totalLoans}</div>
                           </td>
-                          <td className="px-5 py-4 whitespace-nowrap">
+                          <td className={`px-2 py-4 whitespace-nowrap sticky right-0 z-10 ${idx % 2 === 0 ? 'bg-blue-50' : 'bg-white'}`}>
                             <button
                               onClick={() => {
                                 setSelectedCustomer(customer);
                                 setOriginalAadharNumber(customer.aadharNumber);
                                 setEditDialogOpen(true);
                               }}
-                              className="bg-gradient-to-r from-blue-400 to-cyan-500 hover:from-blue-500 hover:to-cyan-600 text-white px-4 py-2 rounded-full font-bold flex items-center gap-2 shadow group-hover:scale-105 transition"
+                              className="bg-gradient-to-r from-blue-400 to-cyan-500 hover:from-blue-500 hover:to-cyan-600 text-white px-3 py-1.5 rounded-lg font-medium flex items-center gap-1 shadow group-hover:scale-105 transition text-sm"
                               disabled={!customer.mongoId}
                               title={!customer.mongoId ? 'Cannot edit: No user record found for this customer' : ''}
                             >
@@ -262,7 +271,7 @@ const CustomersPage = () => {
                                   <div className="text-sm">
                                     <p>Amount: <span className="font-bold text-blue-800">{formatCurrency(customer.latestLoan.amount)}</span></p>
                                     <p>Term: {customer.latestLoan.term} months</p>
-                                    <p>Interest Rate: {customer.latestLoan.interestRate}%</p>
+                                    <p>Interest Rate: {Number(customer.latestLoan.interestRate)}%</p>
                                     <p>Monthly Payment: {formatCurrency(customer.latestLoan.monthlyPayment)}</p>
                                     <p>Total Payment: {formatCurrency(customer.latestLoan.totalPayment)}</p>
                                     <p>Status: <span className="capitalize font-semibold text-blue-700">{customer.latestLoan.status}</span></p>

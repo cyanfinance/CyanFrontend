@@ -1,5 +1,5 @@
 import React from 'react';
-import { BrowserRouter as Router, Routes, Route, Navigate, Outlet } from 'react-router-dom';
+import { BrowserRouter as Router, Routes, Route, Navigate, Outlet, useLocation } from 'react-router-dom';
 import Navbar from './components/Navbar';
 import Home from './pages/Home';
 import About from './pages/About';
@@ -83,6 +83,12 @@ const CustomerLayout = () => (
 const AppRoutes: React.FC = () => {
   // Use the auth hook to handle token refresh
   useAuth();
+  const location = useLocation();
+  
+  // Check if current route is admin, employee, or customer dashboard
+  const isDashboardPage = location.pathname.startsWith('/admin/') || 
+                         location.pathname.startsWith('/employee/') || 
+                         location.pathname.startsWith('/customer/');
 
   return (
     <div className="min-h-screen bg-gray-50">
@@ -148,7 +154,8 @@ const AppRoutes: React.FC = () => {
           </Route>
         </Routes>
       </main>
-      <Footer />
+      {/* Only show footer on public pages, not on dashboard pages */}
+      {!isDashboardPage && <Footer />}
     </div>
   );
 };

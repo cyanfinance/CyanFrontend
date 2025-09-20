@@ -1,5 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useAuth } from '../../context/AuthContext';
+import AdminSidebar from '../../components/AdminSidebar';
+import Navbar from '../../components/Navbar';
 
 interface AuctionLoan {
   loanId: string;
@@ -28,6 +30,7 @@ const AuctionManagement: React.FC = () => {
   const [auctionDate, setAuctionDate] = useState('');
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState<string | null>(null);
+  const [sidebarOpen, setSidebarOpen] = useState(false);
 
   const API_URL = import.meta.env.VITE_API_URL || '';
 
@@ -143,21 +146,37 @@ const AuctionManagement: React.FC = () => {
 
   if (loading) {
     return (
-      <div className="flex justify-center items-center min-h-screen">
-        <div className="text-xl">Loading auction loans...</div>
+      <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-50">
+        <Navbar isSidebarPage={true} sidebarOpen={sidebarOpen} toggleSidebar={() => setSidebarOpen(open => !open)} />
+        <div className="flex flex-1 relative">
+          <AdminSidebar isOpen={sidebarOpen} toggleSidebar={() => setSidebarOpen(open => !open)} />
+          <main className={`flex-1 p-4 transition-all duration-300 relative z-10 ${sidebarOpen ? 'md:ml-64' : 'ml-0'}`}>
+            <div className="flex justify-center items-center min-h-screen">
+              <div className="text-xl">Loading auction loans...</div>
+            </div>
+          </main>
+        </div>
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen bg-gray-50 p-6">
-      <div className="max-w-7xl mx-auto">
-        <div className="bg-white rounded-lg shadow-sm p-6">
-          <div className="flex justify-between items-center mb-6">
-            <h1 className="text-2xl font-bold text-gray-900">Auction Management</h1>
+    <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-50">
+      <Navbar isSidebarPage={true} sidebarOpen={sidebarOpen} toggleSidebar={() => setSidebarOpen(open => !open)} />
+      <div className="flex flex-1 relative">
+        <AdminSidebar isOpen={sidebarOpen} toggleSidebar={() => setSidebarOpen(open => !open)} />
+        <main className={`flex-1 p-4 transition-all duration-300 relative z-10 ${sidebarOpen ? 'md:ml-64' : 'ml-0'}`}>
+          <div className="bg-white/90 rounded-xl shadow-lg p-4 border border-blue-100">
+          <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-3 mb-4">
+            <div>
+              <h1 className="text-xl font-bold text-gray-900 mb-1 flex items-center gap-2">
+                <span>🔨</span> Auction Management
+              </h1>
+              <p className="text-gray-600 text-sm">Manage loan auctions and track auction status</p>
+            </div>
             <button
               onClick={fetchAuctionLoans}
-              className="bg-blue-600 text-white px-4 py-2 rounded-md hover:bg-blue-700"
+              className="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 text-sm font-medium"
             >
               Refresh
             </button>
@@ -280,7 +299,8 @@ const AuctionManagement: React.FC = () => {
               </table>
             </div>
           )}
-        </div>
+          </div>
+        </main>
       </div>
 
       {/* Modal */}

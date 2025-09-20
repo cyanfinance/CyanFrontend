@@ -94,7 +94,7 @@ const AdminSidebar: React.FC<AdminSidebarProps> = ({ isOpen, toggleSidebar }) =>
 
       {/* Sidebar */}
       <aside
-        className={`fixed top-7 left-0 h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-50 shadow-2xl rounded-r-3xl transform transition-transform duration-300 ease-in-out z-[58] \
+        className={`fixed top-0 left-0 h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-50 shadow-2xl rounded-r-3xl transform transition-transform duration-300 ease-in-out z-[58] \
           ${isOpen ? 'translate-x-0' : '-translate-x-full'} \
           md:translate-x-0 md:relative md:z-0 w-64 border-r border-blue-100/50 backdrop-blur-sm`}
       >

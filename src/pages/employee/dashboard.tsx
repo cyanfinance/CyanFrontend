@@ -6,6 +6,7 @@ import { API_URL } from '../../config';
 import { calculateDailyInterest, fetchEarlyRepaymentDetails } from '../../utils/api';
 import Navbar from '../../components/Navbar';
 import { useNavigate } from 'react-router-dom';
+import UpgradeHistoryModal from '../../components/UpgradeHistoryModal';
 
 interface GoldItem {
   description: string;
@@ -30,6 +31,8 @@ interface Loan {
   amount: number;
   term: number;
   interestRate: number;
+  originalInterestRate?: number;
+  currentUpgradeLevel?: number;
   status:  'approved' | 'rejected' | 'active' | 'closed';
   monthlyPayment: number;
   totalPayment: number;
@@ -40,6 +43,14 @@ interface Loan {
     email: string;
     role: string;
   };
+  upgradeHistory?: Array<{
+    fromRate: number;
+    toRate: number;
+    upgradeDate: string;
+    reason: string;
+    upgradeLevel: number;
+  }>;
+  hasUpgradeHistory?: boolean;
 }
 
 interface LoanFormData {
@@ -285,6 +296,7 @@ const EmployeeDashboard = () => {
   const [checkingAadhar, setCheckingAadhar] = useState(false);
   const [selectedLoan, setSelectedLoan] = useState<Loan | null>(null);
   const [showRepaymentModal, setShowRepaymentModal] = useState(false);
+  const [historyModalOpen, setHistoryModalOpen] = useState(false);
   const { token: rawToken, user } = useAuth();
   const token = rawToken || '';
   const [search, setSearch] = useState('');
@@ -412,6 +424,37 @@ const EmployeeDashboard = () => {
       };
     }
     return { monthlyPayment: 0, totalAmount: 0 };
+  };
+
+  const hasUpgradeHistory = (loan: Loan) => {
+    return loan.upgradeHistory && loan.upgradeHistory.length > 0;
+  };
+
+  const getUpgradeIndicator = (loan: Loan) => {
+    if (!hasUpgradeHistory(loan)) return null;
+    
+    const totalUpgrades = loan.upgradeHistory?.length || 0;
+    const currentRate = loan.interestRate;
+    const originalRate = loan.originalInterestRate || loan.interestRate;
+    
+    if (currentRate > originalRate) {
+      return (
+        <div className="flex items-center gap-1 mt-1">
+          <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-orange-100 text-orange-800">
+            ⬆️ Upgraded {totalUpgrades}x
+          </span>
+          <span className="text-xs text-gray-500">
+            {originalRate}% → {currentRate}%
+          </span>
+        </div>
+      );
+    }
+    return null;
+  };
+
+  const handleViewHistory = (loan: Loan) => {
+    setSelectedLoan(loan);
+    setHistoryModalOpen(true);
   };
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
@@ -857,25 +900,36 @@ const EmployeeDashboard = () => {
                         </td>
                         <td className="px-4 py-3 max-w-[180px] break-words">
                           <div className="text-sm text-blue-900">Amount: ₹{loan.amount}</div>
-                          <div className="text-xs text-blue-500">Term: {loan.term} months | Interest: {loan.interestRate}% (Daily)</div>
+                          <div className="text-xs text-blue-500">Term: {loan.term} months | Interest: {Number(loan.interestRate)}% (Daily)</div>
                           <div className="text-xs text-blue-700">Monthly: ₹{loan.monthlyPayment}</div>
                           <div className="text-xs text-green-700">Total Paid: ₹{loan.totalPaid || 0}</div>
+                          {getUpgradeIndicator(loan)}
                         </td>
                         <td className="px-4 py-3 whitespace-nowrap">
                           <span className={`px-3 py-1 rounded-full text-xs font-bold ${getStatusColor(loan.status)}`}>{loan.status.charAt(0).toUpperCase() + loan.status.slice(1)}</span>
                         </td>
                         <td className="px-4 py-3 whitespace-no-wrap border-b border-gray-200 text-sm font-medium">
-                          {loan.status === 'active' && (
-                            <button
-                              onClick={() => {
-                                setSelectedLoan(loan);
-                                setShowRepaymentModal(true);
-                              }}
-                              className="text-yellow-600 hover:text-yellow-900"
-                            >
-                              Repay
-                            </button>
-                          )}
+                          <div className="flex space-x-2">
+                            {loan.status === 'active' && (
+                              <button
+                                onClick={() => {
+                                  setSelectedLoan(loan);
+                                  setShowRepaymentModal(true);
+                                }}
+                                className="text-yellow-600 hover:text-yellow-900"
+                              >
+                                Repay
+                              </button>
+                            )}
+                            {hasUpgradeHistory(loan) && (
+                              <button
+                                onClick={() => handleViewHistory(loan)}
+                                className="text-blue-600 hover:text-blue-900"
+                              >
+                                History
+                              </button>
+                            )}
+                          </div>
                         </td>
                       </tr>
                     ))}
@@ -895,6 +949,22 @@ const EmployeeDashboard = () => {
               loan={selectedLoan}
               onClose={() => setShowRepaymentModal(false)}
               onRepay={handleRepay}
+            />
+          )}
+
+          {/* Upgrade History Modal */}
+          {selectedLoan && (
+            <UpgradeHistoryModal
+              open={historyModalOpen}
+              onClose={() => setHistoryModalOpen(false)}
+              loanId={selectedLoan._id}
+              loanData={{
+                name: typeof selectedLoan.customerId === 'object' && selectedLoan.customerId?.name ? selectedLoan.customerId.name : selectedLoan.name,
+                loanId: selectedLoan._id,
+                amount: selectedLoan.amount,
+                currentInterestRate: selectedLoan.interestRate,
+                currentUpgradeLevel: selectedLoan.currentUpgradeLevel || 0
+              }}
             />
           )}
         </main>

@@ -6,6 +6,7 @@ import { API_URL } from '../../config';
 import { calculateDailyInterest, fetchEarlyRepaymentDetails } from '../../utils/api';
 import axios from 'axios';
 import Navbar from '../../components/Navbar';
+import UpgradedLoansList from '../../components/UpgradedLoansList';
 import { Bell, AlertCircle, DollarSign, Calendar, Clock } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 
@@ -42,12 +43,17 @@ interface Loan {
   monthlyPayment: number;
   totalPayment: number;
   totalPaid: number;
+  remainingBalance?: number;
   createdAt: string;
   createdBy?: {
     name: string;
     email: string;
     role: string;
   };
+  originalInterestRate?: number;
+  currentUpgradeLevel?: number;
+  interestRateUpgraded?: boolean;
+  interestRateUpgradeDate?: string;
 }
 
 interface LoanFormData {
@@ -87,7 +93,7 @@ interface CustomerDetails {
 interface RepaymentModalProps {
   loan: Loan;
   onClose: () => void;
-  onRepay: (amount: number, paymentMethod: string, transactionId?: string, bankName?: string) => Promise<void>;
+  onRepay: (amount: number, paymentMethod: string, transactionId?: string, bankName?: string, paymentType?: string) => Promise<void>;
 }
 
 interface WeeklyDue {
@@ -106,6 +112,7 @@ interface WeeklyDue {
 const RepaymentModal: React.FC<RepaymentModalProps> = ({ loan: _loan, onClose, onRepay }) => {
   const [amount, setAmount] = useState<number>(0);
   const [paymentMethod, setPaymentMethod] = useState<string>('handcash');
+  const [paymentType, setPaymentType] = useState<string>('total');
   const [transactionId, setTransactionId] = useState<string>('');
   const [error, setError] = useState<string>('');
   const [loading, setLoading] = useState<boolean>(false);
@@ -113,6 +120,7 @@ const RepaymentModal: React.FC<RepaymentModalProps> = ({ loan: _loan, onClose, o
   const [calc, setCalc] = useState<any>(null);
   const [calcLoading, setCalcLoading] = useState(false);
   const [bankName, setBankName] = useState<string>('');
+  const [userHasManuallySetAmount, setUserHasManuallySetAmount] = useState<boolean>(false);
 
   const { token } = useAuth();
 
@@ -128,8 +136,11 @@ const RepaymentModal: React.FC<RepaymentModalProps> = ({ loan: _loan, onClose, o
           token: token || '',
         });
         if (mounted) setCalc(data);
-        // Set default amount to totalDue if not set
-        if (mounted && !amount) setAmount(Math.round(data.totalDue));
+        // Set default amount to remaining balance if not set
+        if (mounted && amount === 0 && !userHasManuallySetAmount) {
+          const remainingBalance = Math.round(data.totalDue) - (_loan.totalPaid || 0);
+          setAmount(Math.max(remainingBalance, 0));
+        }
       } catch (err: any) {
         if (mounted) setError(err.message || 'Failed to fetch repayment details');
       } finally {
@@ -140,6 +151,41 @@ const RepaymentModal: React.FC<RepaymentModalProps> = ({ loan: _loan, onClose, o
     return () => { mounted = false; };
     // eslint-disable-next-line
   }, [_loan._id, repaymentDate]);
+
+  // Auto-set amount when calculation data is available (only if user hasn't manually set it)
+  useEffect(() => {
+    if (calc && amount === 0 && !userHasManuallySetAmount) {
+      // Set amount based on payment type
+      let newAmount = 0;
+      if (paymentType === 'interest') {
+        newAmount = Math.round(calc.interest || 0);
+      } else if (paymentType === 'principal') {
+        newAmount = _loan.amount - (_loan.totalPaid || 0);
+      } else {
+        // For total amount, use remaining balance (total due - already paid)
+        const remainingBalance = Math.round(calc.totalDue) - (_loan.totalPaid || 0);
+        newAmount = Math.max(remainingBalance, 0);
+      }
+      setAmount(newAmount);
+    }
+  }, [calc, amount, paymentType, _loan.amount, _loan.totalPaid, userHasManuallySetAmount]);
+
+  // Update amount when payment type changes (only if user hasn't manually set it)
+  useEffect(() => {
+    if (calc && !userHasManuallySetAmount) {
+      let newAmount = 0;
+      if (paymentType === 'interest') {
+        newAmount = Math.round(calc.interest || 0);
+      } else if (paymentType === 'principal') {
+        newAmount = _loan.amount - (_loan.totalPaid || 0);
+      } else {
+        // For total amount, use remaining balance (total due - already paid)
+        const remainingBalance = Math.round(calc.totalDue) - (_loan.totalPaid || 0);
+        newAmount = Math.max(remainingBalance, 0);
+      }
+      setAmount(newAmount);
+    }
+  }, [paymentType, calc, _loan.amount, _loan.totalPaid, userHasManuallySetAmount]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -155,7 +201,7 @@ const RepaymentModal: React.FC<RepaymentModalProps> = ({ loan: _loan, onClose, o
       if (paymentMethod === 'online' && !bankName.trim()) {
         throw new Error('Bank Name is required for online payments');
       }
-      await onRepay(amount, paymentMethod, transactionId, bankName);
+      await onRepay(amount, paymentMethod, transactionId, bankName, paymentType);
       onClose();
     } catch (err: any) {
       setError(err.message || 'Failed to process repayment');
@@ -228,7 +274,7 @@ const RepaymentModal: React.FC<RepaymentModalProps> = ({ loan: _loan, onClose, o
                 </div>
                 <div className="flex justify-between border-t border-blue-200 pt-1">
                   <span>Remaining Balance:</span>
-                  <span className="font-bold text-red-600">₹{((calc?.totalDue || _loan.totalPayment || 0) - (_loan.totalPaid || 0)).toLocaleString()}</span>
+                  <span className="font-bold text-red-600">₹{(_loan.status === 'closed' && _loan.remainingBalance === 0 ? 0 : (calc?.totalDue || _loan.totalPayment || 0) - (_loan.totalPaid || 0)).toLocaleString()}</span>
                 </div>
               </div>
               <div className="mt-2 text-xs text-blue-600 bg-blue-100 p-2 rounded">
@@ -236,32 +282,86 @@ const RepaymentModal: React.FC<RepaymentModalProps> = ({ loan: _loan, onClose, o
               </div>
             </div>
           </div>
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-2">Amount</label>
-              <div className="flex gap-2 mb-2">
+              <div className="flex gap-2 mb-2 flex-wrap">
+                {userHasManuallySetAmount && (
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setUserHasManuallySetAmount(false);
+                      // This will trigger the useEffect to auto-set the amount
+                    }}
+                    className="px-3 py-1 text-xs bg-gray-100 text-gray-700 rounded hover:bg-gray-200 border border-gray-300"
+                    title="Reset to automatic amount calculation"
+                  >
+                    🔄 Reset to Auto
+                  </button>
+                )}
                 <button
                   type="button"
-                  onClick={() => setAmount(_loan.monthlyPayment || 0)}
+                  onClick={() => {
+                    setAmount(_loan.monthlyPayment || 0);
+                    setUserHasManuallySetAmount(true);
+                  }}
                   className="px-3 py-1 text-xs bg-blue-100 text-blue-700 rounded hover:bg-blue-200 border border-blue-300"
                 >
                   Set Monthly (₹{_loan.monthlyPayment?.toLocaleString() || '0'})
                 </button>
                 <button
                   type="button"
-                  onClick={() => setAmount((calc?.totalDue || _loan.totalPayment || 0) - (_loan.totalPaid || 0))}
+                  onClick={() => {
+                    const remainingBalance = Math.round(calc?.totalDue || _loan.totalPayment || 0) - (_loan.totalPaid || 0);
+                    setAmount(Math.max(remainingBalance, 0));
+                    setUserHasManuallySetAmount(true);
+                  }}
                   className="px-3 py-1 text-xs bg-green-100 text-green-700 rounded hover:bg-green-200 border border-green-300"
                 >
-                  Set Full Balance (₹{((calc?.totalDue || _loan.totalPayment || 0) - (_loan.totalPaid || 0)).toLocaleString()})
+                  Set Full Balance (₹{Math.max(Math.round(calc?.totalDue || _loan.totalPayment || 0) - (_loan.totalPaid || 0), 0).toLocaleString()})
                 </button>
+                {paymentType === 'interest' && calc?.interest && (
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setAmount(calc.interest);
+                      setUserHasManuallySetAmount(true);
+                    }}
+                    className="px-3 py-1 text-xs bg-yellow-100 text-yellow-700 rounded hover:bg-yellow-200 border border-yellow-300"
+                  >
+                    Set Interest Only (₹{calc.interest?.toLocaleString()})
+                  </button>
+                )}
+                {paymentType === 'principal' && (
+                  <button
+                    type="button"
+                    onClick={() => {
+                      const remainingPrincipal = _loan.amount - (_loan.totalPaid || 0);
+                      setAmount(Math.max(remainingPrincipal, 0));
+                      setUserHasManuallySetAmount(true);
+                    }}
+                    className="px-3 py-1 text-xs bg-purple-100 text-purple-700 rounded hover:bg-purple-200 border border-purple-300"
+                  >
+                    Set Principal Only (₹{Math.max(_loan.amount - (_loan.totalPaid || 0), 0).toLocaleString()})
+                  </button>
+                )}
               </div>
               <input
                 type="number"
-                value={amount}
-                onChange={(e) => setAmount(Number(e.target.value))}
+                value={amount || ''}
+                onChange={(e) => {
+                  const value = e.target.value;
+                  if (value === '' || value === '0') {
+                    setAmount(0);
+                  } else {
+                    setAmount(Number(value));
+                  }
+                  setUserHasManuallySetAmount(true);
+                }}
                 className="block w-full rounded-md border-gray-300 shadow-sm focus:border-yellow-500 focus:ring-yellow-500"
                 required
                 min={calc?.minimumTotalDue || 0}
+                placeholder="Enter amount"
               />
             </div>
             <div>
@@ -275,6 +375,24 @@ const RepaymentModal: React.FC<RepaymentModalProps> = ({ loan: _loan, onClose, o
                 <option value="handcash">Hand Cash</option>
                 <option value="online">Online Payment</option>
               </select>
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">Payment Type</label>
+              <select
+                value={paymentType}
+                onChange={(e) => setPaymentType(e.target.value)}
+                className="block w-full rounded-md border-gray-300 shadow-sm focus:border-yellow-500 focus:ring-yellow-500"
+                required
+              >
+                <option value="total">Total Amount (Interest + Principal)</option>
+                <option value="interest">Interest Only</option>
+                <option value="principal">Principal Only</option>
+              </select>
+              <div className="mt-1 text-xs text-gray-500">
+                {paymentType === 'total' && 'Pays both interest and principal amount'}
+                {paymentType === 'interest' && 'Pays only the interest portion'}
+                {paymentType === 'principal' && 'Pays only the principal amount'}
+              </div>
             </div>
           </div>
           {paymentMethod === 'online' && (
@@ -910,7 +1028,7 @@ const AdminDashboard = () => {
     return colors[status];
   };
 
-  const handleRepay = async (amount: number, paymentMethod: string, transactionId?: string, bankName?: string) => {
+  const handleRepay = async (amount: number, paymentMethod: string, transactionId?: string, bankName?: string, paymentType?: string) => {
     if (!selectedLoan) return;
     const response = await fetch(`${API_URL}/loans/${selectedLoan._id}/payment`, {
       method: 'POST',
@@ -918,7 +1036,7 @@ const AdminDashboard = () => {
         'Content-Type': 'application/json',
         'x-auth-token': token
       },
-      body: JSON.stringify({ amount, paymentMethod, transactionId, bankName })
+      body: JSON.stringify({ amount, paymentMethod, transactionId, bankName, paymentType })
     });
     const data = await response.json();
     if (!response.ok) {
@@ -1011,37 +1129,37 @@ const AdminDashboard = () => {
       <Navbar isSidebarPage={true} sidebarOpen={sidebarOpen} toggleSidebar={() => setSidebarOpen(open => !open)} />
       <div className="flex flex-1 relative">
         <AdminSidebar isOpen={sidebarOpen} toggleSidebar={() => setSidebarOpen(open => !open)} />
-        <main className={`flex-1 p-8 transition-all duration-300 relative z-10 ${sidebarOpen ? 'md:ml-64' : 'ml-0'}`}>
+        <main className={`flex-1 p-4 transition-all duration-300 relative z-10 ${sidebarOpen ? 'md:ml-64' : 'ml-0'}`}>
           {/* Header Section */}
-          <div className="text-center mb-8">
-            <div className="flex items-center justify-center space-x-3 mb-4">
-              <div className="w-12 h-12 bg-gradient-to-br from-blue-500 to-purple-600 rounded-xl flex items-center justify-center shadow-lg">
-                <span className="text-white text-xl">🏦</span>
+          {/* <div className="text-center mb-4">
+            <div className="flex items-center justify-center space-x-2 mb-2">
+              <div className="w-8 h-8 bg-gradient-to-br from-blue-500 to-purple-600 rounded-lg flex items-center justify-center shadow-md">
+                <span className="text-white text-sm">🏦</span>
               </div>
-              <h1 className="text-4xl font-bold text-gray-800 bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">
+              <h1 className="text-2xl font-bold text-gray-800 bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">
                 Admin Dashboard
               </h1>
             </div>
-            <div className="w-24 h-1 bg-gradient-to-r from-blue-500 to-purple-500 mx-auto rounded-full mb-4"></div>
-            <p className="text-gray-600 text-lg">Manage loans, customers, and financial operations</p>
-          </div>
+            <div className="w-16 h-0.5 bg-gradient-to-r from-blue-500 to-purple-500 mx-auto rounded-full mb-2"></div>
+            <p className="text-gray-600 text-sm">Manage loans, customers, and financial operations</p>
+          </div> */}
           
           <div className="relative z-10">
           
             {/* Today's Due Payments Section */}
             {todaysDuePayments.length > 0 && (
-              <div className="bg-white/80 backdrop-blur-sm rounded-2xl shadow-xl p-6 mb-8 border border-white/20">
-                <div className="flex items-center justify-between mb-4">
-                  <div className="flex items-center space-x-3">
-                    <div className="w-10 h-10 bg-yellow-100 rounded-xl flex items-center justify-center">
-                      <AlertCircle className="w-5 h-5 text-yellow-600" />
+              <div className="bg-white/80 backdrop-blur-sm rounded-xl shadow-lg p-4 mb-4 border border-white/20">
+                <div className="flex items-center justify-between mb-3">
+                  <div className="flex items-center space-x-2">
+                    <div className="w-8 h-8 bg-yellow-100 rounded-lg flex items-center justify-center">
+                      <AlertCircle className="w-4 h-4 text-yellow-600" />
                     </div>
                     <div>
-                      <h3 className="text-xl font-bold text-gray-800">Today's Due Payments</h3>
-                      <p className="text-sm text-gray-600">Payments due for today</p>
+                      <h3 className="text-lg font-bold text-gray-800">Today's Due Payments</h3>
+                      <p className="text-xs text-gray-600">Payments due for today</p>
                     </div>
                   </div>
-                  <div className="bg-yellow-100 text-yellow-800 px-4 py-2 rounded-full font-bold">
+                  <div className="bg-yellow-100 text-yellow-800 px-3 py-1 rounded-full font-bold text-sm">
                     {todaysDuePayments.length} Due
                   </div>
                 </div>
@@ -1080,55 +1198,55 @@ const AdminDashboard = () => {
             )}
             {/* Summary Statistics */}
             {loans.length > 0 && (
-              <div className="bg-white/80 backdrop-blur-sm rounded-2xl shadow-xl p-6 mb-8 border border-white/20">
-                <h2 className="text-2xl font-bold text-gray-800 mb-6">Portfolio Overview</h2>
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-                  <div className="bg-gradient-to-br from-blue-50 to-blue-100 p-6 rounded-xl border border-blue-200">
+              <div className="bg-white/80 backdrop-blur-sm rounded-xl shadow-lg p-4 mb-4 border border-white/20">
+                <h2 className="text-lg font-bold text-gray-800 mb-4">Portfolio Overview</h2>
+                <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+                  <div className="bg-gradient-to-br from-blue-50 to-blue-100 p-4 rounded-lg border border-blue-200">
                     <div className="flex items-center justify-between">
                       <div>
-                        <p className="text-sm text-blue-600 font-medium">Total Loans</p>
-                        <p className="text-2xl font-bold text-blue-900">{loans.length}</p>
+                        <p className="text-xs text-blue-600 font-medium">Total Loans</p>
+                        <p className="text-lg font-bold text-blue-900">{loans.length}</p>
                       </div>
-                      <div className="w-12 h-12 bg-blue-200 rounded-lg flex items-center justify-center">
-                        <span className="text-blue-600 text-xl">📊</span>
+                      <div className="w-8 h-8 bg-blue-200 rounded-lg flex items-center justify-center">
+                        <span className="text-blue-600 text-sm">📊</span>
                       </div>
                     </div>
                   </div>
                   
-                  <div className="bg-gradient-to-br from-green-50 to-green-100 p-6 rounded-xl border border-green-200">
+                  <div className="bg-gradient-to-br from-green-50 to-green-100 p-4 rounded-lg border border-green-200">
                     <div className="flex items-center justify-between">
                       <div>
-                        <p className="text-sm text-green-600 font-medium">Active Loans</p>
-                        <p className="text-2xl font-bold text-green-900">{activeLoansCount}</p>
+                        <p className="text-xs text-green-600 font-medium">Active Loans</p>
+                        <p className="text-lg font-bold text-green-900">{activeLoansCount}</p>
                       </div>
-                      <div className="w-12 h-12 bg-green-200 rounded-lg flex items-center justify-center">
-                        <span className="text-green-600 text-xl">✅</span>
+                      <div className="w-8 h-8 bg-green-200 rounded-lg flex items-center justify-center">
+                        <span className="text-green-600 text-sm">✅</span>
                       </div>
                     </div>
                   </div>
                   
-                  <div className="bg-gradient-to-br from-gray-50 to-gray-100 p-6 rounded-xl border border-gray-200">
+                  <div className="bg-gradient-to-br from-gray-50 to-gray-100 p-4 rounded-lg border border-gray-200">
                     <div className="flex items-center justify-between">
                       <div>
-                        <p className="text-sm text-gray-600 font-medium">Closed Loans</p>
-                        <p className="text-2xl font-bold text-gray-900">{closedLoansCount}</p>
+                        <p className="text-xs text-gray-600 font-medium">Closed Loans</p>
+                        <p className="text-lg font-bold text-gray-900">{closedLoansCount}</p>
                       </div>
-                      <div className="w-12 h-12 bg-gray-200 rounded-lg flex items-center justify-center">
-                        <span className="text-gray-600 text-xl">🔒</span>
+                      <div className="w-8 h-8 bg-gray-200 rounded-lg flex items-center justify-center">
+                        <span className="text-gray-600 text-sm">🔒</span>
                       </div>
                     </div>
                   </div>
                   
-                  <div className="bg-gradient-to-br from-purple-50 to-purple-100 p-6 rounded-xl border border-purple-200">
+                  <div className="bg-gradient-to-br from-purple-50 to-purple-100 p-4 rounded-lg border border-purple-200">
                     <div className="flex items-center justify-between">
                       <div>
-                        <p className="text-sm text-purple-600 font-medium">Total Amount</p>
-                        <p className="text-2xl font-bold text-purple-900">
+                        <p className="text-xs text-purple-600 font-medium">Total Amount</p>
+                        <p className="text-lg font-bold text-purple-900">
                           {formatCurrency(loans.reduce((sum, loan) => sum + loan.amount, 0))}
                         </p>
                       </div>
-                      <div className="w-12 h-12 bg-purple-200 rounded-lg flex items-center justify-center">
-                        <span className="text-purple-600 text-xl">💰</span>
+                      <div className="w-8 h-8 bg-purple-200 rounded-lg flex items-center justify-center">
+                        <span className="text-purple-600 text-sm">💰</span>
                       </div>
                     </div>
                   </div>
@@ -1137,11 +1255,11 @@ const AdminDashboard = () => {
             )}
 
             {/* Filter and Actions */}
-            <div className="bg-white/80 backdrop-blur-sm rounded-2xl shadow-xl p-6 mb-8 border border-white/20">
-              <div className="flex flex-col lg:flex-row gap-4 items-center justify-between">
-                <div className="flex flex-wrap gap-3">
+            <div className="bg-white/80 backdrop-blur-sm rounded-xl shadow-lg p-4 mb-4 border border-white/20">
+              <div className="flex flex-col lg:flex-row gap-3 items-center justify-between">
+                <div className="flex flex-wrap gap-2">
                   <button 
-                    className={`px-6 py-3 rounded-xl font-semibold shadow transition-all duration-300 ${
+                    className={`px-4 py-2 rounded-lg font-medium shadow transition-all duration-300 text-sm ${
                       statusFilter === 'all' 
                         ? 'bg-gradient-to-r from-blue-500 to-blue-600 text-white' 
                         : 'bg-white/60 text-blue-700 border border-blue-200 hover:bg-blue-50'
@@ -1151,7 +1269,7 @@ const AdminDashboard = () => {
                     All Loans ({loans.length})
                   </button>
                   <button 
-                    className={`px-6 py-3 rounded-xl font-semibold shadow transition-all duration-300 ${
+                    className={`px-4 py-2 rounded-lg font-medium shadow transition-all duration-300 text-sm ${
                       statusFilter === 'active' 
                         ? 'bg-gradient-to-r from-green-500 to-green-600 text-white' 
                         : 'bg-white/60 text-green-700 border border-green-200 hover:bg-green-50'
@@ -1161,7 +1279,7 @@ const AdminDashboard = () => {
                     Active ({activeLoansCount})
                   </button>
                   <button 
-                    className={`px-6 py-3 rounded-xl font-semibold shadow transition-all duration-300 ${
+                    className={`px-4 py-2 rounded-lg font-medium shadow transition-all duration-300 text-sm ${
                       statusFilter === 'closed' 
                         ? 'bg-gradient-to-r from-gray-500 to-gray-600 text-white' 
                         : 'bg-white/60 text-gray-700 border border-gray-200 hover:bg-gray-50'
@@ -1172,7 +1290,7 @@ const AdminDashboard = () => {
                   </button>
                 </div>
                 <button 
-                  className="bg-gradient-to-r from-blue-500 to-purple-600 hover:from-blue-600 hover:to-purple-700 text-white px-8 py-3 rounded-xl font-bold shadow-lg transition-all duration-300 flex items-center space-x-2 group"
+                  className="bg-gradient-to-r from-blue-500 to-purple-600 hover:from-blue-600 hover:to-purple-700 text-white px-4 py-2 rounded-lg font-medium shadow-md transition-all duration-300 flex items-center space-x-2 group text-sm"
                   onClick={() => navigate('/admin/add-loan')}
                 >
                   <span className="group-hover:scale-110 transition-transform">➕</span>
@@ -1257,7 +1375,7 @@ const AdminDashboard = () => {
                             </>
                           ) : (
                             <>
-                              <span>📧</span> Add Customer & Send OTP
+                          <span>📧</span> Add Customer & Send OTP
                             </>
                           )}
                         </button>
@@ -1303,7 +1421,7 @@ const AdminDashboard = () => {
                           </>
                         ) : (
                           <>
-                            <span>✅</span> Verify OTP
+                        <span>✅</span> Verify OTP
                           </>
                         )}
                       </button>
@@ -1337,7 +1455,7 @@ const AdminDashboard = () => {
                             </>
                           ) : (
                             <>
-                              <span>📱</span> Send SMS OTP to Customer
+                          <span>📱</span> Send SMS OTP to Customer
                             </>
                           )}
                         </button>
@@ -1382,7 +1500,7 @@ const AdminDashboard = () => {
                             </>
                           ) : (
                             <>
-                              <span>✅</span> Verify OTP & Proceed
+                          <span>✅</span> Verify OTP & Proceed
                             </>
                           )}
                         </button>
@@ -1501,7 +1619,7 @@ const AdminDashboard = () => {
                             </>
                           ) : (
                             <>
-                              <span>🚀</span> Create Loan
+                          <span>🚀</span> Create Loan
                             </>
                           )}
                         </button>
@@ -1512,20 +1630,22 @@ const AdminDashboard = () => {
               </div>
             )}
 
+            
+
             {/* Loans Table Section */}
-            <div className="bg-white/90 rounded-2xl shadow-xl p-6 mt-8">
-              <div className="flex flex-col md:flex-row md:items-center md:justify-between mb-4 gap-4">
-                <h2 className="text-2xl font-semibold flex items-center gap-2 mb-2 md:mb-0">
+            <div className="bg-white/90 rounded-xl shadow-lg p-4 mt-4">
+              <div className="flex flex-col md:flex-row md:items-center md:justify-between mb-3 gap-3">
+                <h2 className="text-lg font-semibold flex items-center gap-2 mb-1 md:mb-0">
                   <span>📄</span> Loans
                 </h2>
-                <div className="relative w-full md:w-96">
-                  <span className="absolute left-3 top-1/2 -translate-y-1/2 text-blue-300 text-lg">🔍</span>
+                <div className="relative w-full md:w-80">
+                  <span className="absolute left-3 top-1/2 -translate-y-1/2 text-blue-300 text-sm">🔍</span>
                   <input
                     type="text"
                     value={search}
                     onChange={e => setSearch(e.target.value)}
                     placeholder="Search by name, email, mobile, Aadhar"
-                    className="pl-10 pr-4 py-2 w-full rounded-full border border-blue-100 bg-blue-50 focus:ring-2 focus:ring-blue-200 focus:border-blue-300 transition text-gray-700 shadow-sm"
+                    className="pl-8 pr-4 py-2 w-full rounded-lg border border-blue-100 bg-blue-50 focus:ring-2 focus:ring-blue-200 focus:border-blue-300 transition text-gray-700 shadow-sm text-sm"
                   />
                 </div>
               </div>
@@ -1543,8 +1663,20 @@ const AdminDashboard = () => {
                     </tr>
                   </thead>
                   <tbody>
-                    {filteredLoans.map((loan, idx) => (
-                      <tr key={loan._id} className={`transition group ${idx % 2 === 0 ? 'bg-blue-50' : 'bg-white'} hover:bg-cyan-50`}>
+                    {filteredLoans.map((loan, idx) => {
+                      const isUpgraded = loan.currentUpgradeLevel && loan.currentUpgradeLevel > 0;
+                      const getHighlightColor = () => {
+                        if (!isUpgraded) return idx % 2 === 0 ? 'bg-blue-50' : 'bg-white';
+                        switch (loan.currentUpgradeLevel) {
+                          case 1: return 'bg-yellow-50 border-l-4 border-yellow-400';
+                          case 2: return 'bg-orange-50 border-l-4 border-orange-400';
+                          case 3: return 'bg-red-50 border-l-4 border-red-400';
+                          default: return idx % 2 === 0 ? 'bg-blue-50' : 'bg-white';
+                        }
+                      };
+                      
+                      return (
+                      <tr key={loan._id} className={`transition group ${getHighlightColor()} hover:bg-cyan-50`}>
                         <td className="px-3 py-2 whitespace-nowrap text-sm text-gray-500">{formatDate(loan.createdAt)}</td>
                         <td className="px-4 py-3 max-w-[120px] truncate">
                           <div className="text-sm font-medium text-gray-900 truncate">
@@ -1560,9 +1692,25 @@ const AdminDashboard = () => {
                         </td>
                         <td className="px-3 py-2">
                           <div className="text-sm text-gray-900">Amount: ₹{loan.amount}</div>
-                          <div className="text-xs text-gray-500">Term: {loan.term} months | Interest: {loan.interestRate}% (Daily)</div>
+                          <div className="text-xs text-gray-500">Term: {loan.term} months</div>
+                          <div className="text-xs text-gray-500">
+                            Interest: {Number(loan.interestRate)}%
+                            {/* Debug: {JSON.stringify(loan.interestRate)} */}
+                            {/* Temporarily disabled upgrade display
+                            {isUpgraded && loan.originalInterestRate && loan.originalInterestRate !== loan.interestRate && (
+                              <span className="text-orange-600 font-semibold">
+                                {' '}(Upgraded from {Number(loan.originalInterestRate)}%)
+                              </span>
+                            )}
+                            */}
+                          </div>
                           <div className="text-xs text-gray-500">Monthly: ₹{loan.monthlyPayment}</div>
                           <div className="text-xs text-green-700">Total Paid: ₹{loan.totalPaid || 0}</div>
+                          {isUpgraded && (
+                            <div className="text-xs text-orange-600 font-semibold">
+                              Level {loan.currentUpgradeLevel} Upgrade
+                            </div>
+                          )}
                         </td>
                         
                         <td className="px-3 py-2 max-w-[120px] truncate">
@@ -1586,14 +1734,18 @@ const AdminDashboard = () => {
                                 setSelectedLoan(loan);
                                 setShowRepaymentModal(true);
                               }}
-                              className="bg-gradient-to-r from-yellow-400 to-yellow-600 hover:from-yellow-500 hover:to-yellow-700 text-white px-4 py-2 rounded-xl font-bold shadow flex items-center gap-2"
+                              className="text-white px-4 py-2 rounded-xl font-bold shadow flex items-center gap-2"
+                              style={{ backgroundColor: '#FFE100', color: '#000000' }}
+                              onMouseEnter={(e) => (e.target as HTMLButtonElement).style.backgroundColor = '#FFD700'}
+                              onMouseLeave={(e) => (e.target as HTMLButtonElement).style.backgroundColor = '#FFE100'}
                             >
                               <span>💸</span> Repay
                             </button>
                           )}
                         </td>
                       </tr>
-                    ))}
+                      );
+                    })}
                     {filteredLoans.length === 0 && (
                       <tr>
                         <td colSpan={7} className="px-3 py-4 text-center text-gray-500">No loans found</td>
@@ -1603,7 +1755,10 @@ const AdminDashboard = () => {
                 </table>
               </div>
             </div>
-
+            {/* Upgraded Loans Section */}
+            <div className="mt-4">
+              <UpgradedLoansList refreshTrigger={Date.now()} />
+            </div>
             {/* Gold Rate Update Section */}
             <div className="bg-white/80 backdrop-blur-sm rounded-2xl shadow-xl p-6 mt-8 border border-white/20">
               <div className="flex items-center space-x-3 mb-6">
@@ -1647,7 +1802,7 @@ const AdminDashboard = () => {
             </div>
 
             {/* Footer Section */}
-            <div className="mt-12 pb-8">
+            {/* <div className="mt-12 pb-8">
               <div className="bg-white/60 backdrop-blur-sm rounded-2xl shadow-lg p-6 border border-white/20">
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
                   <div className="text-center">
@@ -1673,7 +1828,7 @@ const AdminDashboard = () => {
                   </div>
                 </div>
               </div>
-            </div>
+            </div> */}
           </div>
         </main>
       </div>

@@ -71,19 +71,16 @@ const LoanForm: React.FC<LoanFormProps> = ({ apiPrefix, token, user, onSuccess }
   const [customerDetails, setCustomerDetails] = useState<CustomerDetails | null>(null);
   const [checkingAadhar, setCheckingAadhar] = useState(false);
   const [verifyingOtp, setVerifyingOtp] = useState(false);
-  const [loanStep, setLoanStep] = useState<1 | 2 | 3 | 4>(1);
+  const [loanStep, setLoanStep] = useState<1 | 2 | 3>(1);
   const [customerEmail, setCustomerEmail] = useState('');
   const [otp, setOtp] = useState('');
   const [customerVerified, setCustomerVerified] = useState(false);
   const [customerId, setCustomerId] = useState<string | null>(null);
-  const [loanOtp, setLoanOtp] = useState('');
-  const [loanOtpSent, setLoanOtpSent] = useState(false);
-  const [loanOtpVerified, setLoanOtpVerified] = useState(false);
-  const [loanOtpError, setLoanOtpError] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
   const [createdLoanId, setCreatedLoanId] = useState<string | null>(null);
   const [goldItemPhotos, setGoldItemPhotos] = useState<{[key: number]: any[]}>({});
+  const [allItemsTogetherPhoto, setAllItemsTogetherPhoto] = useState<any[]>([]);
   const [showPrintout, setShowPrintout] = useState(false);
   const [createdLoanData, setCreatedLoanData] = useState<any>(null);
 
@@ -192,10 +189,16 @@ const LoanForm: React.FC<LoanFormProps> = ({ apiPrefix, token, user, onSuccess }
     }));
   };
 
+  // Handle photo changes for "all items together" photo
+  const handleAllItemsTogetherPhotoChange = (photos: any[]) => {
+    setAllItemsTogetherPhoto(photos);
+  };
+
   // Upload photos for all gold items
   const uploadPhotosForLoan = async (loanId: string) => {
     const uploadPromises: Promise<any>[] = [];
 
+    // Upload individual gold item photos
     Object.entries(goldItemPhotos).forEach(([goldItemIndex, photos]) => {
       if (photos && photos.length > 0) {
         const uploadFormData = new FormData();
@@ -225,6 +228,35 @@ const LoanForm: React.FC<LoanFormProps> = ({ apiPrefix, token, user, onSuccess }
         }
       }
     });
+
+    // Upload "all items together" photo if it exists and there are multiple gold items
+    if (allItemsTogetherPhoto.length > 0 && formData.goldItems.length > 1) {
+      const uploadFormData = new FormData();
+      uploadFormData.append('goldItemIndex', '-1'); // Special index for "all items together"
+      uploadFormData.append('description', 'All gold items together');
+
+      allItemsTogetherPhoto.forEach(photo => {
+        if (photo.file && !photo.uploaded) {
+          uploadFormData.append('photos', photo.file);
+        }
+      });
+
+      if (uploadFormData.getAll('photos').length > 0) {
+        const uploadPromise = fetch(`${API_URL}/loans/${loanId}/photos`, {
+          method: 'POST',
+          headers: {
+            'x-auth-token': token
+          },
+          body: uploadFormData
+        }).then(response => {
+          if (!response.ok) {
+            throw new Error('Failed to upload "all items together" photo');
+          }
+          return response.json();
+        });
+        uploadPromises.push(uploadPromise);
+      }
+    }
 
     if (uploadPromises.length > 0) {
       await Promise.all(uploadPromises);
@@ -257,6 +289,7 @@ const LoanForm: React.FC<LoanFormProps> = ({ apiPrefix, token, user, onSuccess }
     setCustomerId(null);
     setCreatedLoanId(null);
     setGoldItemPhotos({});
+    setAllItemsTogetherPhoto([]);
     setShowPrintout(false);
     setCreatedLoanData(null);
     if (onSuccess) onSuccess();
@@ -329,7 +362,8 @@ const LoanForm: React.FC<LoanFormProps> = ({ apiPrefix, token, user, onSuccess }
           secondaryMobile: formData.secondaryMobile,
           presentAddress: formData.presentAddress,
           permanentAddress: formData.permanentAddress,
-          emergencyContact: formData.emergencyContact
+          emergencyContact: formData.emergencyContact,
+          purpose: 'loan_creation'
         })
       });
       const data = await response.json();
@@ -375,6 +409,7 @@ const LoanForm: React.FC<LoanFormProps> = ({ apiPrefix, token, user, onSuccess }
       setVerifyingOtp(false);
     }
   };
+
 
   // Step 3: Add loan (only allow if customerVerified)
   const handleSubmit = async (e: React.FormEvent) => {
@@ -749,6 +784,29 @@ const LoanForm: React.FC<LoanFormProps> = ({ apiPrefix, token, user, onSuccess }
                 ))}
                 <button type="button" onClick={addGoldItem} className="bg-gradient-to-r from-green-400 to-green-600 hover:from-green-500 hover:to-green-700 text-white px-5 py-2 rounded-lg mt-2 font-semibold shadow">+ Add Gold Item</button>
               </div>
+
+              {/* All Items Together Photo Section - Only show when there are multiple gold items */}
+              {formData.goldItems.length > 1 && (
+                <div className="mt-8 p-6 bg-gradient-to-r from-purple-50 to-pink-50 rounded-xl border border-purple-200">
+                  <div className="flex items-center gap-3 mb-4">
+                    <div className="w-10 h-10 bg-purple-100 rounded-lg flex items-center justify-center">
+                      <span className="text-purple-600 text-xl">📷</span>
+                    </div>
+                    <div>
+                      <h3 className="text-lg font-semibold text-purple-800">All Gold Items Together</h3>
+                      <p className="text-sm text-purple-600">Take a single photo showing all gold items together</p>
+                    </div>
+                  </div>
+                  <PhotoUpload
+                    loanId="temp" // Will be replaced when loan is created
+                    goldItemIndex={-1} // Special index for "all items together"
+                    token={token}
+                    onPhotosChange={handleAllItemsTogetherPhotoChange}
+                    maxPhotos={1}
+                    className="max-w-full"
+                  />
+                </div>
+              )}
             <div className="space-y-4 mt-8">
               <h2 className="flex items-center gap-2 text-xl font-bold text-yellow-700 mb-2"><span>💰</span> Loan Details</h2>
               <div className="grid grid-cols-1 md:grid-cols-3 gap-6">

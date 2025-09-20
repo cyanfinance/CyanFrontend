@@ -12,6 +12,7 @@ interface Payment {
   installmentNumber: number;
   transactionId?: string;
   bankName: string;
+  remainingBalance?: number;
 }
 
 interface Loan {
@@ -78,28 +79,47 @@ const CustomerDashboard = () => {
   }, [authToken]);
 
   const downloadPaymentReceipt = async (loanId: string, paymentId: string) => {
-    const token = authToken || localStorage.getItem('token');
     try {
-      const response = await fetch(`${API_URL}/loans/${loanId}/payments/${paymentId}/receipt`, {
-        headers: { 'x-auth-token': token || '' }
-      });
+      console.log(`=== DOWNLOAD FUNCTION CALLED ===`);
+      console.log(`Loan ID: ${loanId}`);
+      console.log(`Payment ID: ${paymentId}`);
       
-      if (!response.ok) {
-        throw new Error('Failed to download receipt');
+      // Find the loan and payment data
+      const loan = loans.find(l => l._id === loanId);
+      if (!loan) {
+        throw new Error('Loan not found');
       }
       
-      const blob = await response.blob();
-      const url = window.URL.createObjectURL(blob);
-      const a = document.createElement('a');
-      a.href = url;
-      a.download = `PaymentReceipt_${loanId}_${paymentId}.pdf`;
-      document.body.appendChild(a);
-      a.click();
-      window.URL.revokeObjectURL(url);
-      document.body.removeChild(a);
+      const payment = loan.payments?.find(p => p._id === paymentId);
+      if (!payment) {
+        throw new Error('Payment not found');
+      }
+      
+      // Import the frontend PDF generator
+      const { downloadReceipt } = await import('../../utils/pdfGenerator');
+      
+      // Calculate the correct values for this specific payment
+      const remainingBalanceAtTime = payment.remainingBalance || (loan.amount - (loan.totalPaid || 0));
+      const totalPaidAtTime = remainingBalanceAtTime + payment.amount;
+      
+      const receiptData = {
+        customerName: user.name || 'Customer',
+        paymentDate: payment.date,
+        paymentAmount: payment.amount,
+        totalLoanAmount: loan.amount,
+        totalPaid: totalPaidAtTime,
+        remainingBalance: remainingBalanceAtTime,
+        loanId: loan.loanId,
+        receiptNumber: `${loan.loanId}_${payment.installmentNumber}`
+      };
+      
+      console.log(`Generating receipt with data:`, receiptData);
+      await downloadReceipt(receiptData);
+      console.log(`=== DOWNLOAD COMPLETED ===`);
+      
     } catch (err) {
-      console.error('Error downloading receipt:', err);
-      alert('Failed to download receipt');
+      console.error('Error generating receipt:', err);
+      alert('Failed to generate receipt');
     }
   };
 
@@ -121,6 +141,11 @@ const CustomerDashboard = () => {
   };
 
   const calculateRemainingBalance = (loan: Loan): number => {
+    // If loan is closed with 0 remaining balance, return 0
+    if (loan.status === 'closed' && loan.remainingBalance === 0) {
+      return 0;
+    }
+    
     const amount = ensureNumber(loan.amount);
     const totalPaid = ensureNumber(loan.totalPaid);
     return Math.max(0, amount - totalPaid);
@@ -443,7 +468,7 @@ const CustomerDashboard = () => {
                   </div>
                   <div className="bg-white/60 backdrop-blur-sm p-4 rounded-xl border border-white/50 shadow-sm">
                     <p className="text-sm text-gray-600 mb-1">Interest Rate</p>
-                    <p className="font-bold text-gray-800">{loan.interestRate}%</p>
+                    <p className="font-bold text-gray-800">{Number(loan.interestRate)}%</p>
                   </div>
                   <div className="bg-white/60 backdrop-blur-sm p-4 rounded-xl border border-white/50 shadow-sm">
                     <p className="text-sm text-gray-600 mb-1">Payment Type</p>
@@ -474,6 +499,34 @@ const CustomerDashboard = () => {
                       <span>View Installments</span>
                     </button>
                   )}
+                  <button
+                    onClick={async () => {
+                      try {
+                        const token = authToken || localStorage.getItem('token');
+                        const response = await fetch(`${API_URL}/loans/${loan._id}/receipt`, {
+                          headers: { 'x-auth-token': token || '' }
+                        });
+                        if (!response.ok) {
+                          alert('Failed to download receipt');
+                          return;
+                        }
+                        const blob = await response.blob();
+                        const url = window.URL.createObjectURL(blob);
+                        const a = document.createElement('a');
+                        a.href = url;
+                        a.download = `LoanReceipt_${loan.loanId}.pdf`;
+                        a.click();
+                        window.URL.revokeObjectURL(url);
+                      } catch (error) {
+                        console.error('Error downloading receipt:', error);
+                        alert('Failed to download receipt');
+                      }
+                    }}
+                    className="bg-gradient-to-r from-purple-600 to-purple-700 text-white px-6 py-3 rounded-xl hover:from-purple-700 hover:to-purple-800 transition-all duration-300 shadow-lg hover:shadow-xl flex items-center justify-center space-x-2 group"
+                  >
+                    <span className="group-hover:scale-110 transition-transform">📄</span>
+                    <span>Download Receipt</span>
+                  </button>
                 </div>
               </div>
             ))}
@@ -545,7 +598,7 @@ const CustomerDashboard = () => {
                       </tr>
                     </thead>
                     <tbody>
-                      {selectedLoan.payments.map((payment: Payment) => (
+                      {selectedLoan.payments.map((payment: Payment, index: number) => (
                         <tr key={payment._id} className="border-b">
                           <td className="px-4 py-2">{new Date(payment.date).toLocaleDateString()}</td>
                           <td className="px-4 py-2">{formatCurrency(payment.amount)}</td>
@@ -567,7 +620,17 @@ const CustomerDashboard = () => {
                           </td>
                           <td className="px-4 py-2">
                             <button
-                              onClick={() => downloadPaymentReceipt(selectedLoan._id, payment._id)}
+                              onClick={() => {
+                                console.log(`=== DOWNLOADING RECEIPT FOR PAYMENT ${index + 1} ===`);
+                                console.log(`Loan ID: ${selectedLoan._id}`);
+                                console.log(`Payment ID: ${payment._id}`);
+                                console.log(`Payment Amount: ₹${payment.amount}`);
+                                console.log(`Payment Date: ${payment.date}`);
+                                console.log(`Payment Method: ${payment.method}`);
+                                console.log(`Installment: ${payment.installmentNumber}`);
+                                console.log(`Full Payment Object:`, payment);
+                                downloadPaymentReceipt(selectedLoan._id, payment._id);
+                              }}
                               className="bg-gradient-to-r from-blue-600 to-blue-700 text-white px-4 py-2 rounded-lg text-sm hover:from-blue-700 hover:to-blue-800 transition-all duration-300 shadow-md hover:shadow-lg flex items-center space-x-1"
                             >
                               <span>📄</span>
