@@ -75,10 +75,16 @@ export const generatePaymentReceipt = async (data: PaymentReceiptData): Promise<
     }
   }
   
+  // Final check: if we still don't have a valid logo, use empty string to trigger text fallback
+  if (logoBase64 && logoBase64.includes('iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNkYPhfDwAChwGA60e6kgAAAABJRU5ErkJggg==')) {
+    console.log('⚠️ Detected fallback logo, using text instead');
+    logoBase64 = '';
+  }
+  
   console.log('📊 Logo loading result:', logoBase64 ? 'SUCCESS' : 'FAILED');
   
   // Add logo if available, otherwise use text
-  if (logoBase64 && logoBase64.length > 1000) {
+  if (logoBase64 && logoBase64.length > 1000 && !logoBase64.includes('iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNkYPhfDwAChwGA60e6kgAAAABJRU5ErkJggg==')) {
     try {
       console.log('✅ Adding logo image to PDF');
       // Add logo image (resize to fit nicely)
@@ -96,7 +102,7 @@ export const generatePaymentReceipt = async (data: PaymentReceiptData): Promise<
       addTextLogo(doc, pageWidth / 2, 25, pageWidth);
     }
   } else {
-    console.log('⚠️ Using text-only logo (no valid image loaded)');
+    console.log('⚠️ Using text-only logo (no valid image loaded or fallback detected)');
     // Use text logo only when logo loading fails
     addTextLogo(doc, pageWidth / 2, 25, pageWidth);
   }
@@ -148,13 +154,13 @@ export const generatePaymentReceipt = async (data: PaymentReceiptData): Promise<
       fillColor: [255, 255, 255] // White background for all cells
     },
     columnStyles: {
-      0: { cellWidth: 18 }, // Date
-      1: { cellWidth: 25 }, // Receipt No
-      2: { cellWidth: 22 }, // Customer Name
-      3: { cellWidth: 22 }, // Payment Amount
-      4: { cellWidth: 20 }, // Total Paid
-      5: { cellWidth: 22 }, // Total Loan Amount
-      6: { cellWidth: 20 }  // To Be Paid
+      0: { cellWidth: 16 }, // Date
+      1: { cellWidth: 22 }, // Receipt No
+      2: { cellWidth: 20 }, // Customer Name
+      3: { cellWidth: 20 }, // Payment Amount
+      4: { cellWidth: 18 }, // Total Paid
+      5: { cellWidth: 20 }, // Total Loan Amount
+      6: { cellWidth: 18 }  // To Be Paid
     }
   });
   
