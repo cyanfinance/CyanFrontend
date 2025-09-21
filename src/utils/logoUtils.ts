@@ -3,6 +3,14 @@
 // Production logo path - will be resolved by Vite during build
 const PRODUCTION_LOGO_PATH = '/cyanlogo.png';
 
+// Fallback base64 logo (simple 1x1 transparent PNG)
+const FALLBACK_LOGO_BASE64 = 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNkYPhfDwAChwGA60e6kgAAAABJRU5ErkJggg==';
+
+// Check if the loaded logo is a fallback (very small base64)
+export const isFallbackLogo = (base64: string): boolean => {
+  return base64 === FALLBACK_LOGO_BASE64 || base64.length < 200;
+};
+
 /**
  * Convert image to base64 for embedding in PDFs and print content
  * @param imagePath - Path to the image file
@@ -72,8 +80,8 @@ export const getLogoBase64 = async (): Promise<string> => {
   const possiblePaths = [
     '/cyanlogo.png',           // Public directory (production)
     './cyanlogo.png',          // Relative path
+    'favicon.png',             // Root directory favicon
     '/favicon.png',            // Alternative logo
-    '/logo192.png',            // React default logo
     'cyanlogo.png'             // Simple filename
   ];
   
@@ -90,8 +98,8 @@ export const getLogoBase64 = async (): Promise<string> => {
     }
   }
   
-  console.warn('⚠️ No logo could be loaded from any path, using text fallback');
-  return '';
+  console.warn('⚠️ No logo could be loaded from any path, using fallback base64 logo');
+  return FALLBACK_LOGO_BASE64;
 };
 
 /**
@@ -99,7 +107,7 @@ export const getLogoBase64 = async (): Promise<string> => {
  * @returns Promise<string> - Base64 encoded logo or empty string if failed
  */
 export const getLogoBase64ViaFetch = async (): Promise<string> => {
-  const fetchPaths = ['/cyanlogo.png', './cyanlogo.png', 'cyanlogo.png'];
+  const fetchPaths = ['/cyanlogo.png', './cyanlogo.png', 'favicon.png', '/favicon.png', 'cyanlogo.png'];
   
   for (const path of fetchPaths) {
     try {
@@ -137,8 +145,8 @@ export const getLogoBase64ViaFetch = async (): Promise<string> => {
     }
   }
   
-  console.warn('❌ All fetch paths failed for logo loading');
-  return '';
+  console.warn('❌ All fetch paths failed for logo loading, using fallback base64 logo');
+  return FALLBACK_LOGO_BASE64;
 };
 
 /**
