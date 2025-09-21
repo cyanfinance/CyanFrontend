@@ -29,15 +29,32 @@ export const generatePaymentReceipt = async (data: PaymentReceiptData): Promise<
       const blob = await response.blob();
       logoBase64 = await new Promise<string>((resolve) => {
         const reader = new FileReader();
-        reader.onload = () => resolve(reader.result as string);
-        reader.onerror = () => resolve('');
+        reader.onload = () => {
+          const result = reader.result as string;
+          // Validate the base64 data
+          if (result && result.startsWith('data:image/png;base64,') && result.length > 1000) {
+            // Test if the base64 is valid by creating a test image
+            const testImg = new Image();
+            testImg.onload = () => {
+              console.log('✅ Logo loaded via fetch, length:', result.length);
+              resolve(result);
+            };
+            testImg.onerror = () => {
+              console.warn('❌ Logo validation failed - corrupted data');
+              resolve('');
+            };
+            testImg.src = result;
+          } else {
+            console.warn('❌ Invalid logo data format');
+            resolve('');
+          }
+        };
+        reader.onerror = () => {
+          console.warn('❌ FileReader error');
+          resolve('');
+        };
         reader.readAsDataURL(blob);
       });
-      if (logoBase64 && logoBase64.length > 1000) {
-        console.log('✅ Logo loaded via fetch, length:', logoBase64.length);
-      } else {
-        logoBase64 = '';
-      }
     }
   } catch (error) {
     console.warn('❌ Fetch method failed:', error);
@@ -68,8 +85,11 @@ export const generatePaymentReceipt = async (data: PaymentReceiptData): Promise<
       const logoWidth = 40;
       const logoHeight = 20;
       const logoX = (pageWidth - logoWidth) / 2;
+      
+      // Try to add the image with error handling
       doc.addImage(logoBase64, 'PNG', logoX, 10, logoWidth, logoHeight);
-      // No additional text needed since logo already contains the company name
+      console.log('✅ Logo successfully added to PDF');
+      
     } catch (error) {
       console.warn('❌ Failed to add logo image to PDF:', error);
       console.log('⚠️ Falling back to text logo due to image error');
@@ -128,13 +148,13 @@ export const generatePaymentReceipt = async (data: PaymentReceiptData): Promise<
       fillColor: [255, 255, 255] // White background for all cells
     },
     columnStyles: {
-      0: { cellWidth: 20 }, // Date
-      1: { cellWidth: 30 }, // Receipt No
-      2: { cellWidth: 25 }, // Customer Name
-      3: { cellWidth: 25 }, // Payment Amount
-      4: { cellWidth: 25 }, // Total Paid
-      5: { cellWidth: 25 }, // Total Loan Amount
-      6: { cellWidth: 25 }  // To Be Paid
+      0: { cellWidth: 18 }, // Date
+      1: { cellWidth: 25 }, // Receipt No
+      2: { cellWidth: 22 }, // Customer Name
+      3: { cellWidth: 22 }, // Payment Amount
+      4: { cellWidth: 20 }, // Total Paid
+      5: { cellWidth: 22 }, // Total Loan Amount
+      6: { cellWidth: 20 }  // To Be Paid
     }
   });
   
