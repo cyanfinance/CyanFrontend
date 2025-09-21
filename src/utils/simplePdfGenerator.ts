@@ -42,40 +42,52 @@ const loadLogoAsBase64 = async (): Promise<string> => {
       console.log(`🔄 Attempting to load logo from: ${path}`);
       const response = await fetch(path);
       if (response.ok) {
-        const blob = await response.blob();
-        return new Promise((resolve) => {
-          const reader = new FileReader();
-          reader.onload = () => {
-            const result = reader.result as string;
-            console.log(`🔍 Logo data from ${path}:`, {
-              length: result?.length,
-              hasDataUrl: result?.includes('data:image/png;base64,'),
-              hasFallback: result?.includes('iVBORw0KGgoAAAANs...'),
-              firstChars: result?.substring(0, 50)
-            });
-            
-            // Validate the base64 data - check for proper PNG header
-            if (result && result.length > 1000 && 
-                result.includes('data:image/png;base64,')) {
-              // Check if it's the fallback logo
-              if (result.includes('iVBORw0KGgoAAAANs...')) {
-                console.warn(`Fallback logo detected from ${path}, trying next path`);
-                resolve('');
-              } else {
-                console.log(`✅ Logo loaded successfully from: ${path}`);
-                resolve(result);
-              }
-            } else {
-              console.warn(`Invalid logo data from ${path} (length: ${result?.length}), trying next path`);
-              resolve('');
-            }
-          };
-          reader.onerror = () => {
-            console.warn(`Error reading logo file from ${path}`);
-            resolve('');
-          };
-          reader.readAsDataURL(blob);
+        // Check if the response is actually an image
+        const contentType = response.headers.get('content-type');
+        console.log(`📄 Response from ${path}:`, {
+          status: response.status,
+          contentType: contentType,
+          ok: response.ok
         });
+        
+        if (contentType && contentType.startsWith('image/')) {
+          const blob = await response.blob();
+          return new Promise((resolve) => {
+            const reader = new FileReader();
+            reader.onload = () => {
+              const result = reader.result as string;
+              console.log(`🔍 Logo data from ${path}:`, {
+                length: result?.length,
+                hasDataUrl: result?.includes('data:image/png;base64,'),
+                hasFallback: result?.includes('iVBORw0KGgoAAAANs...'),
+                firstChars: result?.substring(0, 50)
+              });
+              
+              // Validate the base64 data - check for proper PNG header
+              if (result && result.length > 1000 && 
+                  result.includes('data:image/png;base64,')) {
+                // Check if it's the fallback logo
+                if (result.includes('iVBORw0KGgoAAAANs...')) {
+                  console.warn(`Fallback logo detected from ${path}, trying next path`);
+                  resolve('');
+                } else {
+                  console.log(`✅ Logo loaded successfully from: ${path}`);
+                  resolve(result);
+                }
+              } else {
+                console.warn(`Invalid logo data from ${path} (length: ${result?.length}), trying next path`);
+                resolve('');
+              }
+            };
+            reader.onerror = () => {
+              console.warn(`Error reading logo file from ${path}`);
+              resolve('');
+            };
+            reader.readAsDataURL(blob);
+          });
+        } else {
+          console.warn(`Response from ${path} is not an image (content-type: ${contentType}), trying next path`);
+        }
       } else {
         console.warn(`Failed to fetch logo from ${path}: ${response.status} ${response.statusText}`);
       }
