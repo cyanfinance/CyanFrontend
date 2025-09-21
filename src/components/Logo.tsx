@@ -1,8 +1,8 @@
 import React, { useState } from 'react';
 // Import the logo directly
-import cyanlogo1 from '../public/cyanlogo1.png';
-import cyanlogo from '../public/cyanlogo.png';
-import favicon from '../public/favicon.png';
+import cyanlogo1 from '/cyanlogo1.png?url';
+import cyanlogo from '/cyanlogo.png?url';
+import favicon from '/favicon.png?url';
 
 interface LogoProps {
   className?: string;
