@@ -87,6 +87,38 @@ export const getLogoBase64 = async (): Promise<string> => {
 };
 
 /**
+ * Alternative method to load logo using fetch API (more reliable for some environments)
+ * @returns Promise<string> - Base64 encoded logo or empty string if failed
+ */
+export const getLogoBase64ViaFetch = async (): Promise<string> => {
+  try {
+    console.log('🔄 Trying to load logo via fetch API...');
+    const response = await fetch('/cyanlogo.png');
+    if (!response.ok) {
+      throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+    }
+    
+    const blob = await response.blob();
+    return new Promise((resolve) => {
+      const reader = new FileReader();
+      reader.onload = () => {
+        const result = reader.result as string;
+        console.log('✅ Logo loaded successfully via fetch API');
+        resolve(result);
+      };
+      reader.onerror = () => {
+        console.warn('❌ Failed to convert logo blob to base64');
+        resolve('');
+      };
+      reader.readAsDataURL(blob);
+    });
+  } catch (error) {
+    console.warn('❌ Failed to load logo via fetch API:', error);
+    return '';
+  }
+};
+
+/**
  * Get the best available logo path for direct use in img src
  * @returns string - Path to logo or empty string if none found
  */

@@ -1,7 +1,7 @@
 import jsPDF from 'jspdf';
 // @ts-ignore
 import autoTable from 'jspdf-autotable';
-import { getLogoBase64, addTextLogo } from './logoUtils';
+import { getLogoBase64, getLogoBase64ViaFetch, addTextLogo } from './logoUtils';
 
 interface PaymentReceiptData {
   customerName: string;
@@ -18,17 +18,28 @@ export const generatePaymentReceipt = async (data: PaymentReceiptData): Promise<
   const doc = new jsPDF();
   const pageWidth = doc.internal.pageSize.width;
   
-  // Try to load the logo image
-  const logoBase64 = await getLogoBase64();
+  // Try to load the logo image with more detailed logging
+  console.log('🔄 Attempting to load logo for PDF generation...');
+  let logoBase64 = await getLogoBase64();
+  
+  // If the first method failed, try the fetch-based method
+  if (!logoBase64) {
+    console.log('🔄 First method failed, trying fetch-based method...');
+    logoBase64 = await getLogoBase64ViaFetch();
+  }
+  
+  console.log('📊 Logo loading result:', logoBase64 ? 'SUCCESS' : 'FAILED');
   
   // Add logo if available, otherwise use text
   if (logoBase64) {
+    console.log('✅ Adding logo image to PDF');
     // Add logo image (resize to fit nicely)
     const logoWidth = 40;
     const logoHeight = 20;
     const logoX = (pageWidth - logoWidth) / 2;
     doc.addImage(logoBase64, 'PNG', logoX, 10, logoWidth, logoHeight);
   } else {
+    console.log('⚠️ Using text fallback for logo');
     // Fallback to text logo
     addTextLogo(doc, pageWidth / 2, 25, pageWidth);
   }
