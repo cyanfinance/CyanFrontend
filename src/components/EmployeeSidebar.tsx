@@ -9,8 +9,8 @@ import {
   CreditCard
 } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
-// Import logo directly
-import cyanlogo1 from '/cyanlogo1.png?url';
+// Use public asset reference
+const cyanlogo1 = '/cyanlogo1.png';
 
 interface EmployeeSidebarProps {
   isOpen: boolean;
