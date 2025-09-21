@@ -13,8 +13,8 @@ import {
   Package,
   Gavel
 } from 'lucide-react';
-// Use public asset reference
-const cyanlogo1 = '/cyanlogo1.png';
+// Import logo directly from root
+import cyanlogo1 from '/cyanlogo1.png';
 
 interface AdminSidebarProps {
   isOpen: boolean;

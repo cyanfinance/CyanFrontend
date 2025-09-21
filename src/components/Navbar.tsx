@@ -1,8 +1,8 @@
 import React, { useEffect, useState } from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { FaBars, FaTimes, FaWhatsapp } from 'react-icons/fa';
-// Use public asset reference
-const cyanlogo1 = '/cyanlogo1.png';
+// Import logo directly from root
+import cyanlogo1 from '/cyanlogo1.png';
 import { useAuth } from '../context/AuthContext';
 import { Button } from '@mui/material';
 import NotificationBell from './NotificationBell';
