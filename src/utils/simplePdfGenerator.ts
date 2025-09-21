@@ -147,12 +147,19 @@ export const generatePaymentReceipt = async (data: PaymentReceiptData): Promise<
     ]
   ];
 
+  // Add "Payment Details" heading above the table
+  const headingY = detailsStartY + 30;
+  doc.setFontSize(12);
+  doc.setFont(undefined, 'bold'); // Bold font
+  doc.setTextColor(0, 0, 0); // Black
+  doc.text('Payment Details:', 10, headingY, { align: 'left' }); // Left aligned
+
   // Add table (position based on content above)
-  const tableStartY = detailsStartY + 30; // Adjusted spacing without separator line
+  const tableStartY = headingY + 4; // Spacing after heading
   autoTable(doc, {
     startY: tableStartY,
-    margin: { left: 10, right: 10 }, // Balanced margins for deployment
-    tableWidth: 170, // Increased width for better column spacing
+    margin: { left: 5, right: 5 }, // Balanced margins for deployment
+    tableWidth: 210, // Increased width for better column spacing
     head: [tableData[0]],
     body: tableData.slice(1),
     theme: 'grid',
@@ -160,32 +167,32 @@ export const generatePaymentReceipt = async (data: PaymentReceiptData): Promise<
       fillColor: [255, 255, 255], // White background
       textColor: [0, 0, 0],
       fontStyle: 'bold',
-      fontSize: 8, // Increased font size for better readability
+      fontSize: 9, // Slightly larger font for better readability
       lineColor: [255, 193, 7], // Golden yellow borders
       lineWidth: 0.5,
       halign: 'center', // Center align headers
-      cellPadding: 2 // Increased padding for better spacing
+      cellPadding: 1 // Increased padding for better spacing
     },
     styles: { 
-      fontSize: 8, // Increased font size for better readability
-      cellPadding: 2, // Increased padding for better spacing
+      fontSize: 9, // Slightly larger font for better readability
+      cellPadding: 1, // Reduced padding for better fit
       lineColor: [255, 193, 7], // Golden yellow borders
       lineWidth: 0.5,
       fillColor: [255, 255, 255] // White background for all cells
     },
     columnStyles: {
-      0: { cellWidth: 8, halign: 'center' }, // Date - centered for better alignment
-      1: { cellWidth: 12, halign: 'center' }, // Receipt No - centered for better alignment
-      2: { cellWidth: 10, halign: 'center' }, // Customer Name - centered for better alignment
-      3: { cellWidth: 10, halign: 'center' }, // Payment Amount - centered for better alignment
-      4: { cellWidth: 10, halign: 'center' }, // Total Paid - centered for better alignment
-      5: { cellWidth: 10, halign: 'center' }, // Total Loan Amount - centered for better alignment
-      6: { cellWidth: 8, halign: 'center' }  // To Be Paid - centered for better alignment
+      0: { cellWidth: 20, halign: 'center' }, // Date - centered
+      1: { cellWidth: 20, halign: 'center' }, // Receipt No - centered
+      2: { cellWidth: 25, halign: 'center' }, // Customer Name - centered
+      3: { cellWidth: 18, halign: 'center' }, // Payment Amount - centered
+      4: { cellWidth: 18, halign: 'center' }, // Total Paid - centered
+      5: { cellWidth: 18, halign: 'center' }, // Total Loan Amount - centered
+      6: { cellWidth: 18, halign: 'center' }  // To Be Paid - centered
     }
   });
   
   // Thank you message (position after table with proper spacing)
-  const thankYouY = tableStartY + 35; // Increased spacing to prevent overlap
+  const thankYouY = tableStartY + 30; // Increased spacing to prevent overlap
   doc.setFontSize(12);
   doc.setTextColor(0, 128, 0); // Green color
   doc.text('Thank you for your payment!', pageWidth / 2, thankYouY, { align: 'center' });
