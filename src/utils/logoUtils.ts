@@ -6,6 +6,11 @@ const PRODUCTION_LOGO_PATH = '/cyanlogo.png';
 // Fallback base64 logo (simple 1x1 transparent PNG)
 const FALLBACK_LOGO_BASE64 = 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNkYPhfDwAChwGA60e6kgAAAABJRU5ErkJggg==';
 
+// Check if we should skip logo image and use text only
+export const shouldUseTextOnly = (base64: string): boolean => {
+  return base64 === FALLBACK_LOGO_BASE64 || base64.length < 200;
+};
+
 // Check if the loaded logo is a fallback (very small base64)
 export const isFallbackLogo = (base64: string): boolean => {
   return base64 === FALLBACK_LOGO_BASE64 || base64.length < 200;

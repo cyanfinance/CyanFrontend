@@ -1,7 +1,7 @@
 import jsPDF from 'jspdf';
 // @ts-ignore
 import autoTable from 'jspdf-autotable';
-import { getLogoBase64, getLogoBase64ViaFetch, addTextLogo, isFallbackLogo } from './logoUtils';
+import { getLogoBase64, getLogoBase64ViaFetch, addTextLogo, shouldUseTextOnly, isFallbackLogo } from './logoUtils';
 
 interface PaymentReceiptData {
   customerName: string;
@@ -38,7 +38,7 @@ export const generatePaymentReceipt = async (data: PaymentReceiptData): Promise<
   console.log('📊 Logo loading result:', logoBase64 ? 'SUCCESS' : 'FAILED');
   
   // Add logo if available, otherwise use text
-  if (logoBase64 && logoBase64.length > 50) { // Check if we have a valid base64 string
+  if (logoBase64 && logoBase64.length > 50 && !shouldUseTextOnly(logoBase64)) {
     try {
       console.log('✅ Adding logo image to PDF');
       // Add logo image (resize to fit nicely)
@@ -46,20 +46,14 @@ export const generatePaymentReceipt = async (data: PaymentReceiptData): Promise<
       const logoHeight = 20;
       const logoX = (pageWidth - logoWidth) / 2;
       doc.addImage(logoBase64, 'PNG', logoX, 10, logoWidth, logoHeight);
-      
-      // If we're using a fallback logo (small base64), also add the text
-      if (isFallbackLogo(logoBase64)) {
-        console.log('📝 Adding text alongside fallback logo');
-        addTextLogo(doc, pageWidth / 2, 35, pageWidth);
-      }
     } catch (error) {
       console.warn('❌ Failed to add logo image to PDF:', error);
       console.log('⚠️ Falling back to text logo due to image error');
       addTextLogo(doc, pageWidth / 2, 25, pageWidth);
     }
   } else {
-    console.log('⚠️ Using text fallback for logo (no valid base64 data)');
-    // Fallback to text logo
+    console.log('⚠️ Using text-only logo (fallback or no valid image)');
+    // Use text logo only
     addTextLogo(doc, pageWidth / 2, 25, pageWidth);
   }
   
