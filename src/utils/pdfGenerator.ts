@@ -104,13 +104,13 @@ export const generatePaymentReceipt = async (data: PaymentReceiptData): Promise<
       fillColor: [255, 255, 255] // White background for all cells
     },
     columnStyles: {
-      0: { cellWidth: 20 }, // Date
-      1: { cellWidth: 30 }, // Receipt No
-      2: { cellWidth: 25 }, // Customer Name
-      3: { cellWidth: 25 }, // Payment Amount
-      4: { cellWidth: 20 }, // Total Paid
-      5: { cellWidth: 25 }, // Total Loan Amount
-      6: { cellWidth: 20 }  // To Be Paid
+      0: { cellWidth: 18 }, // Date
+      1: { cellWidth: 25 }, // Receipt No
+      2: { cellWidth: 22 }, // Customer Name
+      3: { cellWidth: 22 }, // Payment Amount
+      4: { cellWidth: 18 }, // Total Paid
+      5: { cellWidth: 22 }, // Total Loan Amount
+      6: { cellWidth: 18 }  // To Be Paid
     }
   });
   

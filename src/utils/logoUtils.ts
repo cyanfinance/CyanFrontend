@@ -70,11 +70,11 @@ export const getLogoBase64 = async (): Promise<string> => {
   
   // Fallback to trying other paths
   const possiblePaths = [
+    '/cyanlogo.png',           // Public directory (production)
     './cyanlogo.png',          // Relative path
     '/favicon.png',            // Alternative logo
     '/logo192.png',            // React default logo
-    '/src/pages/cyanlogo.png', // Source directory (development)
-    './src/pages/cyanlogo.png' // Relative source path
+    'cyanlogo.png'             // Simple filename
   ];
   
   for (const path of possiblePaths) {
@@ -99,38 +99,46 @@ export const getLogoBase64 = async (): Promise<string> => {
  * @returns Promise<string> - Base64 encoded logo or empty string if failed
  */
 export const getLogoBase64ViaFetch = async (): Promise<string> => {
-  try {
-    console.log('🔄 Trying to load logo via fetch API...');
-    const response = await fetch('/cyanlogo.png');
-    if (!response.ok) {
-      throw new Error(`HTTP ${response.status}: ${response.statusText}`);
-    }
-    
-    const blob = await response.blob();
-    return new Promise((resolve) => {
-      const reader = new FileReader();
-      reader.onload = () => {
-        const result = reader.result as string;
-        
-        // Validate the base64 data
-        if (result && result.length > 100 && result.startsWith('data:image/png;base64,')) {
-          console.log('✅ Logo loaded successfully via fetch API, length:', result.length);
-          resolve(result);
-        } else {
-          console.warn('❌ Invalid base64 data from fetch API');
+  const fetchPaths = ['/cyanlogo.png', './cyanlogo.png', 'cyanlogo.png'];
+  
+  for (const path of fetchPaths) {
+    try {
+      console.log('🔄 Trying to load logo via fetch API from:', path);
+      const response = await fetch(path);
+      if (!response.ok) {
+        console.warn(`❌ HTTP ${response.status}: ${response.statusText} for path: ${path}`);
+        continue;
+      }
+      
+      const blob = await response.blob();
+      return new Promise((resolve) => {
+        const reader = new FileReader();
+        reader.onload = () => {
+          const result = reader.result as string;
+          
+          // Validate the base64 data
+          if (result && result.length > 100 && result.startsWith('data:image/png;base64,')) {
+            console.log('✅ Logo loaded successfully via fetch API from:', path, 'length:', result.length);
+            resolve(result);
+          } else {
+            console.warn('❌ Invalid base64 data from fetch API for path:', path);
+            resolve('');
+          }
+        };
+        reader.onerror = () => {
+          console.warn('❌ Failed to convert logo blob to base64 for path:', path);
           resolve('');
-        }
-      };
-      reader.onerror = () => {
-        console.warn('❌ Failed to convert logo blob to base64');
-        resolve('');
-      };
-      reader.readAsDataURL(blob);
-    });
-  } catch (error) {
-    console.warn('❌ Failed to load logo via fetch API:', error);
-    return '';
+        };
+        reader.readAsDataURL(blob);
+      });
+    } catch (error) {
+      console.warn('❌ Failed to load logo via fetch API from path:', path, error);
+      continue;
+    }
   }
+  
+  console.warn('❌ All fetch paths failed for logo loading');
+  return '';
 };
 
 /**
