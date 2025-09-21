@@ -123,7 +123,7 @@ const PaymentReceipt: React.FC<{
         <div>Payment Amount: <b>INR {payment.amount}</b></div>
         <div>Total Paid: <b>INR {loan.totalPaid}</b></div>
         <div>Total Loan Amount: <b>INR {loan.amount}</b></div>
-        <div>To Be Paid: <b>INR {loan.totalPayment - loan.totalPaid}</b></div>
+        <div>To Be Paid: <b>INR {Math.max(0, (loan.totalPayment || loan.amount) - (loan.totalPaid || 0))}</b></div>
         <div>Payment Method: <b>{payment.method}</b></div>
         {payment.transactionId && <div>Transaction ID: <b>{payment.transactionId}</b></div>}
       </div>
@@ -404,14 +404,17 @@ const PaymentHistoryModal: React.FC<PaymentHistoryModalProps> = ({ loan, onClose
                                 const { downloadReceipt } = await import('../../utils/pdfGenerator');
                                 
                                 // Calculate the correct values for this specific payment
-                                const remainingBalanceAtTime = payment.remainingBalance || (loan.amount - (loan.totalPaid || 0));
-                                const totalPaidAtTime = remainingBalanceAtTime + payment.amount;
+                                // Always calculate fresh to avoid using old negative values from payment records
+                                // If customer paid more than principal, use payment amount as total loan amount (includes interest)
+                                const totalLoanAmount = (loan.totalPaid >= loan.amount) ? loan.totalPaid : (loan.totalPayment || loan.amount);
+                                const remainingBalanceAtTime = Math.max(0, totalLoanAmount - (loan.totalPaid || 0));
+                                const totalPaidAtTime = loan.totalPaid || 0;
                                 
                                 const receiptData = {
                                   customerName: loan.name || 'Customer',
                                   paymentDate: payment.date,
                                   paymentAmount: payment.amount,
-                                  totalLoanAmount: loan.amount,
+                                  totalLoanAmount: totalLoanAmount,
                                   totalPaid: totalPaidAtTime,
                                   remainingBalance: remainingBalanceAtTime,
                                   loanId: loan.loanId,

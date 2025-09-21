@@ -56,7 +56,7 @@ export const generatePaymentReceipt = async (data: PaymentReceiptData): Promise<
       `INR ${data.paymentAmount.toLocaleString()}`,
       `INR ${data.totalPaid.toLocaleString()}`,
       `INR ${data.totalLoanAmount.toLocaleString()}`,
-      `INR ${data.remainingBalance.toLocaleString()}`
+      `INR ${Math.max(0, data.remainingBalance).toLocaleString()}`
     ]
   ];
   

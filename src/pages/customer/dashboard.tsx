@@ -26,6 +26,7 @@ interface Loan {
   totalPaid: number;
   remainingBalance: number;
   monthlyPayment: number;
+  totalPayment?: number;
   payments: Payment[];
   installments: Array<{
     number: number;
@@ -99,14 +100,17 @@ const CustomerDashboard = () => {
       const { downloadReceipt } = await import('../../utils/pdfGenerator');
       
       // Calculate the correct values for this specific payment
-      const remainingBalanceAtTime = payment.remainingBalance || (loan.amount - (loan.totalPaid || 0));
-      const totalPaidAtTime = remainingBalanceAtTime + payment.amount;
+      // Always calculate fresh to avoid using old negative values from payment records
+      // If customer paid more than principal, use payment amount as total loan amount (includes interest)
+      const totalLoanAmount = (loan.totalPaid >= loan.amount) ? loan.totalPaid : (loan.totalPayment || loan.amount);
+      const remainingBalanceAtTime = Math.max(0, totalLoanAmount - (loan.totalPaid || 0));
+      const totalPaidAtTime = loan.totalPaid || 0;
       
       const receiptData = {
         customerName: user.name || 'Customer',
         paymentDate: payment.date,
         paymentAmount: payment.amount,
-        totalLoanAmount: loan.amount,
+        totalLoanAmount: totalLoanAmount,
         totalPaid: totalPaidAtTime,
         remainingBalance: remainingBalanceAtTime,
         loanId: loan.loanId,
