@@ -154,7 +154,7 @@ const RepaymentModal: React.FC<RepaymentModalProps> = ({ loan: _loan, onClose, o
 
   // Auto-set amount when calculation data is available (only if user hasn't manually set it)
   useEffect(() => {
-    if (calc && amount === 0 && !userHasManuallySetAmount) {
+    if (calc && !userHasManuallySetAmount) {
       // Set amount based on payment type
       let newAmount = 0;
       if (paymentType === 'interest') {
@@ -168,24 +168,8 @@ const RepaymentModal: React.FC<RepaymentModalProps> = ({ loan: _loan, onClose, o
       }
       setAmount(newAmount);
     }
-  }, [calc, amount, paymentType, _loan.amount, _loan.totalPaid, userHasManuallySetAmount]);
+  }, [calc, paymentType, _loan.amount, _loan.totalPaid, userHasManuallySetAmount]);
 
-  // Update amount when payment type changes (only if user hasn't manually set it)
-  useEffect(() => {
-    if (calc && !userHasManuallySetAmount) {
-      let newAmount = 0;
-      if (paymentType === 'interest') {
-        newAmount = Math.round(calc.interest || 0);
-      } else if (paymentType === 'principal') {
-        newAmount = _loan.amount - (_loan.totalPaid || 0);
-      } else {
-        // For total amount, use remaining balance (total due - already paid)
-        const remainingBalance = Math.round(calc.totalDue) - (_loan.totalPaid || 0);
-        newAmount = Math.max(remainingBalance, 0);
-      }
-      setAmount(newAmount);
-    }
-  }, [paymentType, calc, _loan.amount, _loan.totalPaid, userHasManuallySetAmount]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -222,16 +206,23 @@ const RepaymentModal: React.FC<RepaymentModalProps> = ({ loan: _loan, onClose, o
               value={repaymentDate}
               onChange={e => setRepaymentDate(e.target.value)}
               className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-yellow-500 focus:ring-yellow-500"
-              max={new Date().toISOString().slice(0, 10)}
               required
             />
+            <p className="text-xs text-gray-500 mt-1">
+              💡 Select the actual date when the payment was made (useful for holiday payments)
+            </p>
           </div>
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 mb-4">
             {calcLoading ? (
-              <div className="text-yellow-700 text-sm">Calculating interest...</div>
+              <div className="text-yellow-700 text-sm flex items-center">
+                <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-yellow-600 mr-2"></div>
+                Calculating interest for selected date...
+              </div>
             ) : calc && (
               <div className="text-sm bg-yellow-50 border-l-4 border-yellow-400 p-3 rounded">
-                <div className="font-semibold text-yellow-800 mb-2">Interest Calculation:</div>
+                <div className="font-semibold text-yellow-800 mb-2">
+                  Interest Calculation (as of {new Date(repaymentDate).toLocaleDateString()}):
+                </div>
                 <div className="space-y-1">
                   <div><b>Interest (compounded monthly):</b> ₹{calc.interest}</div>
                   <div><b>Minimum interest period:</b> {calc.minimumDays} days</div>

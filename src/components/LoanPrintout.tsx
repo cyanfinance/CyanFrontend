@@ -1,4 +1,6 @@
 import React, { useState, useEffect } from 'react';
+import { getLogoBase64, getLogoHTML } from '../utils/logoUtils';
+import Logo from './Logo';
 
 interface LoanPrintoutProps {
   loanData: {
@@ -195,22 +197,7 @@ const LoanPrintout: React.FC<LoanPrintoutProps> = ({ loanData, token, onClose })
 
 
   const generateWithoutImagesHTML = async (base64Images: {[key: string]: string} = {}) => {
-    // Convert favicon to base64 for embedding
-    const getLogoBase64 = async () => {
-      try {
-        const response = await fetch('/favicon.png');
-        const blob = await response.blob();
-        return new Promise((resolve) => {
-          const reader = new FileReader();
-          reader.onloadend = () => resolve(reader.result);
-          reader.readAsDataURL(blob);
-        });
-      } catch (error) {
-        console.error('Error loading logo:', error);
-        return null;
-      }
-    };
-
+    // Get logo as base64 for embedding
     const logoBase64 = await getLogoBase64();
     return `
         <!DOCTYPE html>
@@ -264,9 +251,9 @@ const LoanPrintout: React.FC<LoanPrintoutProps> = ({ loanData, token, onClose })
             <div class="duplicate-section">
           <div class="header">
             <div style="display: flex; align-items: center; justify-content: center; margin-bottom: 8px;">
-              ${logoBase64 ? `<img src="${logoBase64}" style="width: 40px; height: 40px; margin-right: 10px;" alt="Cyan Finance Logo" />` : ''}
+              ${getLogoHTML(logoBase64, 'logo', 'Cyan Finance Logo')}
               <div>
-            <h1>CYAN FINANCE</h1>
+                <h1>CYAN FINANCE</h1>
                 <h2>GOLD LOAN AGREEMENT</h2>
               </div>
             </div>
@@ -420,7 +407,7 @@ const LoanPrintout: React.FC<LoanPrintoutProps> = ({ loanData, token, onClose })
             <div class="duplicate-section">
               <div class="header">
                 <div style="display: flex; align-items: center; justify-content: center; margin-bottom: 8px;">
-                  ${logoBase64 ? `<img src="${logoBase64}" style="width: 40px; height: 40px; margin-right: 10px;" alt="Cyan Finance Logo" />` : ''}
+                  ${getLogoHTML(logoBase64, 'logo', 'Cyan Finance Logo')}
                   <div>
                     <h1>CYAN FINANCE</h1>
                     <h2>GOLD LOAN AGREEMENT</h2>
@@ -740,7 +727,7 @@ const LoanPrintout: React.FC<LoanPrintoutProps> = ({ loanData, token, onClose })
           {/* Company Header */}
           <div className="text-center mb-8">
             <div className="flex items-center justify-center mb-4">
-              <img src="/favicon.png" alt="Cyan Finance Logo" className="w-12 h-12 mr-4" />
+              <Logo className="mr-4" size="medium" />
               <div>
             <h1 className="text-3xl font-bold text-blue-800">CYAN FINANCE</h1>
             <p className="text-lg text-gray-600">Gold Loan Agreement</p>

@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import AdminSidebar from '../../components/AdminSidebar';
 import EmployeeSidebar from '../../components/EmployeeSidebar';
+import Logo from '../../components/Logo';
 import {
   Table,
   TableBody,
@@ -101,7 +102,7 @@ const PaymentReceipt: React.FC<{
   return (
     <div style={{ maxWidth: 600, margin: '0 auto', fontFamily: 'Arial, sans-serif', padding: 32 }}>
       <div style={{ textAlign: 'center', marginBottom: 24 }}>
-        <img src="/logo192.png" alt="Cyan Finance Logo" style={{ height: 48, marginBottom: 8 }} />
+        <Logo style={{ marginBottom: 8 }} size="medium" />
         <h2 style={{ fontWeight: 700, fontSize: 28, color: '#b58900', marginBottom: 0 }}>Payment Receipt</h2>
         <div style={{ fontSize: 14, color: '#555' }}>
           Cyan Finance<br />

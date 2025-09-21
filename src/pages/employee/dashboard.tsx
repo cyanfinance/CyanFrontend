@@ -166,14 +166,22 @@ const RepaymentModal: React.FC<RepaymentModalProps> = ({ loan: _loan, onClose, o
               value={repaymentDate}
               onChange={e => setRepaymentDate(e.target.value)}
               className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-yellow-500 focus:ring-yellow-500"
-              max={new Date().toISOString().slice(0, 10)}
               required
             />
+            <p className="text-xs text-gray-500 mt-1">
+              💡 Select the actual date when the payment was made (useful for holiday payments)
+            </p>
           </div>
           {calcLoading ? (
-            <div className="mb-4 text-yellow-700 text-sm">Calculating interest...</div>
+            <div className="mb-4 text-yellow-700 text-sm flex items-center">
+              <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-yellow-600 mr-2"></div>
+              Calculating interest for selected date...
+            </div>
           ) : calc && (
             <div className="mb-4 text-sm bg-yellow-50 border-l-4 border-yellow-400 p-2 rounded">
+              <div className="font-semibold text-yellow-800 mb-2">
+                Interest Calculation (as of {new Date(repaymentDate).toLocaleDateString()}):
+              </div>
               <div><b>Interest (compounded monthly):</b> ₹{calc.interest}</div>
               <div><b>Minimum interest period:</b> {calc.minimumDays} days</div>
               <div><b>Minimum interest amount:</b> ₹{calc.minimumInterest}</div>

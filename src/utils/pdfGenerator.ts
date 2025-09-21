@@ -1,6 +1,7 @@
 import jsPDF from 'jspdf';
 // @ts-ignore
 import autoTable from 'jspdf-autotable';
+import { getLogoBase64, addTextLogo } from './logoUtils';
 
 interface PaymentReceiptData {
   customerName: string;
@@ -13,61 +14,12 @@ interface PaymentReceiptData {
   receiptNumber: string;
 }
 
-// @ts-ignore for jspdf-autotable import
-
-// Helper function to convert image to base64
-const getImageAsBase64 = (imagePath: string): Promise<string> => {
-  return new Promise((resolve, reject) => {
-    const img = new Image();
-    img.crossOrigin = 'anonymous';
-    img.onload = () => {
-      const canvas = document.createElement('canvas');
-      const ctx = canvas.getContext('2d');
-      if (!ctx) {
-        console.warn('Could not get canvas context, using text fallback');
-        resolve('');
-        return;
-      }
-      canvas.width = img.width;
-      canvas.height = img.height;
-      ctx.drawImage(img, 0, 0);
-      const dataURL = canvas.toDataURL('image/png');
-      resolve(dataURL);
-    };
-    img.onerror = () => {
-      console.warn('Could not load logo image, using text fallback');
-      resolve(''); // Return empty string as fallback
-    };
-    img.src = imagePath;
-  });
-};
-
 export const generatePaymentReceipt = async (data: PaymentReceiptData): Promise<jsPDF> => {
   const doc = new jsPDF();
   const pageWidth = doc.internal.pageSize.width;
   
   // Try to load the logo image
-  let logoBase64 = '';
-  try {
-    // Try multiple possible paths for the logo
-    const possiblePaths = [
-      '/cyanlogo.png',
-      './cyanlogo.png',
-      '/src/pages/cyanlogo.png',
-      './src/pages/cyanlogo.png'
-    ];
-    
-    for (const path of possiblePaths) {
-      try {
-        logoBase64 = await getImageAsBase64(path);
-        if (logoBase64) break;
-      } catch (e) {
-        continue;
-      }
-    }
-  } catch (error) {
-    console.warn('Could not load logo, using text fallback');
-  }
+  const logoBase64 = await getLogoBase64();
   
   // Add logo if available, otherwise use text
   if (logoBase64) {
@@ -78,13 +30,7 @@ export const generatePaymentReceipt = async (data: PaymentReceiptData): Promise<
     doc.addImage(logoBase64, 'PNG', logoX, 10, logoWidth, logoHeight);
   } else {
     // Fallback to text logo
-    doc.setFontSize(20);
-    doc.setTextColor(0, 51, 102); // Dark blue color
-    doc.text('CYAN', pageWidth / 2, 25, { align: 'center' });
-    
-    doc.setFontSize(12);
-    doc.setTextColor(0, 0, 0);
-    doc.text('FINANCE', pageWidth / 2, 32, { align: 'center' });
+    addTextLogo(doc, pageWidth / 2, 25, pageWidth);
   }
   
   // Receipt title
@@ -164,6 +110,6 @@ export const downloadReceipt = async (data: PaymentReceiptData): Promise<void> =
 
 export const printReceipt = async (data: PaymentReceiptData): Promise<void> => {
   const doc = await generatePaymentReceipt(data);
-  doc.autoPrint({ variant: 'non-conform' });
+  // Open PDF in new window for printing
   window.open(doc.output('bloburl'), '_blank');
 }; 
