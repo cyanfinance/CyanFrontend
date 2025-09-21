@@ -32,8 +32,20 @@ const loadLogoAsBase64 = async (): Promise<string> => {
       const blob = await response.blob();
       return new Promise((resolve) => {
         const reader = new FileReader();
-        reader.onload = () => resolve(reader.result as string);
-        reader.onerror = () => resolve('');
+        reader.onload = () => {
+          const result = reader.result as string;
+          // Validate the base64 data
+          if (result && result.length > 1000 && !result.includes('iVBORw0KGgoAAAANs...')) {
+            resolve(result);
+          } else {
+            console.warn('Invalid logo data detected, using fallback');
+            resolve('');
+          }
+        };
+        reader.onerror = () => {
+          console.warn('Error reading logo file');
+          resolve('');
+        };
         reader.readAsDataURL(blob);
       });
     }
@@ -55,23 +67,9 @@ export const generatePaymentReceipt = async (data: PaymentReceiptData): Promise<
   // Load and add company logo
   const logoBase64 = await loadLogoAsBase64();
   
-  if (logoBase64 && logoBase64.length > 1000 && !logoBase64.includes('iVBORw0KGgoAAAANs...')) {
-    try {
-      // Add logo image to PDF
-      const logoWidth = 20;
-      const logoHeight = 10;
-      const logoX = (pageWidth - logoWidth) / 2;
-      
-      doc.addImage(logoBase64, 'PNG', logoX, 10, logoWidth, logoHeight);
-      console.log('✅ Logo successfully added to payment receipt');
-    } catch (error) {
-      console.warn('❌ Failed to add logo image, using text fallback:', error);
-      addTextLogo(doc, pageWidth / 2, 20, pageWidth);
-    }
-  } else {
-    console.log('⚠️ Logo not available or fallback detected, using text fallback');
-    addTextLogo(doc, pageWidth / 2, 20, pageWidth);
-  }
+  // Always use text logo for deployment reliability
+  console.log('Using text logo for deployment compatibility');
+  addTextLogo(doc, pageWidth / 2, 20, pageWidth);
 
   // Add title (position based on whether logo was displayed)
   const titleY = logoBase64 && logoBase64.length > 1000 ? 25 : 25;
@@ -123,7 +121,7 @@ export const generatePaymentReceipt = async (data: PaymentReceiptData): Promise<
   const tableStartY = detailsStartY + 30; // Adjusted spacing without separator line
   autoTable(doc, {
     startY: tableStartY,
-    margin: { left: 3, right: 3 }, // Minimal margins for deployment
+    margin: { left: 2, right: 2 }, // Ultra-minimal margins for deployment
     tableWidth: 'auto', // Auto width for better fitting
     head: [tableData[0]],
     body: tableData.slice(1),
@@ -146,13 +144,13 @@ export const generatePaymentReceipt = async (data: PaymentReceiptData): Promise<
       fillColor: [255, 255, 255] // White background for all cells
     },
     columnStyles: {
-      0: { cellWidth: 16, halign: 'left' }, // Date - further reduced for deployment
-      1: { cellWidth: 18, halign: 'left' }, // Receipt No - further reduced for deployment
-      2: { cellWidth: 18, halign: 'left' }, // Customer Name - further reduced for deployment
-      3: { cellWidth: 18, halign: 'right' }, // Payment Amount - further reduced for deployment
-      4: { cellWidth: 18, halign: 'right' }, // Total Paid - further reduced for deployment
-      5: { cellWidth: 18, halign: 'right' }, // Total Loan Amount - further reduced for deployment
-      6: { cellWidth: 16, halign: 'right' }  // To Be Paid - further reduced for deployment
+      0: { cellWidth: 14, halign: 'left' }, // Date - minimal width for deployment
+      1: { cellWidth: 16, halign: 'left' }, // Receipt No - minimal width for deployment
+      2: { cellWidth: 16, halign: 'left' }, // Customer Name - minimal width for deployment
+      3: { cellWidth: 16, halign: 'right' }, // Payment Amount - minimal width for deployment
+      4: { cellWidth: 16, halign: 'right' }, // Total Paid - minimal width for deployment
+      5: { cellWidth: 16, halign: 'right' }, // Total Loan Amount - minimal width for deployment
+      6: { cellWidth: 14, halign: 'right' }  // To Be Paid - minimal width for deployment
     }
   });
   
