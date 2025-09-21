@@ -28,15 +28,23 @@ export const getImageAsBase64 = (imagePath: string): Promise<string> => {
         canvas.height = img.height;
         ctx.drawImage(img, 0, 0);
         const dataURL = canvas.toDataURL('image/png');
-        resolve(dataURL);
+        
+        // Validate the base64 data
+        if (dataURL && dataURL.length > 100 && dataURL.startsWith('data:image/png;base64,')) {
+          console.log('✅ Successfully converted image to base64, length:', dataURL.length);
+          resolve(dataURL);
+        } else {
+          console.warn('❌ Invalid base64 data generated');
+          resolve('');
+        }
       } catch (error) {
         console.warn('Error converting image to base64:', error);
         resolve('');
       }
     };
     
-    img.onerror = () => {
-      console.warn('Could not load logo image from:', imagePath);
+    img.onerror = (error) => {
+      console.warn('Could not load logo image from:', imagePath, error);
       resolve('');
     };
     
@@ -103,8 +111,15 @@ export const getLogoBase64ViaFetch = async (): Promise<string> => {
       const reader = new FileReader();
       reader.onload = () => {
         const result = reader.result as string;
-        console.log('✅ Logo loaded successfully via fetch API');
-        resolve(result);
+        
+        // Validate the base64 data
+        if (result && result.length > 100 && result.startsWith('data:image/png;base64,')) {
+          console.log('✅ Logo loaded successfully via fetch API, length:', result.length);
+          resolve(result);
+        } else {
+          console.warn('❌ Invalid base64 data from fetch API');
+          resolve('');
+        }
       };
       reader.onerror = () => {
         console.warn('❌ Failed to convert logo blob to base64');

@@ -20,26 +20,39 @@ export const generatePaymentReceipt = async (data: PaymentReceiptData): Promise<
   
   // Try to load the logo image with more detailed logging
   console.log('🔄 Attempting to load logo for PDF generation...');
-  let logoBase64 = await getLogoBase64();
+  let logoBase64 = '';
   
-  // If the first method failed, try the fetch-based method
-  if (!logoBase64) {
-    console.log('🔄 First method failed, trying fetch-based method...');
-    logoBase64 = await getLogoBase64ViaFetch();
+  try {
+    logoBase64 = await getLogoBase64();
+    
+    // If the first method failed, try the fetch-based method
+    if (!logoBase64) {
+      console.log('🔄 First method failed, trying fetch-based method...');
+      logoBase64 = await getLogoBase64ViaFetch();
+    }
+  } catch (error) {
+    console.warn('❌ Error during logo loading:', error);
+    logoBase64 = '';
   }
   
   console.log('📊 Logo loading result:', logoBase64 ? 'SUCCESS' : 'FAILED');
   
   // Add logo if available, otherwise use text
-  if (logoBase64) {
-    console.log('✅ Adding logo image to PDF');
-    // Add logo image (resize to fit nicely)
-    const logoWidth = 40;
-    const logoHeight = 20;
-    const logoX = (pageWidth - logoWidth) / 2;
-    doc.addImage(logoBase64, 'PNG', logoX, 10, logoWidth, logoHeight);
+  if (logoBase64 && logoBase64.length > 100) { // Check if we have a valid base64 string
+    try {
+      console.log('✅ Adding logo image to PDF');
+      // Add logo image (resize to fit nicely)
+      const logoWidth = 40;
+      const logoHeight = 20;
+      const logoX = (pageWidth - logoWidth) / 2;
+      doc.addImage(logoBase64, 'PNG', logoX, 10, logoWidth, logoHeight);
+    } catch (error) {
+      console.warn('❌ Failed to add logo image to PDF:', error);
+      console.log('⚠️ Falling back to text logo due to image error');
+      addTextLogo(doc, pageWidth / 2, 25, pageWidth);
+    }
   } else {
-    console.log('⚠️ Using text fallback for logo');
+    console.log('⚠️ Using text fallback for logo (no valid base64 data)');
     // Fallback to text logo
     addTextLogo(doc, pageWidth / 2, 25, pageWidth);
   }
