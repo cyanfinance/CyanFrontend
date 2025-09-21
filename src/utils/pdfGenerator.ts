@@ -18,27 +18,50 @@ export const generatePaymentReceipt = async (data: PaymentReceiptData): Promise<
   const doc = new jsPDF();
   const pageWidth = doc.internal.pageSize.width;
   
-  // Try to load the logo image with more detailed logging
+  // Try to load the logo image with more robust fetch method
   console.log('🔄 Attempting to load logo for PDF generation...');
   let logoBase64 = '';
   
+  // Try direct fetch first (most reliable for deployed environments)
   try {
-    logoBase64 = await getLogoBase64();
-    
-    // If the first method failed, try the fetch-based method
-    if (!logoBase64) {
-      console.log('🔄 First method failed, trying fetch-based method...');
-      logoBase64 = await getLogoBase64ViaFetch();
+    const response = await fetch('/cyanlogo.png');
+    if (response.ok) {
+      const blob = await response.blob();
+      logoBase64 = await new Promise<string>((resolve) => {
+        const reader = new FileReader();
+        reader.onload = () => resolve(reader.result as string);
+        reader.onerror = () => resolve('');
+        reader.readAsDataURL(blob);
+      });
+      if (logoBase64 && logoBase64.length > 1000) {
+        console.log('✅ Logo loaded via fetch, length:', logoBase64.length);
+      } else {
+        logoBase64 = '';
+      }
     }
   } catch (error) {
-    console.warn('❌ Error during logo loading:', error);
-    logoBase64 = '';
+    console.warn('❌ Fetch method failed:', error);
+  }
+  
+  // Fallback to existing methods if fetch failed
+  if (!logoBase64) {
+    try {
+      logoBase64 = await getLogoBase64();
+      
+      if (!logoBase64) {
+        console.log('🔄 First method failed, trying fetch-based method...');
+        logoBase64 = await getLogoBase64ViaFetch();
+      }
+    } catch (error) {
+      console.warn('❌ Error during logo loading:', error);
+      logoBase64 = '';
+    }
   }
   
   console.log('📊 Logo loading result:', logoBase64 ? 'SUCCESS' : 'FAILED');
   
   // Add logo if available, otherwise use text
-  if (logoBase64 && logoBase64.length > 50 && !shouldUseTextOnly(logoBase64)) {
+  if (logoBase64 && logoBase64.length > 1000) {
     try {
       console.log('✅ Adding logo image to PDF');
       // Add logo image (resize to fit nicely)
@@ -46,14 +69,15 @@ export const generatePaymentReceipt = async (data: PaymentReceiptData): Promise<
       const logoHeight = 20;
       const logoX = (pageWidth - logoWidth) / 2;
       doc.addImage(logoBase64, 'PNG', logoX, 10, logoWidth, logoHeight);
+      // No additional text needed since logo already contains the company name
     } catch (error) {
       console.warn('❌ Failed to add logo image to PDF:', error);
       console.log('⚠️ Falling back to text logo due to image error');
       addTextLogo(doc, pageWidth / 2, 25, pageWidth);
     }
   } else {
-    console.log('⚠️ Using text-only logo (fallback or no valid image)');
-    // Use text logo only
+    console.log('⚠️ Using text-only logo (no valid image loaded)');
+    // Use text logo only when logo loading fails
     addTextLogo(doc, pageWidth / 2, 25, pageWidth);
   }
   
@@ -98,19 +122,19 @@ export const generatePaymentReceipt = async (data: PaymentReceiptData): Promise<
     },
     styles: { 
       fontSize: 9, 
-      cellPadding: 4,
+      cellPadding: 5,
       lineColor: [255, 193, 7], // Golden yellow borders
       lineWidth: 0.5,
       fillColor: [255, 255, 255] // White background for all cells
     },
     columnStyles: {
-      0: { cellWidth: 18 }, // Date
-      1: { cellWidth: 25 }, // Receipt No
-      2: { cellWidth: 22 }, // Customer Name
-      3: { cellWidth: 22 }, // Payment Amount
-      4: { cellWidth: 18 }, // Total Paid
-      5: { cellWidth: 22 }, // Total Loan Amount
-      6: { cellWidth: 18 }  // To Be Paid
+      0: { cellWidth: 20 }, // Date
+      1: { cellWidth: 30 }, // Receipt No
+      2: { cellWidth: 25 }, // Customer Name
+      3: { cellWidth: 25 }, // Payment Amount
+      4: { cellWidth: 25 }, // Total Paid
+      5: { cellWidth: 25 }, // Total Loan Amount
+      6: { cellWidth: 25 }  // To Be Paid
     }
   });
   

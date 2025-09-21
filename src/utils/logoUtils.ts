@@ -204,8 +204,8 @@ export const addTextLogo = (doc: any, x: number, y: number, width: number) => {
  * @returns string - HTML string
  */
 export const getLogoHTML = (base64Logo?: string, className: string = '', altText: string = 'Cyan Finance Logo'): string => {
-  if (base64Logo) {
-    return `<img src="${base64Logo}" class="${className}" alt="${altText}" style="max-width: 100%; height: auto;" />`;
+  if (base64Logo && base64Logo.length > 1000) {
+    return `<img src="${base64Logo}" class="${className}" alt="${altText}" style="max-width: 100%; height: auto; max-height: 40px;" />`;
   } else {
     return `
       <div class="${className}" style="text-align: center; font-family: Arial, sans-serif;">

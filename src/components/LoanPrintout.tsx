@@ -197,8 +197,34 @@ const LoanPrintout: React.FC<LoanPrintoutProps> = ({ loanData, token, onClose })
 
 
   const generateWithoutImagesHTML = async (base64Images: {[key: string]: string} = {}) => {
-    // Get logo as base64 for embedding
-    const logoBase64 = await getLogoBase64();
+    // Get logo as base64 for embedding using robust method
+    let logoBase64 = '';
+    
+    // Try direct fetch first (most reliable for deployed environments)
+    try {
+      const response = await fetch('/cyanlogo.png');
+      if (response.ok) {
+        const blob = await response.blob();
+        logoBase64 = await new Promise<string>((resolve) => {
+          const reader = new FileReader();
+          reader.onload = () => resolve(reader.result as string);
+          reader.onerror = () => resolve('');
+          reader.readAsDataURL(blob);
+        });
+        if (logoBase64 && logoBase64.length > 1000) {
+          console.log('✅ Logo loaded via fetch for loan agreement, length:', logoBase64.length);
+        } else {
+          logoBase64 = '';
+        }
+      }
+    } catch (error) {
+      console.warn('❌ Fetch method failed for loan agreement:', error);
+    }
+    
+    // Fallback to existing method if fetch failed
+    if (!logoBase64) {
+      logoBase64 = await getLogoBase64();
+    }
     return `
         <!DOCTYPE html>
         <html>
@@ -250,10 +276,11 @@ const LoanPrintout: React.FC<LoanPrintoutProps> = ({ loanData, token, onClose })
             <!-- First Copy -->
             <div class="duplicate-section">
           <div class="header">
-            <div style="display: flex; align-items: center; justify-content: center; margin-bottom: 8px;">
-              ${getLogoHTML(logoBase64, 'logo', 'Cyan Finance Logo')}
-              <div>
-                <h1>CYAN FINANCE</h1>
+            <div style="display: flex; align-items: center; margin-bottom: 8px;">
+              <div style="flex: 0 0 auto; margin-right: 10px;">
+                ${getLogoHTML(logoBase64, 'logo', 'Cyan Finance Logo')}
+              </div>
+              <div style="flex: 1; text-align: center;">
                 <h2>GOLD LOAN AGREEMENT</h2>
               </div>
             </div>
@@ -327,7 +354,7 @@ const LoanPrintout: React.FC<LoanPrintoutProps> = ({ loanData, token, onClose })
             
             <!-- Photos Section -->
             <div style="margin-top: 8px;">
-              <h4 style="font-size: 9px; font-weight: bold; margin-bottom: 4px; color: #1e40af;">Additional Photos</h4>
+              <h4 style="font-size: 9px; font-weight: bold; margin-bottom: 4px; color: #1e40af;">All Items</h4>
               <div style="display: flex; flex-wrap: wrap; gap: 4px; justify-content: flex-start;">
                 ${loanData.goldItems.map((item, index) => {
                   const itemPhotos = photos[index] || photos[String(index)] || photos['undefined'] || [];
@@ -406,10 +433,11 @@ const LoanPrintout: React.FC<LoanPrintoutProps> = ({ loanData, token, onClose })
             <!-- Second Copy -->
             <div class="duplicate-section">
               <div class="header">
-                <div style="display: flex; align-items: center; justify-content: center; margin-bottom: 8px;">
-                  ${getLogoHTML(logoBase64, 'logo', 'Cyan Finance Logo')}
-                  <div>
-                    <h1>CYAN FINANCE</h1>
+                <div style="display: flex; align-items: center; margin-bottom: 8px;">
+                  <div style="flex: 0 0 auto; margin-right: 10px;">
+                    ${getLogoHTML(logoBase64, 'logo', 'Cyan Finance Logo')}
+                  </div>
+                  <div style="flex: 1; text-align: center;">
                     <h2>GOLD LOAN AGREEMENT</h2>
                   </div>
                 </div>
@@ -483,7 +511,7 @@ const LoanPrintout: React.FC<LoanPrintoutProps> = ({ loanData, token, onClose })
                 
                 <!-- Photos Section -->
                 <div style="margin-top: 8px;">
-                  <h4 style="font-size: 9px; font-weight: bold; margin-bottom: 4px; color: #1e40af;">Additional Photos</h4>
+                  <h4 style="font-size: 9px; font-weight: bold; margin-bottom: 4px; color: #1e40af;">All Items</h4>
                   <div style="display: flex; flex-wrap: wrap; gap: 4px; justify-content: flex-start;">
                     ${loanData.goldItems.map((item, index) => {
                       const itemPhotos = photos[index] || photos[String(index)] || photos['undefined'] || [];
