@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { getLogoBase64, getLogoHTML } from '../utils/logoUtils';
+// Logo is now loaded directly from public directory
 import Logo from './Logo';
 
 interface LoanPrintoutProps {
@@ -197,10 +197,8 @@ const LoanPrintout: React.FC<LoanPrintoutProps> = ({ loanData, token, onClose })
 
 
   const generateWithoutImagesHTML = async (base64Images: {[key: string]: string} = {}) => {
-    // Get logo as base64 for embedding using robust method
+    // Load logo as base64 for embedding in print HTML
     let logoBase64 = '';
-    
-    // Try direct fetch first (most reliable for deployed environments)
     try {
       const response = await fetch('/cyanlogo.png');
       if (response.ok) {
@@ -211,19 +209,9 @@ const LoanPrintout: React.FC<LoanPrintoutProps> = ({ loanData, token, onClose })
           reader.onerror = () => resolve('');
           reader.readAsDataURL(blob);
         });
-        if (logoBase64 && logoBase64.length > 1000) {
-          console.log('✅ Logo loaded via fetch for loan agreement, length:', logoBase64.length);
-        } else {
-          logoBase64 = '';
-        }
       }
     } catch (error) {
-      console.warn('❌ Fetch method failed for loan agreement:', error);
-    }
-    
-    // Fallback to existing method if fetch failed
-    if (!logoBase64) {
-      logoBase64 = await getLogoBase64();
+      console.warn('Error loading logo for print:', error);
     }
     return `
         <!DOCTYPE html>
@@ -278,7 +266,7 @@ const LoanPrintout: React.FC<LoanPrintoutProps> = ({ loanData, token, onClose })
           <div class="header">
             <div style="display: flex; align-items: center; margin-bottom: 8px;">
               <div style="flex: 0 0 auto; margin-right: 10px;">
-                ${getLogoHTML(logoBase64, 'logo', 'Cyan Finance Logo')}
+                ${logoBase64 ? `<img src="${logoBase64}" alt="Cyan Finance Logo" style="max-width: 100%; height: auto; max-height: 40px;" />` : '<div style="font-size: 16px; font-weight: bold; color: #003366;">CYAN FINANCE</div>'}
               </div>
               <div style="flex: 1; text-align: center;">
                 <h2>GOLD LOAN AGREEMENT</h2>
@@ -435,7 +423,7 @@ const LoanPrintout: React.FC<LoanPrintoutProps> = ({ loanData, token, onClose })
               <div class="header">
                 <div style="display: flex; align-items: center; margin-bottom: 8px;">
                   <div style="flex: 0 0 auto; margin-right: 10px;">
-                    ${getLogoHTML(logoBase64, 'logo', 'Cyan Finance Logo')}
+                    ${logoBase64 ? `<img src="${logoBase64}" alt="Cyan Finance Logo" style="max-width: 100%; height: auto; max-height: 40px;" />` : '<div style="font-size: 16px; font-weight: bold; color: #003366;">CYAN FINANCE</div>'}
                   </div>
                   <div style="flex: 1; text-align: center;">
                     <h2>GOLD LOAN AGREEMENT</h2>

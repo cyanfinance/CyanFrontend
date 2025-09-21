@@ -401,7 +401,7 @@ const PaymentHistoryModal: React.FC<PaymentHistoryModalProps> = ({ loan, onClose
                             onClick={async () => {
                               try {
                                 // Import the frontend PDF generator
-                                const { downloadReceipt } = await import('../../utils/pdfGenerator');
+                                const { downloadReceipt } = await import('../../utils/simplePdfGenerator');
                                 
                                 // Calculate the correct values for this specific payment
                                 // Always calculate fresh to avoid using old negative values from payment records
