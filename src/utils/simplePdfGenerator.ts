@@ -28,13 +28,18 @@ const addTextLogo = (doc: jsPDF, x: number, y: number, pageWidth: number) => {
 const loadLogoAsBase64 = async (): Promise<string> => {
   // Try multiple approaches to load the logo
   const possiblePaths = [
+    '/cyanlogo1.png',
     '/cyanlogo.png',
     '/favicon.png',
+    window.location.origin + '/cyanlogo1.png',
     window.location.origin + '/cyanlogo.png',
     window.location.origin + '/favicon.png',
     // Try with build path for deployment
+    window.location.origin + '/build/cyanlogo1.png',
     window.location.origin + '/build/cyanlogo.png',
+    window.location.origin + '/static/cyanlogo1.png',
     window.location.origin + '/static/cyanlogo.png',
+    window.location.origin + '/assets/cyanlogo1.png',
     window.location.origin + '/assets/cyanlogo.png'
   ];
 
@@ -132,7 +137,7 @@ export const generatePaymentReceipt = async (data: PaymentReceiptData): Promise<
   // Try to add logo image, fallback to text if it fails
   if (logoBase64 && logoBase64.length > 1000 && !logoBase64.includes('iVBORw0KGgoAAAANs...')) {
     try {
-      const logoWidth = 20;
+      const logoWidth = 30;
       const logoHeight = 10;
       const logoX = (pageWidth - logoWidth) / 2;
       

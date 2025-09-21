@@ -46,7 +46,7 @@ const Navbar: React.FC<NavbarProps> = ({ isSidebarPage, sidebarOpen, toggleSideb
         <div className="flex justify-between items-center h-16 relative">
           {/* Logo - hidden on mobile */}
           <Link to="/" className="hidden md:block">
-            <Logo size="large" className="h-16 w-auto" alt="Logo" />
+            <Logo size="medium" className="h-12 w-auto" alt="Logo" />
           </Link>
 
           {/* Mobile Logo - centered */}

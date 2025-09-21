@@ -1,7 +1,7 @@
 // Logo utility functions for consistent logo handling across the application
 
 // Production logo path - will be resolved by Vite during build
-const PRODUCTION_LOGO_PATH = '/cyanlogo.png';
+const PRODUCTION_LOGO_PATH = '/cyanlogo1.png';
 
 // Fallback base64 logo (simple 1x1 transparent PNG)
 const FALLBACK_LOGO_BASE64 = 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNkYPhfDwAChwGA60e6kgAAAABJRU5ErkJggg==';
@@ -83,10 +83,13 @@ export const getLogoBase64 = async (): Promise<string> => {
   
   // Fallback to trying other paths
   const possiblePaths = [
+    '/cyanlogo1.png',          // New logo (production)
     '/cyanlogo.png',           // Public directory (production)
+    './cyanlogo1.png',         // Relative path
     './cyanlogo.png',          // Relative path
     'favicon.png',             // Root directory favicon
     '/favicon.png',            // Alternative logo
+    'cyanlogo1.png',           // Simple filename
     'cyanlogo.png'             // Simple filename
   ];
   
@@ -112,7 +115,7 @@ export const getLogoBase64 = async (): Promise<string> => {
  * @returns Promise<string> - Base64 encoded logo or empty string if failed
  */
 export const getLogoBase64ViaFetch = async (): Promise<string> => {
-  const fetchPaths = ['/cyanlogo.png', './cyanlogo.png', 'favicon.png', '/favicon.png', 'cyanlogo.png'];
+  const fetchPaths = ['/cyanlogo1.png', '/cyanlogo.png', './cyanlogo1.png', './cyanlogo.png', 'favicon.png', '/favicon.png', 'cyanlogo1.png', 'cyanlogo.png'];
   
   for (const path of fetchPaths) {
     try {
@@ -171,8 +174,14 @@ export const getLogoPath = (): string => {
 export const checkLogoExists = async (path: string): Promise<boolean> => {
   return new Promise((resolve) => {
     const img = new Image();
-    img.onload = () => resolve(true);
-    img.onerror = () => resolve(false);
+    img.onload = () => {
+      console.log(`✅ Image loaded successfully from: ${path}`);
+      resolve(true);
+    };
+    img.onerror = (error) => {
+      console.log(`❌ Image failed to load from: ${path}`, error);
+      resolve(false);
+    };
     img.src = path;
   });
 };
