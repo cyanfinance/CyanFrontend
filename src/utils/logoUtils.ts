@@ -1,5 +1,8 @@
 // Logo utility functions for consistent logo handling across the application
 
+// Production logo path - will be resolved by Vite during build
+const PRODUCTION_LOGO_PATH = '/cyanlogo.png';
+
 /**
  * Convert image to base64 for embedding in PDFs and print content
  * @param imagePath - Path to the image file
@@ -46,9 +49,19 @@ export const getImageAsBase64 = (imagePath: string): Promise<string> => {
  * @returns Promise<string> - Base64 encoded logo or empty string if none found
  */
 export const getLogoBase64 = async (): Promise<string> => {
-  // List of possible logo paths in order of preference
+  // Try the production logo path first
+  try {
+    const base64 = await getImageAsBase64(PRODUCTION_LOGO_PATH);
+    if (base64) {
+      console.log('✅ Logo loaded successfully from production path:', PRODUCTION_LOGO_PATH);
+      return base64;
+    }
+  } catch (error) {
+    console.warn('❌ Failed to load logo from production path:', error);
+  }
+  
+  // Fallback to trying other paths
   const possiblePaths = [
-    '/cyanlogo.png',           // Public directory (deployed)
     './cyanlogo.png',          // Relative path
     '/favicon.png',            // Alternative logo
     '/logo192.png',            // React default logo
@@ -78,15 +91,8 @@ export const getLogoBase64 = async (): Promise<string> => {
  * @returns string - Path to logo or empty string if none found
  */
 export const getLogoPath = (): string => {
-  // In production, these paths should work
-  const possiblePaths = [
-    '/cyanlogo.png',
-    '/favicon.png',
-    '/logo192.png'
-  ];
-  
-  // Return the first path - the browser will handle 404s gracefully
-  return possiblePaths[0];
+  // Use the production logo path first
+  return PRODUCTION_LOGO_PATH;
 };
 
 /**
