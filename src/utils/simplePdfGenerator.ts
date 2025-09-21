@@ -55,7 +55,7 @@ export const generatePaymentReceipt = async (data: PaymentReceiptData): Promise<
   // Load and add company logo
   const logoBase64 = await loadLogoAsBase64();
   
-  if (logoBase64 && logoBase64.length > 1000) {
+  if (logoBase64 && logoBase64.length > 1000 && !logoBase64.includes('iVBORw0KGgoAAAANs...')) {
     try {
       // Add logo image to PDF
       const logoWidth = 20;
@@ -66,11 +66,11 @@ export const generatePaymentReceipt = async (data: PaymentReceiptData): Promise<
       console.log('✅ Logo successfully added to payment receipt');
     } catch (error) {
       console.warn('❌ Failed to add logo image, using text fallback:', error);
-      addTextLogo(doc, pageWidth / 2, 25, pageWidth);
+      addTextLogo(doc, pageWidth / 2, 20, pageWidth);
     }
   } else {
-    console.log('⚠️ Logo not available, using text fallback');
-    addTextLogo(doc, pageWidth / 2, 25, pageWidth);
+    console.log('⚠️ Logo not available or fallback detected, using text fallback');
+    addTextLogo(doc, pageWidth / 2, 20, pageWidth);
   }
 
   // Add title (position based on whether logo was displayed)
@@ -123,7 +123,7 @@ export const generatePaymentReceipt = async (data: PaymentReceiptData): Promise<
   const tableStartY = detailsStartY + 30; // Adjusted spacing without separator line
   autoTable(doc, {
     startY: tableStartY,
-    margin: { left: 5, right: 15 }, // Reduced margins to ensure all columns fit
+    margin: { left: 3, right: 3 }, // Minimal margins for deployment
     tableWidth: 'auto', // Auto width for better fitting
     head: [tableData[0]],
     body: tableData.slice(1),
@@ -132,27 +132,27 @@ export const generatePaymentReceipt = async (data: PaymentReceiptData): Promise<
       fillColor: [255, 255, 255], // White background
       textColor: [0, 0, 0],
       fontStyle: 'bold',
-      fontSize: 8, // Improved readability
+      fontSize: 7, // Reduced for deployment
       lineColor: [255, 193, 7], // Golden yellow borders
       lineWidth: 0.5,
       halign: 'center', // Center align headers
-      cellPadding: 2 // Better spacing for readability
+      cellPadding: 2 // Reduced padding for deployment
     },
     styles: { 
-      fontSize: 8, // Improved readability
-      cellPadding: 4, // Better spacing for readability
+      fontSize: 7, // Reduced for deployment
+      cellPadding: 2, // Reduced padding for deployment
       lineColor: [255, 193, 7], // Golden yellow borders
       lineWidth: 0.5,
       fillColor: [255, 255, 255] // White background for all cells
     },
     columnStyles: {
-      0: { cellWidth: 18, halign: 'left' }, // Date - reduced for better fit
-      1: { cellWidth: 20, halign: 'left' }, // Receipt No - reduced for better fit
-      2: { cellWidth: 20, halign: 'left' }, // Customer Name - reduced for better fit
-      3: { cellWidth: 20, halign: 'right' }, // Payment Amount - reduced for better fit
-      4: { cellWidth: 20, halign: 'right' }, // Total Paid - reduced for better fit
-      5: { cellWidth: 20, halign: 'right' }, // Total Loan Amount - reduced for better fit
-      6: { cellWidth: 18, halign: 'right' }  // To Be Paid - reduced for better fit
+      0: { cellWidth: 16, halign: 'left' }, // Date - further reduced for deployment
+      1: { cellWidth: 18, halign: 'left' }, // Receipt No - further reduced for deployment
+      2: { cellWidth: 18, halign: 'left' }, // Customer Name - further reduced for deployment
+      3: { cellWidth: 18, halign: 'right' }, // Payment Amount - further reduced for deployment
+      4: { cellWidth: 18, halign: 'right' }, // Total Paid - further reduced for deployment
+      5: { cellWidth: 18, halign: 'right' }, // Total Loan Amount - further reduced for deployment
+      6: { cellWidth: 16, halign: 'right' }  // To Be Paid - further reduced for deployment
     }
   });
   
