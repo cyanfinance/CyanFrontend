@@ -151,8 +151,8 @@ export const generatePaymentReceipt = async (data: PaymentReceiptData): Promise<
   const tableStartY = detailsStartY + 30; // Adjusted spacing without separator line
   autoTable(doc, {
     startY: tableStartY,
-    margin: { left: 15, right: 15 }, // Larger margins for deployment
-    tableWidth: 150, // Much smaller fixed width to prevent overflow
+    margin: { left: 10, right: 10 }, // Balanced margins for deployment
+    tableWidth: 170, // Increased width for better column spacing
     head: [tableData[0]],
     body: tableData.slice(1),
     theme: 'grid',
@@ -160,27 +160,27 @@ export const generatePaymentReceipt = async (data: PaymentReceiptData): Promise<
       fillColor: [255, 255, 255], // White background
       textColor: [0, 0, 0],
       fontStyle: 'bold',
-      fontSize: 7, // Balanced font size for readability and fit
+      fontSize: 8, // Increased font size for better readability
       lineColor: [255, 193, 7], // Golden yellow borders
       lineWidth: 0.5,
       halign: 'center', // Center align headers
-      cellPadding: 1 // Reduced padding for better fit
+      cellPadding: 2 // Increased padding for better spacing
     },
     styles: { 
-      fontSize: 7, // Balanced font size for readability and fit
-      cellPadding: 1, // Reduced padding for better fit
+      fontSize: 8, // Increased font size for better readability
+      cellPadding: 2, // Increased padding for better spacing
       lineColor: [255, 193, 7], // Golden yellow borders
       lineWidth: 0.5,
       fillColor: [255, 255, 255] // White background for all cells
     },
     columnStyles: {
-      0: { cellWidth: 6, halign: 'left' }, // Date - extreme minimal width
-      1: { cellWidth: 8, halign: 'left' }, // Receipt No - extreme minimal width
-      2: { cellWidth: 8, halign: 'left' }, // Customer Name - extreme minimal width
-      3: { cellWidth: 8, halign: 'right' }, // Payment Amount - extreme minimal width
-      4: { cellWidth: 8, halign: 'right' }, // Total Paid - extreme minimal width
-      5: { cellWidth: 8, halign: 'right' }, // Total Loan Amount - extreme minimal width
-      6: { cellWidth: 6, halign: 'right' }  // To Be Paid - extreme minimal width
+      0: { cellWidth: 8, halign: 'center' }, // Date - centered for better alignment
+      1: { cellWidth: 12, halign: 'center' }, // Receipt No - centered for better alignment
+      2: { cellWidth: 10, halign: 'center' }, // Customer Name - centered for better alignment
+      3: { cellWidth: 10, halign: 'center' }, // Payment Amount - centered for better alignment
+      4: { cellWidth: 10, halign: 'center' }, // Total Paid - centered for better alignment
+      5: { cellWidth: 10, halign: 'center' }, // Total Loan Amount - centered for better alignment
+      6: { cellWidth: 8, halign: 'center' }  // To Be Paid - centered for better alignment
     }
   });
   
