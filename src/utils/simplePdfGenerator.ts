@@ -26,15 +26,16 @@ const addTextLogo = (doc: jsPDF, x: number, y: number, pageWidth: number) => {
 
 // Function to load logo as base64
 const loadLogoAsBase64 = async (): Promise<string> => {
+  // Try multiple approaches to load the logo
   const possiblePaths = [
     '/cyanlogo.png',
-    './cyanlogo.png',
-    'cyanlogo.png',
     '/favicon.png',
-    'favicon.png',
-    // Try with different base paths for deployment
     window.location.origin + '/cyanlogo.png',
-    window.location.origin + '/favicon.png'
+    window.location.origin + '/favicon.png',
+    // Try with build path for deployment
+    window.location.origin + '/build/cyanlogo.png',
+    window.location.origin + '/static/cyanlogo.png',
+    window.location.origin + '/assets/cyanlogo.png'
   ];
 
   for (const path of possiblePaths) {
@@ -87,6 +88,11 @@ const loadLogoAsBase64 = async (): Promise<string> => {
           });
         } else {
           console.warn(`Response from ${path} is not an image (content-type: ${contentType}), trying next path`);
+          // If we get HTML from the first few paths, try a different approach
+          if (path === '/cyanlogo.png' && contentType === 'text/html; charset=utf-8') {
+            console.log('🚨 Standard paths return HTML, trying alternative deployment paths');
+            // Don't break, continue with other paths
+          }
         }
       } else {
         console.warn(`Failed to fetch logo from ${path}: ${response.status} ${response.statusText}`);
@@ -98,7 +104,17 @@ const loadLogoAsBase64 = async (): Promise<string> => {
   }
   
   console.warn('⚠️ No logo could be loaded from any path');
-  return '';
+  
+  // Final fallback: try to use a base64 encoded logo directly
+  try {
+    console.log('🔄 Attempting to use embedded base64 logo as final fallback');
+    // This is a small 1x1 transparent PNG as absolute last resort
+    const fallbackLogo = 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNkYPhfDwAChwGA60e6kgAAAABJRU5ErkJggg==';
+    return fallbackLogo;
+  } catch (error) {
+    console.warn('❌ Even fallback logo failed:', error);
+    return '';
+  }
 };
 
 export const generatePaymentReceipt = async (data: PaymentReceiptData): Promise<jsPDF> => {

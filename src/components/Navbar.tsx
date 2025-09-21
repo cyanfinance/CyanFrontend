@@ -5,6 +5,7 @@ import { FaBars, FaTimes, FaWhatsapp } from 'react-icons/fa';
 import { useAuth } from '../context/AuthContext';
 import { Button } from '@mui/material';
 import NotificationBell from './NotificationBell';
+import Logo from './Logo';
 
 interface NavbarProps {
   isSidebarPage?: boolean;
@@ -45,12 +46,12 @@ const Navbar: React.FC<NavbarProps> = ({ isSidebarPage, sidebarOpen, toggleSideb
         <div className="flex justify-between items-center h-16 relative">
           {/* Logo - hidden on mobile */}
           <Link to="/" className="hidden md:block">
-            <img src="/cyanlogo.png" alt="Logo" className="h-16 w-auto" />
+            <Logo size="large" className="h-16 w-auto" alt="Logo" />
           </Link>
 
           {/* Mobile Logo - centered */}
           <Link to="/" className="md:hidden absolute left-1/2 transform -translate-x-1/2">
-            <img src="/cyanlogo.png" alt="Logo" className="h-8 w-auto" />
+            <Logo size="small" className="h-8 w-auto" alt="Logo" />
           </Link>
 
           {/* Hamburger for sidebar pages on mobile */}

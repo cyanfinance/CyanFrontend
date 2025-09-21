@@ -14,6 +14,7 @@ import {
   Gavel
 } from 'lucide-react';
 // Logo will be loaded from public directory
+import Logo from './Logo';
 
 interface AdminSidebarProps {
   isOpen: boolean;
@@ -100,7 +101,7 @@ const AdminSidebar: React.FC<AdminSidebarProps> = ({ isOpen, toggleSidebar }) =>
       >
         <nav className="h-full overflow-y-auto flex flex-col">
           <div className="flex flex-col items-center py-8 bg-white/80 backdrop-blur-sm rounded-br-3xl mb-4 shadow-lg border border-white/20">
-            <img src="/cyanlogo.png" alt="Cyan Logo" className="h-14 w-auto mb-2" />
+            <Logo size="medium" className="h-14 w-auto mb-2" alt="Cyan Logo" />
             <span className="text-lg font-bold bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent tracking-wide">CYAN FINANCE</span>
           </div>
           {/* Show public links on mobile only */}
