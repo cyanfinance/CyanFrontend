@@ -43,12 +43,14 @@ const loadLogoAsBase64 = async (): Promise<string> => {
           const reader = new FileReader();
           reader.onload = () => {
             const result = reader.result as string;
-            // Validate the base64 data
-            if (result && result.length > 1000 && !result.includes('iVBORw0KGgoAAAANs...')) {
+            // Validate the base64 data - check for proper PNG header
+            if (result && result.length > 1000 && 
+                result.includes('data:image/png;base64,') && 
+                !result.includes('iVBORw0KGgoAAAANs...')) {
               console.log(`✅ Logo loaded successfully from: ${path}`);
               resolve(result);
             } else {
-              console.warn(`Invalid logo data from ${path}, trying next path`);
+              console.warn(`Invalid or corrupted logo data from ${path}, trying next path`);
               resolve('');
             }
           };
@@ -81,9 +83,23 @@ export const generatePaymentReceipt = async (data: PaymentReceiptData): Promise<
   // Load and add company logo
   const logoBase64 = await loadLogoAsBase64();
   
-  // Always use text logo for deployment reliability - PNG corruption is common
-  console.log('Using text logo for deployment compatibility');
-  addTextLogo(doc, pageWidth / 2, 20, pageWidth);
+  // Try to add logo image, fallback to text if it fails
+  if (logoBase64 && logoBase64.length > 1000 && !logoBase64.includes('iVBORw0KGgoAAAANs...')) {
+    try {
+      const logoWidth = 20;
+      const logoHeight = 10;
+      const logoX = (pageWidth - logoWidth) / 2;
+      
+      doc.addImage(logoBase64, 'PNG', logoX, 10, logoWidth, logoHeight);
+      console.log('✅ Logo successfully added to payment receipt');
+    } catch (error) {
+      console.warn('❌ Failed to add logo image, using text fallback:', error);
+      addTextLogo(doc, pageWidth / 2, 20, pageWidth);
+    }
+  } else {
+    console.log('⚠️ Logo not available, using text fallback');
+    addTextLogo(doc, pageWidth / 2, 20, pageWidth);
+  }
 
   // Add title (position based on whether logo was displayed)
   const titleY = logoBase64 && logoBase64.length > 1000 ? 25 : 25;
