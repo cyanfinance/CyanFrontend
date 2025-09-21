@@ -31,11 +31,15 @@ const loadLogoAsBase64 = async (): Promise<string> => {
     './cyanlogo.png',
     'cyanlogo.png',
     '/favicon.png',
-    'favicon.png'
+    'favicon.png',
+    // Try with different base paths for deployment
+    window.location.origin + '/cyanlogo.png',
+    window.location.origin + '/favicon.png'
   ];
 
   for (const path of possiblePaths) {
     try {
+      console.log(`🔄 Attempting to load logo from: ${path}`);
       const response = await fetch(path);
       if (response.ok) {
         const blob = await response.blob();
@@ -60,6 +64,8 @@ const loadLogoAsBase64 = async (): Promise<string> => {
           };
           reader.readAsDataURL(blob);
         });
+      } else {
+        console.warn(`Failed to fetch logo from ${path}: ${response.status} ${response.statusText}`);
       }
     } catch (error) {
       console.warn(`Error loading logo from ${path}:`, error);
