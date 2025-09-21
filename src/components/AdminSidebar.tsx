@@ -14,7 +14,7 @@ import {
   Gavel
 } from 'lucide-react';
 // Import logo directly
-import cyanlogo1 from '/cyanlogo1.png';
+import cyanlogo1 from '../public/cyanlogo1.png';
 
 interface AdminSidebarProps {
   isOpen: boolean;

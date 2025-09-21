@@ -2,7 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { FaBars, FaTimes, FaWhatsapp } from 'react-icons/fa';
 // Import logos directly
-import cyanlogo1 from '/cyanlogo1.png';
+import cyanlogo1 from '../public/cyanlogo1.png';
 import { useAuth } from '../context/AuthContext';
 import { Button } from '@mui/material';
 import NotificationBell from './NotificationBell';
