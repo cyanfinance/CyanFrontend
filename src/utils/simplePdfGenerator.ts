@@ -34,11 +34,13 @@ const loadLogoAsBase64 = async (): Promise<string> => {
     window.location.origin + '/cyanlogo1.png',
     window.location.origin + '/cyanlogo.png',
     window.location.origin + '/favicon.png',
-    // Try with build path for deployment (remove /static/ as it's not working)
+    // Try with build path for deployment
     window.location.origin + '/build/cyanlogo1.png',
     window.location.origin + '/build/cyanlogo.png',
+    // Try assets directory (for Vite bundled assets)
     window.location.origin + '/assets/cyanlogo1.png',
-    window.location.origin + '/assets/cyanlogo.png'
+    window.location.origin + '/assets/cyanlogo.png',
+    window.location.origin + '/assets/favicon.png'
   ];
 
   for (const path of possiblePaths) {
@@ -91,10 +93,9 @@ const loadLogoAsBase64 = async (): Promise<string> => {
           });
         } else {
           console.warn(`Response from ${path} is not an image (content-type: ${contentType}), trying next path`);
-          // If we get HTML from the first few paths, try a different approach
-          if (path === '/cyanlogo.png' && contentType === 'text/html; charset=utf-8') {
-            console.log('🚨 Standard paths return HTML, trying alternative deployment paths');
-            // Don't break, continue with other paths
+          // If we get HTML from multiple standard paths, likely all will return HTML
+          if ((path === '/cyanlogo.png' || path === '/cyanlogo1.png') && contentType === 'text/html; charset=utf-8') {
+            console.log('🚨 Standard paths return HTML, likely deployment issue - will try remaining paths');
           }
         }
       } else {
