@@ -47,14 +47,26 @@ const loadLogoAsBase64 = async (): Promise<string> => {
           const reader = new FileReader();
           reader.onload = () => {
             const result = reader.result as string;
+            console.log(`🔍 Logo data from ${path}:`, {
+              length: result?.length,
+              hasDataUrl: result?.includes('data:image/png;base64,'),
+              hasFallback: result?.includes('iVBORw0KGgoAAAANs...'),
+              firstChars: result?.substring(0, 50)
+            });
+            
             // Validate the base64 data - check for proper PNG header
             if (result && result.length > 1000 && 
-                result.includes('data:image/png;base64,') && 
-                !result.includes('iVBORw0KGgoAAAANs...')) {
-              console.log(`✅ Logo loaded successfully from: ${path}`);
-              resolve(result);
+                result.includes('data:image/png;base64,')) {
+              // Check if it's the fallback logo
+              if (result.includes('iVBORw0KGgoAAAANs...')) {
+                console.warn(`Fallback logo detected from ${path}, trying next path`);
+                resolve('');
+              } else {
+                console.log(`✅ Logo loaded successfully from: ${path}`);
+                resolve(result);
+              }
             } else {
-              console.warn(`Invalid or corrupted logo data from ${path}, trying next path`);
+              console.warn(`Invalid logo data from ${path} (length: ${result?.length}), trying next path`);
               resolve('');
             }
           };
