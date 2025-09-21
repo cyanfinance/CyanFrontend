@@ -9,8 +9,8 @@ import {
   CreditCard
 } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
-// Logo will be loaded from public directory
-import Logo from './Logo';
+// Import logo directly
+import cyanlogo1 from '/cyanlogo1.png';
 
 interface EmployeeSidebarProps {
   isOpen: boolean;
@@ -78,7 +78,7 @@ const EmployeeSidebar: React.FC<EmployeeSidebarProps> = ({ isOpen, toggleSidebar
       >
         <nav className="h-full overflow-y-auto flex flex-col">
           <div className="hidden md:flex flex-col items-center py-8 bg-white/60 rounded-br-3xl mb-4 shadow-sm">
-            <Logo size="large" className="h-16 w-auto mb-2" alt="Cyan Logo" />
+            <img src={cyanlogo1} alt="Cyan Finance Logo" className="h-16 w-auto mb-2" />
             <span className="text-lg font-bold text-cyan-800 tracking-wide">CYAN FINANCE</span>
           </div>
           {/* Show public links on mobile only */}

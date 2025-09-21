@@ -1,5 +1,8 @@
-import React, { useState, useEffect } from 'react';
-import { getLogoPath, checkLogoExists } from '../utils/logoUtils';
+import React, { useState } from 'react';
+// Import the logo directly
+import cyanlogo1 from '/cyanlogo1.png';
+import cyanlogo from '/cyanlogo.png';
+import favicon from '/favicon.png';
 
 interface LogoProps {
   className?: string;
@@ -17,7 +20,7 @@ const Logo: React.FC<LogoProps> = ({
   size = 'medium'
 }) => {
   const [imageError, setImageError] = useState(false);
-  const [logoPath, setLogoPath] = useState('/cyanlogo1.png');
+  const [logoPath, setLogoPath] = useState(cyanlogo1);
 
   const sizeClasses = {
     small: 'h-8 w-auto',
@@ -31,52 +34,17 @@ const Logo: React.FC<LogoProps> = ({
     large: { height: 64, width: 'auto' }
   };
 
-  // Check for logo availability on component mount
-  useEffect(() => {
-    const checkLogo = async () => {
-      const possiblePaths = [
-        '/cyanlogo1.png',
-        '/cyanlogo.png',
-        '/favicon.png',
-        './cyanlogo1.png',
-        './cyanlogo.png',
-        './favicon.png',
-        'cyanlogo1.png',
-        'cyanlogo.png',
-        'favicon.png',
-        window.location.origin + '/cyanlogo1.png',
-        window.location.origin + '/cyanlogo.png',
-        window.location.origin + '/favicon.png',
-        // Try with different build paths
-        window.location.origin + '/dist/cyanlogo1.png',
-        window.location.origin + '/dist/cyanlogo.png',
-        window.location.origin + '/assets/cyanlogo1.png',
-        window.location.origin + '/assets/cyanlogo.png',
-        window.location.origin + '/static/cyanlogo1.png',
-        window.location.origin + '/static/cyanlogo.png'
-      ];
-
-      console.log('🔍 Checking logo paths...');
-      for (const path of possiblePaths) {
-        console.log(`🔄 Testing path: ${path}`);
-        const exists = await checkLogoExists(path);
-        if (exists) {
-          console.log('✅ Logo found at:', path);
-          setLogoPath(path);
-          return;
-        } else {
-          console.log('❌ Logo not found at:', path);
-        }
-      }
-      console.warn('⚠️ No logo found in any path, will use fallback text');
-    };
-
-    checkLogo();
-  }, []);
-
+  // Try different imported logos if the first one fails
   const handleImageError = () => {
-    console.warn('❌ Logo image failed to load, using fallback text');
-    setImageError(true);
+    console.warn('❌ Primary logo failed to load, trying fallback');
+    if (logoPath === cyanlogo1) {
+      setLogoPath(cyanlogo);
+    } else if (logoPath === cyanlogo) {
+      setLogoPath(favicon);
+    } else {
+      console.warn('❌ All logos failed to load, using fallback text');
+      setImageError(true);
+    }
   };
 
   if (imageError && fallbackText) {

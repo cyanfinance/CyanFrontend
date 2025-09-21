@@ -34,11 +34,9 @@ const loadLogoAsBase64 = async (): Promise<string> => {
     window.location.origin + '/cyanlogo1.png',
     window.location.origin + '/cyanlogo.png',
     window.location.origin + '/favicon.png',
-    // Try with build path for deployment
+    // Try with build path for deployment (remove /static/ as it's not working)
     window.location.origin + '/build/cyanlogo1.png',
     window.location.origin + '/build/cyanlogo.png',
-    window.location.origin + '/static/cyanlogo1.png',
-    window.location.origin + '/static/cyanlogo.png',
     window.location.origin + '/assets/cyanlogo1.png',
     window.location.origin + '/assets/cyanlogo.png'
   ];

@@ -1,11 +1,11 @@
 import React, { useEffect, useState } from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { FaBars, FaTimes, FaWhatsapp } from 'react-icons/fa';
-// Logo will be loaded from public directory
+// Import logos directly
+import cyanlogo1 from '/cyanlogo1.png';
 import { useAuth } from '../context/AuthContext';
 import { Button } from '@mui/material';
 import NotificationBell from './NotificationBell';
-import Logo from './Logo';
 
 interface NavbarProps {
   isSidebarPage?: boolean;
@@ -46,12 +46,12 @@ const Navbar: React.FC<NavbarProps> = ({ isSidebarPage, sidebarOpen, toggleSideb
         <div className="flex justify-between items-center h-16 relative">
           {/* Logo - hidden on mobile */}
           <Link to="/" className="hidden md:block">
-            <Logo size="medium" className="h-12 w-auto" alt="Logo" />
+            <img src={cyanlogo1} alt="Cyan Finance Logo" className="h-12 w-auto" />
           </Link>
 
           {/* Mobile Logo - centered */}
           <Link to="/" className="md:hidden absolute left-1/2 transform -translate-x-1/2">
-            <Logo size="small" className="h-8 w-auto" alt="Logo" />
+            <img src={cyanlogo1} alt="Cyan Finance Logo" className="h-8 w-auto" />
           </Link>
 
           {/* Hamburger for sidebar pages on mobile */}
