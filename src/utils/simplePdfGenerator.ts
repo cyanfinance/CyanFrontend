@@ -81,23 +81,9 @@ export const generatePaymentReceipt = async (data: PaymentReceiptData): Promise<
   // Load and add company logo
   const logoBase64 = await loadLogoAsBase64();
   
-  // Try to add logo image, fallback to text if it fails
-  if (logoBase64 && logoBase64.length > 1000 && !logoBase64.includes('iVBORw0KGgoAAAANs...')) {
-    try {
-      const logoWidth = 20;
-      const logoHeight = 10;
-      const logoX = (pageWidth - logoWidth) / 2;
-      
-      doc.addImage(logoBase64, 'PNG', logoX, 10, logoWidth, logoHeight);
-      console.log('✅ Logo successfully added to payment receipt');
-    } catch (error) {
-      console.warn('❌ Failed to add logo image, using text fallback:', error);
-      addTextLogo(doc, pageWidth / 2, 20, pageWidth);
-    }
-  } else {
-    console.log('⚠️ Logo not available, using text fallback');
-    addTextLogo(doc, pageWidth / 2, 20, pageWidth);
-  }
+  // Always use text logo for deployment reliability - PNG corruption is common in deployment
+  console.log('Using text logo for deployment compatibility');
+  addTextLogo(doc, pageWidth / 2, 20, pageWidth);
 
   // Add title (position based on whether logo was displayed)
   const titleY = logoBase64 && logoBase64.length > 1000 ? 25 : 25;
@@ -149,8 +135,8 @@ export const generatePaymentReceipt = async (data: PaymentReceiptData): Promise<
   const tableStartY = detailsStartY + 30; // Adjusted spacing without separator line
   autoTable(doc, {
     startY: tableStartY,
-    margin: { left: 0, right: 0 }, // Zero margins for deployment
-    tableWidth: 'auto', // Auto width for better fitting
+    margin: { left: 5, right: 5 }, // Small margins for deployment
+    tableWidth: 200, // Fixed width to prevent overflow
     head: [tableData[0]],
     body: tableData.slice(1),
     theme: 'grid',
@@ -158,27 +144,27 @@ export const generatePaymentReceipt = async (data: PaymentReceiptData): Promise<
       fillColor: [255, 255, 255], // White background
       textColor: [0, 0, 0],
       fontStyle: 'bold',
-      fontSize: 6, // Ultra-reduced for deployment
+      fontSize: 5, // Extreme minimal for deployment
       lineColor: [255, 193, 7], // Golden yellow borders
-      lineWidth: 0.5,
+      lineWidth: 0.3,
       halign: 'center', // Center align headers
-      cellPadding: 1 // Ultra-reduced padding for deployment
+      cellPadding: 0.5 // Extreme minimal padding for deployment
     },
     styles: { 
-      fontSize: 6, // Ultra-reduced for deployment
-      cellPadding: 1, // Ultra-reduced padding for deployment
+      fontSize: 5, // Extreme minimal for deployment
+      cellPadding: 0.5, // Extreme minimal padding for deployment
       lineColor: [255, 193, 7], // Golden yellow borders
-      lineWidth: 0.5,
+      lineWidth: 0.3,
       fillColor: [255, 255, 255] // White background for all cells
     },
     columnStyles: {
-      0: { cellWidth: 12, halign: 'left' }, // Date - ultra-minimal width
-      1: { cellWidth: 14, halign: 'left' }, // Receipt No - ultra-minimal width
-      2: { cellWidth: 14, halign: 'left' }, // Customer Name - ultra-minimal width
-      3: { cellWidth: 14, halign: 'right' }, // Payment Amount - ultra-minimal width
-      4: { cellWidth: 14, halign: 'right' }, // Total Paid - ultra-minimal width
-      5: { cellWidth: 14, halign: 'right' }, // Total Loan Amount - ultra-minimal width
-      6: { cellWidth: 12, halign: 'right' }  // To Be Paid - ultra-minimal width
+      0: { cellWidth: 10, halign: 'left' }, // Date - extreme minimal width
+      1: { cellWidth: 12, halign: 'left' }, // Receipt No - extreme minimal width
+      2: { cellWidth: 12, halign: 'left' }, // Customer Name - extreme minimal width
+      3: { cellWidth: 12, halign: 'right' }, // Payment Amount - extreme minimal width
+      4: { cellWidth: 12, halign: 'right' }, // Total Paid - extreme minimal width
+      5: { cellWidth: 12, halign: 'right' }, // Total Loan Amount - extreme minimal width
+      6: { cellWidth: 10, halign: 'right' }  // To Be Paid - extreme minimal width
     }
   });
   
