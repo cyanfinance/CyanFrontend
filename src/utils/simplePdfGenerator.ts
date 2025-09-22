@@ -2,6 +2,10 @@ import jsPDF from 'jspdf';
 // @ts-ignore
 import autoTable from 'jspdf-autotable';
 
+// Import logo directly for better reliability in deployment
+import cyanlogo1 from '../assets/cyanlogo1.png';
+import cyanlogo from '../assets/cyanlogo.png';
+
 interface PaymentReceiptData {
   customerName: string;
   paymentDate: string;
@@ -24,101 +28,82 @@ const addTextLogo = (doc: jsPDF, x: number, y: number, pageWidth: number) => {
   doc.text('FINANCE', x, y + 8, { align: 'center' });
 };
 
-// Function to load logo as base64
+// Function to load logo as base64 - simplified approach for deployment reliability
 const loadLogoAsBase64 = async (): Promise<string> => {
-  // Try multiple approaches to load the logo
-  const possiblePaths = [
-    '/cyanlogo1.png',
-    '/cyanlogo.png',
-    '/favicon.png',
-    window.location.origin + '/cyanlogo1.png',
-    window.location.origin + '/cyanlogo.png',
-    window.location.origin + '/favicon.png',
-    // Try with build path for deployment
-    window.location.origin + '/build/cyanlogo1.png',
-    window.location.origin + '/build/cyanlogo.png',
-    // Try assets directory (for Vite bundled assets)
-    window.location.origin + '/assets/cyanlogo1.png',
-    window.location.origin + '/assets/cyanlogo.png',
-    window.location.origin + '/assets/favicon.png'
-  ];
-
-  for (const path of possiblePaths) {
+  // Try direct imports first (most reliable)
+  const importedLogos = [cyanlogo1, cyanlogo];
+  
+  for (const logoPath of importedLogos) {
     try {
-      console.log(`🔄 Attempting to load logo from: ${path}`);
-      const response = await fetch(path);
+      console.log(`🔄 Attempting to load imported logo: ${logoPath}`);
+      const response = await fetch(logoPath);
       if (response.ok) {
-        // Check if the response is actually an image
         const contentType = response.headers.get('content-type');
-        console.log(`📄 Response from ${path}:`, {
-          status: response.status,
-          contentType: contentType,
-          ok: response.ok
-        });
-        
         if (contentType && contentType.startsWith('image/')) {
           const blob = await response.blob();
           return new Promise((resolve) => {
             const reader = new FileReader();
             reader.onload = () => {
               const result = reader.result as string;
-              console.log(`🔍 Logo data from ${path}:`, {
-                length: result?.length,
-                hasDataUrl: result?.includes('data:image/png;base64,'),
-                hasFallback: result?.includes('iVBORw0KGgoAAAANs...'),
-                firstChars: result?.substring(0, 50)
-              });
-              
-              // Validate the base64 data - check for proper PNG header
-              if (result && result.length > 1000 && 
-                  result.includes('data:image/png;base64,')) {
-                // Check if it's the fallback logo
-                if (result.includes('iVBORw0KGgoAAAANs...')) {
-                  console.warn(`Fallback logo detected from ${path}, trying next path`);
-                  resolve('');
-                } else {
-                  console.log(`✅ Logo loaded successfully from: ${path}`);
-                  resolve(result);
-                }
+              if (result && result.length > 1000 && result.includes('data:image/png;base64,')) {
+                console.log(`✅ Logo loaded successfully from imported path: ${logoPath}`);
+                resolve(result);
               } else {
-                console.warn(`Invalid logo data from ${path} (length: ${result?.length}), trying next path`);
+                console.warn(`Invalid logo data from ${logoPath}, trying next`);
                 resolve('');
               }
             };
             reader.onerror = () => {
-              console.warn(`Error reading logo file from ${path}`);
+              console.warn(`Error reading logo from ${logoPath}`);
               resolve('');
             };
             reader.readAsDataURL(blob);
           });
-        } else {
-          console.warn(`Response from ${path} is not an image (content-type: ${contentType}), trying next path`);
-          // If we get HTML from multiple standard paths, likely all will return HTML
-          if ((path === '/cyanlogo.png' || path === '/cyanlogo1.png') && contentType === 'text/html; charset=utf-8') {
-            console.log('🚨 Standard paths return HTML, likely deployment issue - will try remaining paths');
-          }
         }
-      } else {
-        console.warn(`Failed to fetch logo from ${path}: ${response.status} ${response.statusText}`);
       }
     } catch (error) {
-      console.warn(`Error loading logo from ${path}:`, error);
-      continue;
+      console.warn(`Error loading imported logo from ${logoPath}:`, error);
     }
   }
   
-  console.warn('⚠️ No logo could be loaded from any path');
+  // Fallback to public paths if imports fail
+  const publicPaths = ['/cyanlogo1.png', '/cyanlogo.png'];
   
-  // Final fallback: try to use a base64 encoded logo directly
-  try {
-    console.log('🔄 Attempting to use embedded base64 logo as final fallback');
-    // This is a small 1x1 transparent PNG as absolute last resort
-    const fallbackLogo = 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNkYPhfDwAChwGA60e6kgAAAABJRU5ErkJggg==';
-    return fallbackLogo;
-  } catch (error) {
-    console.warn('❌ Even fallback logo failed:', error);
-    return '';
+  for (const path of publicPaths) {
+    try {
+      console.log(`🔄 Attempting to load logo from public path: ${path}`);
+      const response = await fetch(path);
+      if (response.ok) {
+        const contentType = response.headers.get('content-type');
+        if (contentType && contentType.startsWith('image/')) {
+          const blob = await response.blob();
+          return new Promise((resolve) => {
+            const reader = new FileReader();
+            reader.onload = () => {
+              const result = reader.result as string;
+              if (result && result.length > 1000 && result.includes('data:image/png;base64,')) {
+                console.log(`✅ Logo loaded successfully from public path: ${path}`);
+                resolve(result);
+              } else {
+                console.warn(`Invalid logo data from ${path}, trying next`);
+                resolve('');
+              }
+            };
+            reader.onerror = () => {
+              console.warn(`Error reading logo from ${path}`);
+              resolve('');
+            };
+            reader.readAsDataURL(blob);
+          });
+        }
+      }
+    } catch (error) {
+      console.warn(`Error loading logo from ${path}:`, error);
+    }
   }
+  
+  console.log('⚠️ No logo could be loaded, using text fallback');
+  return '';
 };
 
 export const generatePaymentReceipt = async (data: PaymentReceiptData): Promise<jsPDF> => {
@@ -129,6 +114,14 @@ export const generatePaymentReceipt = async (data: PaymentReceiptData): Promise<
     format: [210, 148.5] // Custom size: 210mm width (A4 width), 148.5mm height (half of A4 height)
   });
   const pageWidth = doc.internal.pageSize.width;
+
+  // Debug environment info
+  console.log('🔍 Environment info:', {
+    origin: window.location.origin,
+    pathname: window.location.pathname,
+    isLocalhost: window.location.hostname === 'localhost',
+    isVercel: window.location.hostname.includes('vercel.app')
+  });
 
   // Load and add company logo
   const logoBase64 = await loadLogoAsBase64();
