@@ -3,6 +3,7 @@ import { Alert, CircularProgress, Card, Typography, TextField, Button } from '@m
 import AdminSidebar from '../../components/AdminSidebar';
 import { useAuth } from '../../context/AuthContext';
 import { API_URL } from '../../config';
+import { formatAmountInWords } from '../../utils/numberToWords';
 import { calculateDailyInterest, fetchEarlyRepaymentDetails } from '../../utils/api';
 import axios from 'axios';
 import Navbar from '../../components/Navbar';
@@ -623,9 +624,9 @@ const AdminDashboard = () => {
       });
       const data = await res.json();
       if (!res.ok) throw new Error(data.message || 'Calculation failed');
-      // Monthly payment = totalAmount / months
+      // Use the monthly payment from the new calculation method
       return {
-        monthlyPayment: Math.round(data.totalAmount / months),
+        monthlyPayment: data.monthlyPayment,
         totalAmount: data.totalAmount
       };
     }
@@ -706,7 +707,7 @@ const AdminDashboard = () => {
           if (!res.ok) throw new Error(data.message || 'Calculation failed');
           setFormData(prev => ({
             ...prev,
-            monthlyPayment: Math.round(data.totalAmount / months),
+            monthlyPayment: data.monthlyPayment,
             totalAmount: data.totalAmount
           }));
         } catch {
@@ -1574,6 +1575,13 @@ const AdminDashboard = () => {
                           <div>
                             <label className="block text-sm font-semibold text-gray-700">Loan Amount (₹)</label>
                             <input type="number" name="loanAmount" value={formData.loanAmount} onChange={handleInputChange} placeholder="Loan Amount" className="w-full p-3 border rounded-lg focus:ring-2 focus:ring-yellow-300 focus:border-yellow-400 transition" min="100" step="1" required autoComplete="off" />
+                            {formData.loanAmount > 0 && (
+                              <div className="mt-2 p-2 bg-blue-50 border border-blue-200 rounded-lg">
+                                <p className="text-sm text-blue-800 font-medium">
+                                  {formatAmountInWords(formData.loanAmount)}
+                                </p>
+                              </div>
+                            )}
                           </div>
                           <div>
                             <label className="block text-sm font-semibold text-gray-700">Duration (months)</label>
@@ -1582,6 +1590,20 @@ const AdminDashboard = () => {
                           <div>
                             <label className="block text-sm font-semibold text-gray-700">Monthly Payment (₹)</label>
                             <input type="number" name="monthlyPayment" value={formData.monthlyPayment} onChange={handleInputChange} placeholder="Monthly Payment" className="w-full p-3 border rounded-lg focus:ring-2 focus:ring-yellow-300 focus:border-yellow-400 transition" min="0" step="1" required autoComplete="off" />
+                            {formData.monthlyPayment > 0 && (
+                              <div className="mt-2 p-2 bg-green-50 border border-green-200 rounded-lg">
+                                <div className="text-sm text-green-800">
+                                  <div className="flex justify-between">
+                                    <span>Monthly Interest:</span>
+                                    <span className="font-semibold">₹{Math.round((formData.totalAmount - formData.loanAmount) / (formData.duration || 1)).toLocaleString()}</span>
+                                  </div>
+                                  <div className="flex justify-between">
+                                    <span>Monthly Principal:</span>
+                                    <span className="font-semibold">₹{Math.round(formData.monthlyPayment - (formData.totalAmount - formData.loanAmount) / (formData.duration || 1)).toLocaleString()}</span>
+                                  </div>
+                                </div>
+                              </div>
+                            )}
                           </div>
                           <div>
                             <label className="block text-sm font-semibold text-gray-700">Total Amount to be Paid (₹)</label>

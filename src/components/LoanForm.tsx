@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import axios from 'axios';
 import PhotoUpload from './PhotoUpload';
 import LoanPrintout from './LoanPrintout';
+import { formatAmountInWords } from '../utils/numberToWords';
 
 // Types for props
 interface GoldItem {
@@ -549,7 +550,7 @@ const LoanForm: React.FC<LoanFormProps> = ({ apiPrefix, token, user, onSuccess }
           if (!res.ok) throw new Error(data.message || 'Calculation failed');
           setFormData(prev => ({
             ...prev,
-            monthlyPayment: Math.round(data.totalAmount / months).toString(),
+            monthlyPayment: data.monthlyPayment.toString(),
             totalAmount: data.totalAmount.toString()
           }));
         } catch {
@@ -823,6 +824,13 @@ const LoanForm: React.FC<LoanFormProps> = ({ apiPrefix, token, user, onSuccess }
                 <div>
                   <label className="block text-sm font-semibold text-gray-700">Loan Amount (₹)</label>
                   <input type="number" name="loanAmount" value={formData.loanAmount} onChange={handleInputChange} placeholder="Loan Amount" className="w-full p-3 border rounded-xl focus:ring-2 focus:ring-yellow-300 focus:border-yellow-400 transition-all duration-200 bg-white/80" min="100" step="1" required />
+                  {formData.loanAmount && Number(formData.loanAmount) > 0 && (
+                    <div className="mt-2 p-2 bg-blue-50 border border-blue-200 rounded-lg">
+                      <p className="text-sm text-blue-800 font-medium">
+                        {formatAmountInWords(Number(formData.loanAmount))}
+                      </p>
+                    </div>
+                  )}
                 </div>
                 <div>
                   <label className="block text-sm font-semibold text-gray-700">Duration (months)</label>
@@ -836,6 +844,20 @@ const LoanForm: React.FC<LoanFormProps> = ({ apiPrefix, token, user, onSuccess }
                 <div>
                   <label className="block text-sm font-semibold text-gray-700">Monthly Payment (₹)</label>
                   <input type="number" name="monthlyPayment" value={formData.monthlyPayment} onChange={handleInputChange} placeholder="Monthly Payment" className="w-full p-3 border rounded-xl focus:ring-2 focus:ring-yellow-300 focus:border-yellow-400 transition-all duration-200 bg-white/80" min="0" step="1" required />
+                  {formData.monthlyPayment && Number(formData.monthlyPayment) > 0 && (
+                    <div className="mt-2 p-2 bg-green-50 border border-green-200 rounded-lg">
+                      <div className="text-sm text-green-800">
+                        <div className="flex justify-between">
+                          <span>Monthly Interest:</span>
+                          <span className="font-semibold">₹{Math.round((Number(formData.totalAmount) - Number(formData.loanAmount)) / (Number(formData.duration) || 1)).toLocaleString()}</span>
+                        </div>
+                        <div className="flex justify-between">
+                          <span>Monthly Principal:</span>
+                          <span className="font-semibold">₹{Math.round(Number(formData.monthlyPayment) - (Number(formData.totalAmount) - Number(formData.loanAmount)) / (Number(formData.duration) || 1)).toLocaleString()}</span>
+                        </div>
+                      </div>
+                    </div>
+                  )}
                 </div>
                 <div>
                   <label className="block text-sm font-semibold text-gray-700">Total Amount to be Paid (₹)</label>

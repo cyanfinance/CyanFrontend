@@ -616,7 +616,7 @@ const EmployeeDashboard = () => {
           if (!res.ok) throw new Error(data.message || 'Calculation failed');
           setFormData(prev => ({
             ...prev,
-            monthlyPayment: Math.round(data.totalAmount / months),
+            monthlyPayment: data.monthlyPayment,
             totalAmount: data.totalAmount
           }));
         } catch {
