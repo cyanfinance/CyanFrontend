@@ -2,6 +2,10 @@ import React, { useState, useEffect } from 'react';
 // Logo is now loaded directly from public directory
 import Logo from './Logo';
 
+// Import logo directly for better reliability in deployment
+import cyanlogo1 from '../assets/cyanlogo1.png';
+import cyanlogo from '../assets/cyanlogo.png';
+
 interface LoanPrintoutProps {
   loanData: {
     _id: string;
@@ -133,6 +137,84 @@ const LoanPrintout: React.FC<LoanPrintoutProps> = ({ loanData, token, onClose })
     });
   };
 
+  // Function to load logo as base64 - same approach as simplePdfGenerator.ts for deployment reliability
+  const loadLogoAsBase64 = async (): Promise<string> => {
+    // Try direct imports first (most reliable)
+    const importedLogos = [cyanlogo1, cyanlogo];
+    
+    for (const logoPath of importedLogos) {
+      try {
+        console.log(`🔄 Attempting to load imported logo: ${logoPath}`);
+        const response = await fetch(logoPath);
+        if (response.ok) {
+          const contentType = response.headers.get('content-type');
+          if (contentType && contentType.startsWith('image/')) {
+            const blob = await response.blob();
+            return new Promise((resolve) => {
+              const reader = new FileReader();
+              reader.onload = () => {
+                const result = reader.result as string;
+                if (result && result.length > 1000 && result.includes('data:image/png;base64,')) {
+                  console.log(`✅ Logo loaded successfully from imported path: ${logoPath}`);
+                  resolve(result);
+                } else {
+                  console.warn(`Invalid logo data from ${logoPath}, trying next`);
+                  resolve('');
+                }
+              };
+              reader.onerror = () => {
+                console.warn(`Error reading logo from ${logoPath}`);
+                resolve('');
+              };
+              reader.readAsDataURL(blob);
+            });
+          }
+        }
+      } catch (error) {
+        console.warn(`Error loading imported logo from ${logoPath}:`, error);
+      }
+    }
+    
+    // Fallback to public paths if imports fail
+    const publicPaths = ['/cyanlogo1.png', '/cyanlogo.png'];
+    
+    for (const path of publicPaths) {
+      try {
+        console.log(`🔄 Attempting to load logo from public path: ${path}`);
+        const response = await fetch(path);
+        if (response.ok) {
+          const contentType = response.headers.get('content-type');
+          if (contentType && contentType.startsWith('image/')) {
+            const blob = await response.blob();
+            return new Promise((resolve) => {
+              const reader = new FileReader();
+              reader.onload = () => {
+                const result = reader.result as string;
+                if (result && result.length > 1000 && result.includes('data:image/png;base64,')) {
+                  console.log(`✅ Logo loaded successfully from public path: ${path}`);
+                  resolve(result);
+                } else {
+                  console.warn(`Invalid logo data from ${path}, trying next`);
+                  resolve('');
+                }
+              };
+              reader.onerror = () => {
+                console.warn(`Error reading logo from ${path}`);
+                resolve('');
+              };
+              reader.readAsDataURL(blob);
+            });
+          }
+        }
+      } catch (error) {
+        console.warn(`Error loading logo from ${path}:`, error);
+      }
+    }
+    
+    console.log('⚠️ No logo could be loaded, using text fallback');
+    return '';
+  };
+
   const getImageAsBase64 = async (photo: any): Promise<string> => {
     try {
       console.log('Converting image to base64:', photo._id, getImageUrl(photo));
@@ -197,22 +279,8 @@ const LoanPrintout: React.FC<LoanPrintoutProps> = ({ loanData, token, onClose })
 
 
   const generateWithoutImagesHTML = async (base64Images: {[key: string]: string} = {}) => {
-    // Load logo as base64 for embedding in print HTML
-    let logoBase64 = '';
-    try {
-      const response = await fetch('/cyanlogo.png');
-      if (response.ok) {
-        const blob = await response.blob();
-        logoBase64 = await new Promise<string>((resolve) => {
-          const reader = new FileReader();
-          reader.onload = () => resolve(reader.result as string);
-          reader.onerror = () => resolve('');
-          reader.readAsDataURL(blob);
-        });
-      }
-    } catch (error) {
-      console.warn('Error loading logo for print:', error);
-    }
+    // Load logo as base64 for embedding in print HTML using robust method
+    const logoBase64 = await loadLogoAsBase64();
     return `
         <!DOCTYPE html>
         <html>
