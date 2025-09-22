@@ -21,11 +21,11 @@ interface PaymentReceiptData {
 const addTextLogo = (doc: jsPDF, x: number, y: number, pageWidth: number) => {
   doc.setFontSize(20);
   doc.setTextColor(0, 51, 102); // Dark blue
-  doc.text('CYAN', x, y, { align: 'center' });
+  doc.text('CYAN', x, y, { align: 'left' });
   
   doc.setFontSize(14);
   doc.setTextColor(0, 0, 0); // Black
-  doc.text('FINANCE', x, y + 8, { align: 'center' });
+  doc.text('FINANCE', x, y + 8, { align: 'left' });
 };
 
 // Function to load logo as base64 - simplified approach for deployment reliability
@@ -109,9 +109,9 @@ const loadLogoAsBase64 = async (): Promise<string> => {
 export const generatePaymentReceipt = async (data: PaymentReceiptData): Promise<jsPDF> => {
   // Use a custom receipt size (full A4 width, optimized height for better space utilization)
   const doc = new jsPDF({
-    orientation: 'portrait',
+    orientation: 'landscape',
     unit: 'mm',
-    format: [210, 148.5] // Custom size: 210mm width (A4 width), 148.5mm height (half of A4 height)
+    format: [210, 120] // Custom size: 210mm width (A4 width), 120mm height (reduced height)
   });
   const pageWidth = doc.internal.pageSize.width;
 
@@ -129,36 +129,36 @@ export const generatePaymentReceipt = async (data: PaymentReceiptData): Promise<
   // Try to add logo image, fallback to text if it fails
   if (logoBase64 && logoBase64.length > 1000 && !logoBase64.includes('iVBORw0KGgoAAAANs...')) {
     try {
-      const logoWidth = 30;
-      const logoHeight = 10;
-      const logoX = (pageWidth - logoWidth) / 2;
+      const logoWidth = 35;
+      const logoHeight = 16;
+      const logoX = 10; // Left margin
+      const logoY = 10; // Top margin
       
-      doc.addImage(logoBase64, 'PNG', logoX, 10, logoWidth, logoHeight);
+      doc.addImage(logoBase64, 'PNG', logoX, logoY, logoWidth, logoHeight);
       console.log('✅ Logo successfully added to payment receipt');
     } catch (error) {
       console.warn('❌ Failed to add logo image, using text fallback:', error);
-      addTextLogo(doc, pageWidth / 2, 20, pageWidth);
+      addTextLogo(doc, 10, 20, pageWidth); // Left aligned text logo
     }
   } else {
     console.log('⚠️ Logo not available, using text fallback');
-    addTextLogo(doc, pageWidth / 2, 20, pageWidth);
+    addTextLogo(doc, 10, 20, pageWidth); // Left aligned text logo
   }
 
-  // Add title (position based on whether logo was displayed)
-  const titleY = logoBase64 && logoBase64.length > 1000 ? 25 : 25;
+  // Add company details below the logo (left aligned)
+  const detailsStartY = 25; // Position below logo
+  doc.setFontSize(8);
+  doc.setTextColor(0, 0, 0);
+//   doc.text('Cyan Finance', 10, detailsStartY, { align: 'left' });
+  doc.text('BK Towers, Akkayyapalem, Visakhapatnam, Andhra Pradesh - 530016', 10, detailsStartY + 6, { align: 'left' });
+  doc.text('Phone: +91-9700049444', 10, detailsStartY + 10, { align: 'left' });
+  doc.text('Email: support@cyanfinance.in', 10, detailsStartY + 14, { align: 'left' });
+
+  // Add title (centered)
+  const titleY = detailsStartY + 22;
   doc.setFontSize(16);
   doc.setTextColor(255, 193, 7); // Golden yellow
   doc.text('Payment Receipt', pageWidth / 2, titleY, { align: 'center' });
-
-  // Add company details with proper spacing and alignment
-  const detailsStartY = titleY + 6;
-  doc.setFontSize(10);
-  doc.setTextColor(0, 0, 0);
-  doc.text('Cyan Finance', pageWidth / 2, detailsStartY, { align: 'center' });
-  doc.text('BK Towers, Akkayyapalem, Visakhapatnam', pageWidth / 2, detailsStartY + 6, { align: 'center' });
-  doc.text('Andhra Pradesh - 530016', pageWidth / 2, detailsStartY + 12, { align: 'center' });
-  doc.text('Phone: +91-9700049444', pageWidth / 2, detailsStartY + 18, { align: 'center' });
-  doc.text('Email: support@cyanfinance.in', pageWidth / 2, detailsStartY + 24, { align: 'center' });
 
   
 
@@ -191,18 +191,18 @@ export const generatePaymentReceipt = async (data: PaymentReceiptData): Promise<
   ];
 
   // Add "Payment Details" heading above the table
-  const headingY = detailsStartY + 30;
+  const headingY = titleY + 6;
   doc.setFontSize(12);
   doc.setFont(undefined, 'bold'); // Bold font
   doc.setTextColor(0, 0, 0); // Black
-  doc.text('Payment Details:', 10, headingY, { align: 'left' }); // Left aligned
+//   doc.text('Payment Details:', 10, headingY, { align: 'left' }); // Left aligned
 
   // Add table (position based on content above)
-  const tableStartY = headingY + 4; // Spacing after heading
+  const tableStartY = headingY; // No extra spacing since heading is commented out
   autoTable(doc, {
     startY: tableStartY,
-    margin: { left: 5, right: 5 }, // Balanced margins for deployment
-    tableWidth: 210, // Increased width for better column spacing
+    margin: { left: 10, right: 10 }, // Centered margins
+    tableWidth: 190, // Reduced width to allow for proper centering
     head: [tableData[0]],
     body: tableData.slice(1),
     theme: 'grid',
@@ -224,18 +224,18 @@ export const generatePaymentReceipt = async (data: PaymentReceiptData): Promise<
       fillColor: [255, 255, 255] // White background for all cells
     },
     columnStyles: {
-      0: { cellWidth: 20, halign: 'center' }, // Date - centered
-      1: { cellWidth: 20, halign: 'center' }, // Receipt No - centered
-      2: { cellWidth: 25, halign: 'center' }, // Customer Name - centered
-      3: { cellWidth: 18, halign: 'center' }, // Payment Amount - centered
-      4: { cellWidth: 18, halign: 'center' }, // Total Paid - centered
-      5: { cellWidth: 18, halign: 'center' }, // Total Loan Amount - centered
-      6: { cellWidth: 18, halign: 'center' }  // To Be Paid - centered
+      0: { cellWidth: 18, halign: 'center' }, // Date - centered
+      1: { cellWidth: 25, halign: 'center' }, // Receipt No - centered
+      2: { cellWidth: 29, halign: 'center' }, // Customer Name - centered
+      3: { cellWidth: 25, halign: 'center' }, // Payment Amount - centered
+      4: { cellWidth: 25, halign: 'center' }, // Total Paid - centered
+      5: { cellWidth: 25, halign: 'center' }, // Total Loan Amount - centered
+      6: { cellWidth: 25, halign: 'center' }  // To Be Paid - centered
     }
   });
   
   // Thank you message (position after table with proper spacing)
-  const thankYouY = tableStartY + 30; // Increased spacing to prevent overlap
+  const thankYouY = tableStartY + 25; // Optimized spacing for reduced height
   doc.setFontSize(12);
   doc.setTextColor(0, 128, 0); // Green color
   doc.text('Thank you for your payment!', pageWidth / 2, thankYouY, { align: 'center' });
@@ -243,9 +243,15 @@ export const generatePaymentReceipt = async (data: PaymentReceiptData): Promise<
   // Footer
   doc.setFontSize(8);
   doc.setTextColor(0,0,0); // Gray color
-  doc.text('Sign & Stamp', pageWidth - 20, thankYouY + 15, { align: 'right' });
+  doc.text('Sign & Stamp', pageWidth - 20, thankYouY + 8, { align: 'right' });
 
   return doc;
+};
+
+// Export function for previewing receipt
+export const previewReceipt = async (data: PaymentReceiptData): Promise<string> => {
+  const doc = await generatePaymentReceipt(data);
+  return doc.output('datauristring');
 };
 
 // Export function for downloading receipt

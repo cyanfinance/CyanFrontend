@@ -97,7 +97,7 @@ const CustomerDashboard = () => {
       }
       
       // Import the frontend PDF generator
-      const { downloadReceipt } = await import('../../utils/simplePdfGenerator');
+      const { previewReceipt } = await import('../../utils/simplePdfGenerator');
       
       // Calculate the correct values for this specific payment
       // Always calculate fresh to avoid using old negative values from payment records
@@ -118,8 +118,55 @@ const CustomerDashboard = () => {
       };
       
       console.log(`Generating receipt with data:`, receiptData);
-      await downloadReceipt(receiptData);
-      console.log(`=== DOWNLOAD COMPLETED ===`);
+      
+      // Generate preview and open in new tab
+      const pdfDataUri = await previewReceipt(receiptData);
+      const newWindow = window.open();
+      if (newWindow) {
+        newWindow.document.write(`
+          <html>
+            <head>
+              <title>Payment Receipt - ${receiptData.receiptNumber}</title>
+              <style>
+                body { margin: 0; padding: 20px; background: #f5f5f5; }
+                .container { max-width: 800px; margin: 0 auto; background: white; border-radius: 8px; box-shadow: 0 2px 10px rgba(0,0,0,0.1); }
+                .header { padding: 20px; border-bottom: 1px solid #eee; display: flex; justify-content: space-between; align-items: center; }
+                .actions { display: flex; gap: 10px; }
+                .btn { padding: 8px 16px; border: none; border-radius: 4px; cursor: pointer; font-weight: 500; }
+                .btn-primary { background: #3b82f6; color: white; }
+                .btn-secondary { background: #6b7280; color: white; }
+                .btn:hover { opacity: 0.9; }
+                iframe { width: 100%; height: 80vh; border: none; }
+              </style>
+            </head>
+            <body>
+              <div class="container">
+                <div class="header">
+                  <h2>Payment Receipt Preview</h2>
+                  <div class="actions">
+                    <button class="btn btn-secondary" onclick="window.close()">Close</button>
+                    <button class="btn btn-primary" onclick="downloadReceipt()">Download PDF</button>
+                  </div>
+                </div>
+                <iframe src="${pdfDataUri}"></iframe>
+              </div>
+              <script>
+                function downloadReceipt() {
+                  const link = document.createElement('a');
+                  link.href = '${pdfDataUri}';
+                  link.download = 'payment_receipt_${receiptData.receiptNumber}.pdf';
+                  document.body.appendChild(link);
+                  link.click();
+                  document.body.removeChild(link);
+                }
+              </script>
+            </body>
+          </html>
+        `);
+        newWindow.document.close();
+      }
+      
+      console.log(`=== PREVIEW OPENED ===`);
       
     } catch (err) {
       console.error('Error generating receipt:', err);
