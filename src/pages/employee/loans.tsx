@@ -278,6 +278,8 @@ interface Loan {
   originalInterestRate?: number;
   currentUpgradeLevel?: number;
   status: 'approved' | 'rejected' | 'active' | 'closed';
+  monthlyPayment: number;
+  totalPayment: number;
   totalPaid: number;
   remainingBalance: number;
   createdAt: string;
