@@ -261,6 +261,7 @@ const CustomerDashboard = () => {
     }
   };
 
+
   // Check if user is authenticated and is a customer
   if (!user) {
     return (

@@ -23,7 +23,7 @@ import {
   Typography,
   Alert
 } from '@mui/material';
-import { Edit as EditIcon, KeyboardArrowDown, KeyboardArrowUp } from '@mui/icons-material';
+import { Edit as EditIcon, KeyboardArrowDown, KeyboardArrowUp, Print as PrintIcon } from '@mui/icons-material';
 import { RepaymentModal } from './dashboard';
 import { useAuth } from '../../context/AuthContext';
 import { API_URL } from '../../config';
@@ -31,6 +31,7 @@ import Navbar from '../../components/Navbar';
 import ReactDOMServer from 'react-dom/server';
 import { fetchEarlyRepaymentDetails } from '../../utils/api';
 import PhotoGallery from '../../components/PhotoGallery';
+import LoanPrintout from '../../components/LoanPrintout';
 
 interface GoldItem {
   description: string;
@@ -41,7 +42,7 @@ interface GoldItem {
 interface Loan {
   _id: string;
   loanId: string;
-  customerId: string;
+  customerId: string | { _id: string; name: string; email: string; primaryMobile: string; aadharNumber: string };
   name: string;
   email: string;
   primaryMobile: string;
@@ -113,7 +114,7 @@ const PaymentReceipt: React.FC<{
       </div>
       <div style={{ marginBottom: 16, fontSize: 15 }}>
         <div><b>Date:</b> {new Date(payment.date || payment.createdAt).toLocaleString('en-IN')}</div>
-        <div><b>Receipt No:</b> {loan.customerId || loan._id}</div>
+        <div><b>Receipt No:</b> {typeof loan.customerId === 'object' ? loan.customerId.aadharNumber : loan.customerId || loan._id}</div>
         <div><b>Customer Name:</b> {loan.name}</div>
         <div><b>Customer Email:</b> {loan.email}</div>
         <div><b>Customer Mobile:</b> {loan.primaryMobile}</div>
@@ -507,6 +508,14 @@ const LoansPage = () => {
   const [showPaymentHistoryModal, setShowPaymentHistoryModal] = useState(false);
   const [deleteLoan, setDeleteLoan] = useState<Loan | null>(null);
   const [showDeleteDialog, setShowDeleteDialog] = useState(false);
+  const [showLoanAgreement, setShowLoanAgreement] = useState(false);
+  const [selectedLoanForAgreement, setSelectedLoanForAgreement] = useState<Loan | null>(null);
+  const [showRenewalModal, setShowRenewalModal] = useState(false);
+  const [selectedLoanForRenewal, setSelectedLoanForRenewal] = useState<Loan | null>(null);
+  const [renewalAmount, setRenewalAmount] = useState<number>(0);
+  const [renewalInterestRate, setRenewalInterestRate] = useState<number>(0);
+  const [renewalTerm, setRenewalTerm] = useState<number>(6);
+  const [renewalLoading, setRenewalLoading] = useState(false);
   useEffect(() => {
     fetchLoans();
   }, []);
@@ -552,6 +561,97 @@ const LoansPage = () => {
       }))
     });
     setEditDialogOpen(true);
+  };
+
+  const handlePrintAgreement = (loan: Loan) => {
+    setSelectedLoanForAgreement(loan);
+    setShowLoanAgreement(true);
+  };
+
+  const handleRenewLoan = (loan: Loan) => {
+    setSelectedLoanForRenewal(loan);
+    setRenewalAmount(loan.amount);
+    setRenewalInterestRate(loan.interestRate);
+    setRenewalTerm(loan.term);
+    setShowRenewalModal(true);
+  };
+
+  const handleConfirmRenewal = async () => {
+    if (!selectedLoanForRenewal) return;
+
+    setRenewalLoading(true);
+    try {
+      const response = await fetch(`${API_URL}/admin/loans/${selectedLoanForRenewal._id}/renew`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'x-auth-token': token
+        },
+        body: JSON.stringify({
+          amount: renewalAmount,
+          interestRate: renewalInterestRate,
+          term: renewalTerm
+        })
+      });
+
+      const data = await response.json();
+      if (!response.ok) {
+        throw new Error(data.message || 'Failed to renew loan');
+      }
+
+      // Refresh loans list
+      await fetchLoans();
+      
+      // Close modal
+      setShowRenewalModal(false);
+      setSelectedLoanForRenewal(null);
+      
+      alert('Loan renewed successfully!');
+    } catch (error) {
+      console.error('Error renewing loan:', error);
+      alert(error instanceof Error ? error.message : 'Failed to renew loan');
+    } finally {
+      setRenewalLoading(false);
+    }
+  };
+
+  // Transform loan data to match LoanPrintout interface
+  const transformLoanForPrintout = (loan: Loan) => {
+    // Handle customerId which might be an object or string
+    const customerId = loan.customerId;
+    const aadharNumber = typeof customerId === 'object' 
+      ? customerId.aadharNumber 
+      : customerId;
+
+    return {
+      _id: loan._id,
+      loanId: loan.loanId,
+      name: loan.name,
+      aadharNumber: aadharNumber || '',
+      email: loan.email,
+      primaryMobile: loan.primaryMobile,
+      secondaryMobile: loan.secondaryMobile,
+      emergencyContact: {
+        mobile: loan.emergencyContact.mobile,
+        relation: loan.emergencyContact.relation,
+        _id: loan._id // Use loan ID as fallback
+      },
+      presentAddress: loan.presentAddress,
+      permanentAddress: loan.permanentAddress,
+      amount: loan.amount,
+      interestRate: loan.interestRate,
+      term: loan.term,
+      monthlyPayment: loan.monthlyPayment,
+      totalPayment: loan.totalPayment,
+      remainingBalance: loan.remainingBalance,
+      dailyInterestRate: (loan.interestRate / 100) / 365, // Calculate daily interest rate
+      goldItems: loan.goldItems,
+      createdAt: loan.createdAt,
+      createdBy: {
+        name: loan.createdBy?.name || 'System',
+        email: loan.createdBy?.email || 'system@cyanfinance.in'
+      }
+    };
   };
 
   const handleSaveEdit = async () => {
@@ -670,11 +770,14 @@ const LoansPage = () => {
   // Filter loans based on search
   const filteredLoans = loans.filter((loan) => {
     const query = search.toLowerCase();
+    const customerIdStr = typeof loan.customerId === 'object' 
+      ? loan.customerId.aadharNumber 
+      : loan.customerId;
     return (
       loan.name.toLowerCase().includes(query) ||
       loan.primaryMobile.includes(query) ||
       (loan.secondaryMobile && loan.secondaryMobile.includes(query)) ||
-      loan.customerId.includes(query)
+      customerIdStr.includes(query)
     );
   });
 
@@ -851,6 +954,20 @@ const LoansPage = () => {
                             >
                               <span>✏️</span> Edit
                             </button>
+                            <button
+                              onClick={() => handlePrintAgreement(loan)}
+                              className="bg-gradient-to-r from-blue-500 to-blue-700 hover:from-blue-600 hover:to-blue-800 text-white px-2 py-1 rounded-lg font-medium flex items-center gap-1 shadow group-hover:scale-105 transition text-xs"
+                            >
+                              <span>📄</span> Agreement
+                            </button>
+                            {loan.status === 'closed' && (
+                              <button
+                                onClick={() => handleRenewLoan(loan)}
+                                className="bg-gradient-to-r from-green-500 to-green-700 hover:from-green-600 hover:to-green-800 text-white px-2 py-1 rounded-lg font-medium flex items-center gap-1 shadow group-hover:scale-105 transition text-xs"
+                              >
+                                <span>🔄</span> Renew
+                              </button>
+                            )}
                             {loan.status === 'active' && (
                               <button
                                 onClick={() => {
@@ -1354,6 +1471,102 @@ const LoansPage = () => {
           </Dialog>
         </main>
       </div>
+      
+      {/* Loan Agreement Modal */}
+      {showLoanAgreement && selectedLoanForAgreement && token && (
+        <LoanPrintout
+          loanData={transformLoanForPrintout(selectedLoanForAgreement)}
+          token={token}
+          onClose={() => {
+            setShowLoanAgreement(false);
+            setSelectedLoanForAgreement(null);
+          }}
+        />
+      )}
+
+      {/* Loan Renewal Modal */}
+      {showRenewalModal && selectedLoanForRenewal && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-[70]">
+          <div className="bg-white p-6 rounded-lg w-full max-w-md shadow-2xl">
+            <h2 className="text-xl font-semibold mb-4 text-gray-800">Renew Loan</h2>
+            
+            <div className="mb-4">
+              <p className="text-sm text-gray-600 mb-2">
+                <strong>Customer:</strong> {selectedLoanForRenewal.name}
+              </p>
+              <p className="text-sm text-gray-600 mb-2">
+                <strong>Loan ID:</strong> {selectedLoanForRenewal.loanId}
+              </p>
+            </div>
+
+            <div className="space-y-4">
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  Renewal Amount (₹)
+                </label>
+                <input
+                  type="number"
+                  value={renewalAmount}
+                  onChange={(e) => setRenewalAmount(Number(e.target.value))}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  min="100"
+                  required
+                />
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  Interest Rate (% per annum)
+                </label>
+                <select
+                  value={renewalInterestRate}
+                  onChange={(e) => setRenewalInterestRate(Number(e.target.value))}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                >
+                  <option value={18}>18%</option>
+                  <option value={24}>24%</option>
+                  <option value={30}>30%</option>
+                  <option value={36}>36%</option>
+                </select>
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  Loan Term (months)
+                </label>
+                <select
+                  value={renewalTerm}
+                  onChange={(e) => setRenewalTerm(Number(e.target.value))}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                >
+                  <option value={3}>3 months</option>
+                  <option value={6}>6 months</option>
+                  <option value={12}>12 months</option>
+                </select>
+              </div>
+            </div>
+
+            <div className="mt-6 flex gap-3">
+              <button
+                onClick={handleConfirmRenewal}
+                disabled={renewalLoading}
+                className="flex-1 bg-green-600 text-white px-4 py-2 rounded-md hover:bg-green-700 disabled:bg-gray-400 disabled:cursor-not-allowed transition-colors"
+              >
+                {renewalLoading ? 'Renewing...' : 'Confirm Renewal'}
+              </button>
+              <button
+                onClick={() => {
+                  setShowRenewalModal(false);
+                  setSelectedLoanForRenewal(null);
+                }}
+                className="flex-1 bg-gray-500 text-white px-4 py-2 rounded-md hover:bg-gray-600 transition-colors"
+              >
+                Cancel
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };

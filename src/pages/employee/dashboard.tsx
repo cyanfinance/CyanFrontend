@@ -90,12 +90,13 @@ interface CustomerDetails {
 interface RepaymentModalProps {
   loan: Loan;
   onClose: () => void;
-  onRepay: (amount: number, paymentMethod: string, transactionId?: string, bankName?: string) => Promise<void>;
+  onRepay: (amount: number, paymentMethod: string, transactionId?: string, bankName?: string, paymentType?: string) => Promise<void>;
 }
 
 const RepaymentModal: React.FC<RepaymentModalProps> = ({ loan: _loan, onClose, onRepay }) => {
   const [amount, setAmount] = useState<number>(0);
   const [paymentMethod, setPaymentMethod] = useState<string>('handcash');
+  const [paymentType, setPaymentType] = useState<string>('total');
   const [transactionId, setTransactionId] = useState<string>('');
   const [error, setError] = useState<string>('');
   const [loading, setLoading] = useState<boolean>(false);
@@ -103,6 +104,7 @@ const RepaymentModal: React.FC<RepaymentModalProps> = ({ loan: _loan, onClose, o
   const [calc, setCalc] = useState<any>(null);
   const [calcLoading, setCalcLoading] = useState(false);
   const [bankName, setBankName] = useState<string>('');
+  const [userHasManuallySetAmount, setUserHasManuallySetAmount] = useState<boolean>(false);
 
   const { token } = useAuth();
 
@@ -118,8 +120,11 @@ const RepaymentModal: React.FC<RepaymentModalProps> = ({ loan: _loan, onClose, o
           token: token || '',
         });
         if (mounted) setCalc(data);
-        // Set default amount to totalDue if not set
-        if (mounted && !amount) setAmount(Math.round(data.totalDue));
+        // Set default amount to remaining balance if not set
+        if (mounted && amount === 0 && !userHasManuallySetAmount) {
+          const remainingBalance = Math.round(data.totalDue) - (_loan.totalPaid || 0);
+          setAmount(Math.max(remainingBalance, 0));
+        }
       } catch (err: any) {
         if (mounted) setError(err.message || 'Failed to fetch repayment details');
       } finally {
@@ -130,6 +135,14 @@ const RepaymentModal: React.FC<RepaymentModalProps> = ({ loan: _loan, onClose, o
     return () => { mounted = false; };
     // eslint-disable-next-line
   }, [_loan._id, repaymentDate]);
+
+  // Auto-set amount when calculation data is available (only if user hasn't manually set it)
+  useEffect(() => {
+    if (calc && amount === 0 && !userHasManuallySetAmount) {
+      const remainingBalance = Math.round(calc.totalDue) - (_loan.totalPaid || 0);
+      setAmount(Math.max(remainingBalance, 0));
+    }
+  }, [calc, _loan.totalPaid, amount, userHasManuallySetAmount]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -145,7 +158,7 @@ const RepaymentModal: React.FC<RepaymentModalProps> = ({ loan: _loan, onClose, o
       if (calc && amount < calc.minimumTotalDue) {
         throw new Error(`Amount must be at least ₹${calc.minimumTotalDue}`);
       }
-      await onRepay(amount, paymentMethod, paymentMethod === 'online' ? transactionId : undefined, bankName);
+      await onRepay(amount, paymentMethod, paymentMethod === 'online' ? transactionId : undefined, bankName, paymentType);
       onClose();
     } catch (err: any) {
       setError(err.message || 'Failed to process repayment');
@@ -199,17 +212,59 @@ const RepaymentModal: React.FC<RepaymentModalProps> = ({ loan: _loan, onClose, o
               )}
             </div>
           )}
+          {calc && (
+            <div className="mb-4 p-4 bg-gray-50 rounded-lg">
+              <h3 className="font-semibold text-gray-800 mb-2">Payment Options</h3>
+              <div className="space-y-1 text-sm">
+                <div><b>Monthly Installment:</b> ₹{Math.round(calc.monthlyPayment || 0).toLocaleString()}</div>
+                <div><b>Total Loan Amount:</b> ₹{_loan.amount.toLocaleString()}</div>
+                <div><b>Total Payment (with interest):</b> ₹{Math.round(calc.totalDue || 0).toLocaleString()}</div>
+                <div><b>Already Paid:</b> ₹{(_loan.totalPaid || 0).toLocaleString()}</div>
+                <div><b>Remaining Balance:</b> ₹{Math.round((calc.totalDue || 0) - (_loan.totalPaid || 0)).toLocaleString()}</div>
+              </div>
+              <div className="mt-2 text-xs text-gray-500">
+                💡 You can pay the monthly installment or any amount up to the full remaining balance. Use the buttons below to quickly set common amounts.
+              </div>
+            </div>
+          )}
           <div className="mb-4">
             <label className="block text-sm font-medium text-gray-700">Amount</label>
             <input
               type="number"
               value={amount}
-              onChange={(e) => setAmount(Number(e.target.value))}
+              onChange={(e) => {
+                setAmount(Number(e.target.value));
+                setUserHasManuallySetAmount(true);
+              }}
               className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-yellow-500 focus:ring-yellow-500"
               required
               min={calc?.minimumTotalDue || 0}
               max={calc?.totalDue || _loan.totalPayment || 0}
             />
+            {calc && (
+              <div className="mt-2 flex gap-2">
+                <button
+                  type="button"
+                  onClick={() => {
+                    setAmount(Math.round(calc.monthlyPayment || 0));
+                    setUserHasManuallySetAmount(true);
+                  }}
+                  className="px-3 py-1 text-xs bg-blue-500 text-white rounded hover:bg-blue-600"
+                >
+                  Set Monthly (₹{Math.round(calc.monthlyPayment || 0).toLocaleString()})
+                </button>
+                <button
+                  type="button"
+                  onClick={() => {
+                    setAmount(Math.round(calc.totalDue || 0));
+                    setUserHasManuallySetAmount(true);
+                  }}
+                  className="px-3 py-1 text-xs bg-green-500 text-white rounded hover:bg-green-600"
+                >
+                  Set Full Balance (₹{Math.round(calc.totalDue || 0).toLocaleString()})
+                </button>
+              </div>
+            )}
           </div>
           <div className="mb-4">
             <label className="block text-sm font-medium text-gray-700">Payment Method</label>
@@ -222,6 +277,24 @@ const RepaymentModal: React.FC<RepaymentModalProps> = ({ loan: _loan, onClose, o
               <option value="handcash">Hand Cash</option>
               <option value="online">Online Payment</option>
             </select>
+          </div>
+          <div className="mb-4">
+            <label className="block text-sm font-medium text-gray-700">Payment Type</label>
+            <select
+              value={paymentType}
+              onChange={(e) => setPaymentType(e.target.value)}
+              className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-yellow-500 focus:ring-yellow-500"
+              required
+            >
+              <option value="total">Total Amount (Interest + Principal)</option>
+              <option value="interest">Interest Only</option>
+              <option value="principal">Principal Only</option>
+            </select>
+            <div className="mt-1 text-xs text-gray-500">
+              {paymentType === 'total' && 'Pays both interest and principal amount'}
+              {paymentType === 'interest' && 'Pays only the interest portion'}
+              {paymentType === 'principal' && 'Pays only the principal amount'}
+            </div>
           </div>
           {paymentMethod === 'online' && (
             <div className="mb-4">
@@ -792,7 +865,7 @@ const EmployeeDashboard = () => {
     return colors[status];
   };
 
-  const handleRepay = async (amount: number, paymentMethod: string, transactionId?: string, bankName?: string) => {
+  const handleRepay = async (amount: number, paymentMethod: string, transactionId?: string, bankName?: string, paymentType?: string) => {
     if (!selectedLoan) return;
     const response = await fetch(`${API_URL}/loans/${selectedLoan._id}/payment`, {
       method: 'POST',
@@ -800,7 +873,7 @@ const EmployeeDashboard = () => {
         'Content-Type': 'application/json',
         'x-auth-token': token
       },
-      body: JSON.stringify({ amount, paymentMethod, transactionId, bankName })
+      body: JSON.stringify({ amount, paymentMethod, transactionId, bankName, paymentType })
     });
     const data = await response.json();
     if (!response.ok) {

@@ -3,6 +3,267 @@ import { useAuth } from '../../context/AuthContext';
 import { API_URL } from '../../config';
 import axios from 'axios';
 import UpgradeHistoryModal from '../../components/UpgradeHistoryModal';
+import LoanPrintout from '../../components/LoanPrintout';
+import { fetchEarlyRepaymentDetails } from '../../utils/api';
+
+interface RepaymentModalProps {
+  loan: Loan;
+  onClose: () => void;
+  onRepay: (amount: number, paymentMethod: string, transactionId?: string, bankName?: string, paymentType?: string) => Promise<void>;
+}
+
+const RepaymentModal: React.FC<RepaymentModalProps> = ({ loan: _loan, onClose, onRepay }) => {
+  const [amount, setAmount] = useState<number>(0);
+  const [paymentMethod, setPaymentMethod] = useState<string>('handcash');
+  const [paymentType, setPaymentType] = useState<string>('total');
+  const [transactionId, setTransactionId] = useState<string>('');
+  const [error, setError] = useState<string>('');
+  const [loading, setLoading] = useState<boolean>(false);
+  const [repaymentDate, setRepaymentDate] = useState<string>(() => new Date().toISOString().slice(0, 10));
+  const [calc, setCalc] = useState<any>(null);
+  const [calcLoading, setCalcLoading] = useState(false);
+  const [bankName, setBankName] = useState<string>('');
+  const [userHasManuallySetAmount, setUserHasManuallySetAmount] = useState<boolean>(false);
+
+  const { token } = useAuth();
+
+  useEffect(() => {
+    let mounted = true;
+    async function fetchCalc() {
+      setCalcLoading(true);
+      setError('');
+      try {
+        const data = await fetchEarlyRepaymentDetails({
+          loanId: _loan._id,
+          repaymentDate,
+          token: token || '',
+        });
+        if (mounted) setCalc(data);
+        // Set default amount to remaining balance if not set
+        if (mounted && amount === 0 && !userHasManuallySetAmount) {
+          const remainingBalance = Math.round(data.totalDue) - (_loan.totalPaid || 0);
+          setAmount(Math.max(remainingBalance, 0));
+        }
+      } catch (err: any) {
+        if (mounted) setError(err.message || 'Failed to fetch repayment details');
+      } finally {
+        if (mounted) setCalcLoading(false);
+      }
+    }
+    fetchCalc();
+    return () => { mounted = false; };
+    // eslint-disable-next-line
+  }, [_loan._id, repaymentDate]);
+
+  // Auto-set amount when calculation data is available (only if user hasn't manually set it)
+  useEffect(() => {
+    if (calc && amount === 0 && !userHasManuallySetAmount) {
+      const remainingBalance = Math.round(calc.totalDue) - (_loan.totalPaid || 0);
+      setAmount(Math.max(remainingBalance, 0));
+    }
+  }, [calc, _loan.totalPaid, amount, userHasManuallySetAmount]);
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setError('');
+    setLoading(true);
+    try {
+      if (paymentMethod === 'online' && !transactionId.trim()) {
+        throw new Error('Transaction ID is required for online payments');
+      }
+      if (paymentMethod === 'online' && !bankName.trim()) {
+        throw new Error('Bank Name is required for online payments');
+      }
+      if (calc && amount < calc.minimumTotalDue) {
+        throw new Error(`Amount must be at least ₹${calc.minimumTotalDue}`);
+      }
+      await onRepay(amount, paymentMethod, paymentMethod === 'online' ? transactionId : undefined, bankName, paymentType);
+      onClose();
+    } catch (err: any) {
+      setError(err.message || 'Failed to process repayment');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  return (
+    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-[60]">
+      <div className="bg-white p-6 rounded-lg w-96 shadow-2xl">
+        <h2 className="text-xl font-semibold mb-4 mt-16">Repay Loan</h2>
+        <form onSubmit={handleSubmit}>
+          <div className="mb-4">
+            <label className="block text-sm font-medium text-gray-700">Repayment Date</label>
+            <input
+              type="date"
+              value={repaymentDate}
+              onChange={e => setRepaymentDate(e.target.value)}
+              className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-yellow-500 focus:ring-yellow-500"
+              required
+            />
+            <p className="text-xs text-gray-500 mt-1">
+              💡 Select the actual date when the payment was made (useful for holiday payments)
+            </p>
+          </div>
+          {calcLoading ? (
+            <div className="mb-4 text-center">Loading calculation...</div>
+          ) : calc ? (
+            <div className="mb-4 p-3 bg-yellow-50 border border-yellow-200 rounded-lg">
+              <h3 className="font-semibold text-yellow-800 mb-2">Interest Calculation (as of {new Date(repaymentDate).toLocaleDateString()})</h3>
+              <div className="text-sm space-y-1">
+                <div><b>Interest (compounded monthly):</b> ₹{calc.interest}</div>
+                <div><b>Minimum interest period:</b> {calc.minimumInterestPeriod} days</div>
+                <div><b>Minimum interest amount:</b> ₹{calc.minimumInterest}</div>
+                <div><b>Rebate:</b> ₹{calc.rebate || 0}</div>
+                <div><b>Grace period:</b> {calc.gracePeriodDays} days {calc.gracePeriodReason ? `(${calc.gracePeriodReason})` : ''}</div>
+                <div><b>Total Due:</b> <span className="text-lg font-bold">₹{calc.totalDue}</span></div>
+                {calc.minimumTotalDue && (
+                  <div className="text-xs text-gray-500">Minimum total due: ₹{calc.minimumTotalDue}</div>
+                )}
+                {calc.breakdown && (
+                  <details className="mt-1">
+                    <summary className="cursor-pointer text-yellow-700">Breakdown</summary>
+                    <pre className="text-xs text-gray-700 whitespace-pre-wrap">{JSON.stringify(calc.breakdown, null, 2)}</pre>
+                  </details>
+                )}
+              </div>
+            </div>
+          ) : (
+            <div className="mb-4 text-red-600 text-sm">Failed to load calculation</div>
+          )}
+          {calc && (
+            <div className="mb-4 p-4 bg-gray-50 rounded-lg">
+              <h3 className="font-semibold text-gray-800 mb-2">Payment Options</h3>
+              <div className="space-y-1 text-sm">
+                <div><b>Monthly Installment:</b> ₹{Math.round(calc.monthlyPayment || 0).toLocaleString()}</div>
+                <div><b>Total Loan Amount:</b> ₹{_loan.amount.toLocaleString()}</div>
+                <div><b>Total Payment (with interest):</b> ₹{Math.round(calc.totalDue || 0).toLocaleString()}</div>
+                <div><b>Already Paid:</b> ₹{(_loan.totalPaid || 0).toLocaleString()}</div>
+                <div><b>Remaining Balance:</b> ₹{Math.round((calc.totalDue || 0) - (_loan.totalPaid || 0)).toLocaleString()}</div>
+              </div>
+              <div className="mt-2 text-xs text-gray-500">
+                💡 You can pay the monthly installment or any amount up to the full remaining balance. Use the buttons below to quickly set common amounts.
+              </div>
+            </div>
+          )}
+          <div className="mb-4">
+            <label className="block text-sm font-medium text-gray-700">Amount</label>
+            <input
+              type="number"
+              value={amount}
+              onChange={(e) => {
+                setAmount(Number(e.target.value));
+                setUserHasManuallySetAmount(true);
+              }}
+              className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-yellow-500 focus:ring-yellow-500"
+              required
+              min={calc?.minimumTotalDue || 0}
+              max={calc?.totalDue || _loan.totalPayment || 0}
+            />
+            {calc && (
+              <div className="mt-2 flex gap-2">
+                <button
+                  type="button"
+                  onClick={() => {
+                    setAmount(Math.round(calc.monthlyPayment || 0));
+                    setUserHasManuallySetAmount(true);
+                  }}
+                  className="px-3 py-1 text-xs bg-blue-500 text-white rounded hover:bg-blue-600"
+                >
+                  Set Monthly (₹{Math.round(calc.monthlyPayment || 0).toLocaleString()})
+                </button>
+                <button
+                  type="button"
+                  onClick={() => {
+                    setAmount(Math.round(calc.totalDue || 0));
+                    setUserHasManuallySetAmount(true);
+                  }}
+                  className="px-3 py-1 text-xs bg-green-500 text-white rounded hover:bg-green-600"
+                >
+                  Set Full Balance (₹{Math.round(calc.totalDue || 0).toLocaleString()})
+                </button>
+              </div>
+            )}
+          </div>
+          <div className="mb-4">
+            <label className="block text-sm font-medium text-gray-700">Payment Method</label>
+            <select
+              value={paymentMethod}
+              onChange={(e) => setPaymentMethod(e.target.value)}
+              className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-yellow-500 focus:ring-yellow-500"
+              required
+            >
+              <option value="handcash">Hand Cash</option>
+              <option value="online">Online Payment</option>
+            </select>
+          </div>
+          <div className="mb-4">
+            <label className="block text-sm font-medium text-gray-700">Payment Type</label>
+            <select
+              value={paymentType}
+              onChange={(e) => setPaymentType(e.target.value)}
+              className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-yellow-500 focus:ring-yellow-500"
+              required
+            >
+              <option value="total">Total Amount (Interest + Principal)</option>
+              <option value="interest">Interest Only</option>
+              <option value="principal">Principal Only</option>
+            </select>
+            <div className="mt-1 text-xs text-gray-500">
+              {paymentType === 'total' && 'Pays both interest and principal amount'}
+              {paymentType === 'interest' && 'Pays only the interest portion'}
+              {paymentType === 'principal' && 'Pays only the principal amount'}
+            </div>
+          </div>
+          {paymentMethod === 'online' && (
+            <div className="mb-4">
+              <label className="block text-sm font-medium text-gray-700">Bank Name</label>
+              <input
+                type="text"
+                value={bankName}
+                onChange={e => setBankName(e.target.value)}
+                className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
+                placeholder="Enter bank name"
+                required={paymentMethod === 'online'}
+              />
+            </div>
+          )}
+          {paymentMethod === 'online' && (
+            <div className="mb-4">
+              <label className="block text-sm font-medium text-gray-700">Transaction ID</label>
+              <input
+                type="text"
+                value={transactionId}
+                onChange={(e) => setTransactionId(e.target.value)}
+                className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-yellow-500 focus:ring-yellow-500"
+                placeholder="Enter transaction ID"
+                required={paymentMethod === 'online'}
+              />
+            </div>
+          )}
+          {error && (
+            <div className="mb-4 text-red-600 text-sm">{error}</div>
+          )}
+          <div className="flex justify-end space-x-2">
+            <button
+              type="button"
+              onClick={onClose}
+              className="px-4 py-2 text-sm font-medium text-gray-700 bg-gray-100 hover:bg-gray-200 rounded-md"
+            >
+              Cancel
+            </button>
+            <button
+              type="submit"
+              disabled={loading || calcLoading}
+              className="px-4 py-2 text-sm font-medium text-white bg-yellow-600 hover:bg-yellow-700 rounded-md disabled:opacity-50"
+            >
+              {loading ? 'Processing...' : 'Repay'}
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
+  );
+};
 
 interface Loan {
   _id: string;
@@ -42,6 +303,16 @@ const EmployeeLoansPage: React.FC = () => {
   const [statusFilter, setStatusFilter] = useState<'all' | 'active' | 'closed'>('all');
   const [selectedLoan, setSelectedLoan] = useState<Loan | null>(null);
   const [historyModalOpen, setHistoryModalOpen] = useState(false);
+  const [showLoanAgreement, setShowLoanAgreement] = useState(false);
+  const [selectedLoanForAgreement, setSelectedLoanForAgreement] = useState<Loan | null>(null);
+  const [showRenewalModal, setShowRenewalModal] = useState(false);
+  const [selectedLoanForRenewal, setSelectedLoanForRenewal] = useState<Loan | null>(null);
+  const [renewalAmount, setRenewalAmount] = useState<number>(0);
+  const [renewalInterestRate, setRenewalInterestRate] = useState<number>(0);
+  const [renewalTerm, setRenewalTerm] = useState<number>(6);
+  const [renewalLoading, setRenewalLoading] = useState(false);
+  const [showRepaymentModal, setShowRepaymentModal] = useState(false);
+  const [selectedLoanForRepayment, setSelectedLoanForRepayment] = useState<Loan | null>(null);
   const { token } = useAuth();
 
   useEffect(() => {
@@ -68,6 +339,113 @@ const EmployeeLoansPage: React.FC = () => {
     } finally {
       setLoading(false);
     }
+  };
+
+  const handlePrintAgreement = (loan: Loan) => {
+    setSelectedLoanForAgreement(loan);
+    setShowLoanAgreement(true);
+  };
+
+  const handleRenewLoan = (loan: Loan) => {
+    setSelectedLoanForRenewal(loan);
+    setRenewalAmount(loan.amount);
+    setRenewalInterestRate(loan.interestRate);
+    setRenewalTerm(loan.term);
+    setShowRenewalModal(true);
+  };
+
+  const handleConfirmRenewal = async () => {
+    if (!selectedLoanForRenewal) return;
+
+    setRenewalLoading(true);
+    try {
+      const response = await fetch(`${API_URL}/employee/loans/${selectedLoanForRenewal._id}/renew`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'x-auth-token': token
+        },
+        body: JSON.stringify({
+          amount: renewalAmount,
+          interestRate: renewalInterestRate,
+          term: renewalTerm
+        })
+      });
+
+      const data = await response.json();
+      if (!response.ok) {
+        throw new Error(data.message || 'Failed to renew loan');
+      }
+
+      // Refresh loans list
+      await fetchLoans();
+      
+      // Close modal
+      setShowRenewalModal(false);
+      setSelectedLoanForRenewal(null);
+      
+      alert('Loan renewed successfully!');
+    } catch (error) {
+      console.error('Error renewing loan:', error);
+      alert(error instanceof Error ? error.message : 'Failed to renew loan');
+    } finally {
+      setRenewalLoading(false);
+    }
+  };
+
+  const handleRepay = async (amount: number, paymentMethod: string, transactionId?: string, bankName?: string, paymentType?: string) => {
+    if (!selectedLoanForRepayment) return;
+    const response = await fetch(`${API_URL}/loans/${selectedLoanForRepayment._id}/payment`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'x-auth-token': token
+      },
+      body: JSON.stringify({ amount, paymentMethod, transactionId, bankName, paymentType })
+    });
+    const data = await response.json();
+    if (!response.ok) {
+      throw new Error(data.message || 'Failed to process repayment');
+    }
+    await fetchLoans();
+  };
+
+  // Transform loan data to match LoanPrintout interface
+  const transformLoanForPrintout = (loan: Loan) => {
+    // Extract aadharNumber from customerId if it's an object
+    const aadharNumber = typeof loan.customerId === 'object' 
+      ? loan.customerId.aadharNumber 
+      : loan.customerId;
+
+    return {
+      _id: loan._id,
+      loanId: loan.loanId,
+      name: loan.name,
+      aadharNumber: aadharNumber || '',
+      email: loan.email,
+      primaryMobile: loan.primaryMobile,
+      secondaryMobile: undefined,
+      emergencyContact: {
+        mobile: loan.primaryMobile, // Use primary mobile as fallback
+        relation: 'Self',
+        _id: loan._id
+      },
+      presentAddress: 'Address not available', // Default fallback
+      permanentAddress: 'Address not available', // Default fallback
+      amount: loan.amount,
+      interestRate: loan.interestRate,
+      term: loan.term,
+      monthlyPayment: 0, // Default fallback
+      totalPayment: loan.amount + (loan.amount * loan.interestRate / 100 * loan.term / 12), // Calculate approximate total
+      remainingBalance: loan.remainingBalance,
+      dailyInterestRate: (loan.interestRate / 100) / 365,
+      goldItems: [], // Default empty array - this might need to be fetched separately
+      createdAt: loan.createdAt,
+      createdBy: {
+        name: loan.createdBy?.name || 'System',
+        email: loan.createdBy?.email || 'system@cyanfinance.in'
+      }
+    };
   };
 
   const formatDate = (dateString: string) => {
@@ -305,9 +683,26 @@ const EmployeeLoansPage: React.FC = () => {
                           >
                             Edit
                           </button>
+                          <button
+                            onClick={() => handlePrintAgreement(loan)}
+                            className="text-blue-600 hover:text-blue-900"
+                          >
+                            Agreement
+                          </button>
+                          {loan.status === 'closed' && (
+                            <button
+                              onClick={() => handleRenewLoan(loan)}
+                              className="text-green-600 hover:text-green-900"
+                            >
+                              Renew
+                            </button>
+                          )}
                           {loan.status === 'active' && (
                             <button
-                              onClick={() => {/* Repay functionality */}}
+                              onClick={() => {
+                                setSelectedLoanForRepayment(loan);
+                                setShowRepaymentModal(true);
+                              }}
                               className="text-green-600 hover:text-green-900"
                             >
                               Repay
@@ -346,6 +741,114 @@ const EmployeeLoansPage: React.FC = () => {
             currentUpgradeLevel: selectedLoan.currentUpgradeLevel || 0
           }}
         />
+      )}
+      
+      {/* Loan Agreement Modal */}
+      {showLoanAgreement && selectedLoanForAgreement && token && (
+        <LoanPrintout
+          loanData={transformLoanForPrintout(selectedLoanForAgreement)}
+          token={token}
+          onClose={() => {
+            setShowLoanAgreement(false);
+            setSelectedLoanForAgreement(null);
+          }}
+        />
+      )}
+
+      {/* Repayment Modal */}
+      {showRepaymentModal && selectedLoanForRepayment && (
+        <RepaymentModal
+          loan={selectedLoanForRepayment}
+          onClose={() => {
+            setShowRepaymentModal(false);
+            setSelectedLoanForRepayment(null);
+          }}
+          onRepay={handleRepay}
+        />
+      )}
+
+      {/* Loan Renewal Modal */}
+      {showRenewalModal && selectedLoanForRenewal && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-[70]">
+          <div className="bg-white p-6 rounded-lg w-full max-w-md shadow-2xl">
+            <h2 className="text-xl font-semibold mb-4 text-gray-800">Renew Loan</h2>
+            
+            <div className="mb-4">
+              <p className="text-sm text-gray-600 mb-2">
+                <strong>Customer:</strong> {selectedLoanForRenewal.name}
+              </p>
+              <p className="text-sm text-gray-600 mb-2">
+                <strong>Loan ID:</strong> {selectedLoanForRenewal.loanId}
+              </p>
+            </div>
+
+            <div className="space-y-4">
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  Renewal Amount (₹)
+                </label>
+                <input
+                  type="number"
+                  value={renewalAmount}
+                  onChange={(e) => setRenewalAmount(Number(e.target.value))}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  min="100"
+                  required
+                />
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  Interest Rate (% per annum)
+                </label>
+                <select
+                  value={renewalInterestRate}
+                  onChange={(e) => setRenewalInterestRate(Number(e.target.value))}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                >
+                  <option value={18}>18%</option>
+                  <option value={24}>24%</option>
+                  <option value={30}>30%</option>
+                  <option value={36}>36%</option>
+                </select>
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  Loan Term (months)
+                </label>
+                <select
+                  value={renewalTerm}
+                  onChange={(e) => setRenewalTerm(Number(e.target.value))}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                >
+                  <option value={3}>3 months</option>
+                  <option value={6}>6 months</option>
+                  <option value={12}>12 months</option>
+                </select>
+              </div>
+            </div>
+
+            <div className="mt-6 flex gap-3">
+              <button
+                onClick={handleConfirmRenewal}
+                disabled={renewalLoading}
+                className="flex-1 bg-green-600 text-white px-4 py-2 rounded-md hover:bg-green-700 disabled:bg-gray-400 disabled:cursor-not-allowed transition-colors"
+              >
+                {renewalLoading ? 'Renewing...' : 'Confirm Renewal'}
+              </button>
+              <button
+                onClick={() => {
+                  setShowRenewalModal(false);
+                  setSelectedLoanForRenewal(null);
+                }}
+                className="flex-1 bg-gray-500 text-white px-4 py-2 rounded-md hover:bg-gray-600 transition-colors"
+              >
+                Cancel
+              </button>
+            </div>
+          </div>
+        </div>
       )}
     </div>
   );
