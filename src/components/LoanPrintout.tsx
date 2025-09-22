@@ -300,19 +300,21 @@ const LoanPrintout: React.FC<LoanPrintoutProps> = ({ loanData, token, onClose })
               padding: 8px; 
               box-sizing: border-box;
               page-break-inside: avoid;
+              position: relative;
+              min-height: 90vh;
             }
             .duplicate-section:last-child { margin-right: 0; }
-            .header { text-align: center; margin-bottom: 10px; }
-            .section { margin-bottom: 8px; }
+            .header { text-align: center; margin-bottom: 6px; }
+            .section { margin-bottom: 4px; }
             .grid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
             .terms { background: #f9f9f9; padding: 6px; border-radius: 3px; font-size: 9px; }
             .signatures { display: flex; justify-content: space-between; margin-top: 10px; }
             .signature { text-align: center; }
-            h1, h2, h3 { color: #1e40af; margin: 2px 0; }
-            h1 { font-size: 14px; }
-            h2 { font-size: 12px; }
-            h3 { font-size: 10px; }
-            p { margin: 1px 0; font-size: 9px; }
+            h1, h2, h3 { color: #1e40af; margin: 1px 0; }
+            h1 { font-size: 12px; }
+            h2 { font-size: 10px; }
+            h3 { font-size: 8px; }
+            p { margin: 0.5px 0; font-size: 8px; }
             .border { border: 1px solid #ccc; padding: 8px; margin: 5px 0; }
             @media print { 
               body { margin: 0; }
@@ -323,7 +325,7 @@ const LoanPrintout: React.FC<LoanPrintoutProps> = ({ loanData, token, onClose })
             }
             @page { 
               size: A4 landscape; 
-              margin: 5mm; 
+              margin: 3mm; 
              }
           </style>
         </head>
@@ -343,13 +345,23 @@ const LoanPrintout: React.FC<LoanPrintoutProps> = ({ loanData, token, onClose })
             <p><strong>Loan ID:</strong> ${loanData.loanId}</p>
           </div>
 
-            <div class="section">
-              <h3>Customer Information</h3>
+            <div class="section" style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px;">
+              <div>
+                <h3>Customer Information</h3>
                 <p><strong>Name:</strong> ${loanData.name}</p>
                 <p><strong>Aadhar Number:</strong> ${loanData.aadharNumber}</p>
                 <p><strong>Email:</strong> ${loanData.email}</p>
                 <p><strong>Primary Mobile:</strong> ${loanData.primaryMobile}</p>
                 <p><strong>Emergency Contact:</strong> ${loanData.emergencyContact.mobile} (${loanData.emergencyContact.relation})</p>
+              </div>
+              <div>
+                <h3>Office Address</h3>
+                <p><strong>Cyan Finance</strong></p>
+                <p>BK Towers, Akkayyapalem</p>
+                <p>Visakhapatnam, Andhra Pradesh - 530016</p>
+                <p><strong>Phone:</strong> +91-9700049444</p>
+                <p><strong>Email:</strong> support@cyanfinance.in</p>
+              </div>
             </div>
 
             <div class="section">
@@ -367,89 +379,54 @@ const LoanPrintout: React.FC<LoanPrintoutProps> = ({ loanData, token, onClose })
                       <th style="border: 1px solid #ccc; padding: 3px; text-align: left; font-size: 8px; font-weight: bold;">Description</th>
                       <th style="border: 1px solid #ccc; padding: 3px; text-align: center; font-size: 8px; font-weight: bold;">Gross Weight</th>
                       <th style="border: 1px solid #ccc; padding: 3px; text-align: center; font-size: 8px; font-weight: bold;">Net Weight</th>
-                      <th style="border: 1px solid #ccc; padding: 3px; text-align: center; font-size: 8px; font-weight: bold;">Photo</th>
                 </tr>
               </thead>
               <tbody>
                 ${loanData.goldItems.map((item, index) => {
-                  const itemPhotos = photos[index] || photos[String(index)] || photos['undefined'] || [];
-                  const firstPhoto = itemPhotos[0];
-                  let photoHtml = '<div style="text-align: center; color: #666; font-size: 7px;">No photo</div>';
-                  
-                  if (firstPhoto) {
-                    const base64Key = `${index}_${firstPhoto._id}`;
-                    const base64KeyAlt1 = `undefined_${firstPhoto._id}`;
-                    const base64KeyAlt2 = `${String(index)}_${firstPhoto._id}`;
-                    const base64Data = base64Images[base64Key] || base64Images[base64KeyAlt1] || base64Images[base64KeyAlt2] || '';
-                    const imageUrl = base64Data || `http://localhost:5001/api/loans/${loanData._id}/photos/${firstPhoto._id}/image`;
-                    
-                    photoHtml = `
-                      <div style="text-align: center;">
-                        <img src="${imageUrl}" style="width: 30px; height: 30px; object-fit: cover; border: 1px solid #ccc; border-radius: 2px; display: block;" onerror="this.style.display='none'; this.nextElementSibling.style.display='flex';" />
-                        <div style="width: 30px; height: 30px; border: 1px solid #ccc; display: none; align-items: center; justify-content: center; color: #666; font-size: 6px; border-radius: 2px;">N/A</div>
-                      </div>
-                    `;
-                  }
-                  
                   return `
                     <tr>
-                          <td style="border: 1px solid #ccc; padding: 3px; font-size: 8px; text-align: center;">${index + 1}</td>
-                          <td style="border: 1px solid #ccc; padding: 3px; font-size: 8px;">${item.description}</td>
-                          <td style="border: 1px solid #ccc; padding: 3px; font-size: 8px; text-align: center;">${item.grossWeight} g</td>
-                          <td style="border: 1px solid #ccc; padding: 3px; font-size: 8px; text-align: center;">${item.netWeight} g</td>
-                          <td style="border: 1px solid #ccc; padding: 3px; font-size: 8px; text-align: center;">${photoHtml}</td>
+                          <td style="border: 1px solid #ccc; padding: 3px; font-size: 8px; text-align: center; font-weight: bold;">${index + 1}</td>
+                          <td style="border: 1px solid #ccc; padding: 3px; font-size: 8px; font-weight: bold;">${item.description}</td>
+                          <td style="border: 1px solid #ccc; padding: 3px; font-size: 8px; text-align: center; font-weight: bold;">${item.grossWeight} g</td>
+                          <td style="border: 1px solid #ccc; padding: 3px; font-size: 8px; text-align: center; font-weight: bold;">${item.netWeight} g</td>
                     </tr>
                   `;
                 }).join('')}
                 <tr style="background: #f8f9fa; font-weight: bold;">
-                  <td style="border: 1px solid #ccc; padding: 3px; font-size: 8px; text-align: center;" colspan="4">TOTAL WEIGHT</td>
-                  <td style="border: 1px solid #ccc; padding: 3px; font-size: 8px; text-align: center;">${loanData.goldItems.reduce((sum, item) => sum + (parseFloat(String(item.grossWeight)) || 0), 0).toFixed(2)} g</td>
+                  <td style="border: 1px solid #ccc; padding: 3px; font-size: 8px; text-align: center;" colspan="3">TOTAL WEIGHT</td>
+                  <td style="border: 1px solid #ccc; padding: 3px; font-size: 8px; text-align: center; font-weight: bold;">${loanData.goldItems.reduce((sum, item) => sum + (parseFloat(String(item.grossWeight)) || 0), 0).toFixed(2)} g</td>
                   </tr>
               </tbody>
             </table>
             
             <!-- Photos Section -->
             <div style="margin-top: 8px;">
-              <h4 style="font-size: 9px; font-weight: bold; margin-bottom: 4px; color: #1e40af;">All Items</h4>
-              <div style="display: flex; flex-wrap: wrap; gap: 4px; justify-content: flex-start;">
-                ${loanData.goldItems.map((item, index) => {
-                  const itemPhotos = photos[index] || photos[String(index)] || photos['undefined'] || [];
-                  // Skip the first photo since it's already in the table
-                  return itemPhotos.slice(1).map((photo, photoIndex) => {
-                    const base64Key = `${index}_${photo._id}`;
-                    const base64KeyAlt1 = `undefined_${photo._id}`;
-                    const base64KeyAlt2 = `${String(index)}_${photo._id}`;
-                    const base64Data = base64Images[base64Key] || base64Images[base64KeyAlt1] || base64Images[base64KeyAlt2] || '';
-                    
-                    const imageUrl = base64Data || `http://localhost:5001/api/loans/${loanData._id}/photos/${photo._id}/image`;
-                    
-                    return `
-                      <div style="text-align: center; border: 1px solid #ddd; padding: 2px; border-radius: 3px; background: white;">
-                        <img src="${imageUrl}" style="width: 50px; height: 50px; object-fit: cover; border-radius: 2px; display: block;" onerror="this.style.display='none'; this.nextElementSibling.style.display='flex';" />
-                        <div style="width: 50px; height: 50px; border: 1px solid #ccc; display: none; align-items: center; justify-content: center; color: #666; font-size: 6px; border-radius: 2px;">N/A</div>
-                        <div style="font-size: 6px; color: #666; margin-top: 1px;">Item ${index + 1}</div>
-                      </div>
-                    `;
-                  }).join('');
-                }).join('')}
-                
-                <!-- All Items Together Photo (if multiple items) -->
-                ${loanData.goldItems.length > 1 ? (() => {
+              <h4 style="font-size: 9px; font-weight: bold; margin-bottom: 4px; color: #1e40af;">All Items Photo</h4>
+              <div style="display: flex; justify-content: center;">
+                ${(() => {
                   const allItemsPhotos = photos[-1] || photos['-1'] || [];
-                  return allItemsPhotos.map((photo, photoIndex) => {
-                    const base64Key = `-1_${photo._id}`;
+                  if (allItemsPhotos.length > 0) {
+                    const firstPhoto = allItemsPhotos[0];
+                    const base64Key = `-1_${firstPhoto._id}`;
                     const base64Data = base64Images[base64Key] || '';
-                    const imageUrl = base64Data || `http://localhost:5001/api/loans/${loanData._id}/photos/${photo._id}/image`;
+                    const imageUrl = base64Data || `http://localhost:5001/api/loans/${loanData._id}/photos/${firstPhoto._id}/image`;
                     
                     return `
-                      <div style="text-align: center; border: 2px solid #dc2626; padding: 2px; border-radius: 3px; background: #fef2f2;">
-                        <img src="${imageUrl}" style="width: 50px; height: 50px; object-fit: cover; border-radius: 2px; display: block;" onerror="this.style.display='none'; this.nextElementSibling.style.display='flex';" />
-                        <div style="width: 50px; height: 50px; border: 1px solid #ccc; display: none; align-items: center; justify-content: center; color: #666; font-size: 6px; border-radius: 2px;">N/A</div>
-                        <div style="font-size: 6px; color: #dc2626; margin-top: 1px; font-weight: bold;">All Items</div>
+                      <div style="text-align: center; border: 2px solid #dc2626; padding: 4px; border-radius: 4px; background: #fef2f2;">
+                        <img src="${imageUrl}" style="width: 100px; height: 100px; object-fit: cover; border-radius: 3px; display: block;" onerror="this.style.display='none'; this.nextElementSibling.style.display='flex';" />
+                        <div style="width: 100px; height: 100px; border: 1px solid #ccc; display: none; align-items: center; justify-content: center; color: #666; font-size: 8px; border-radius: 3px;">No Photo</div>
+                        <div style="font-size: 7px; color: #dc2626; margin-top: 2px; font-weight: bold;">All Items</div>
                       </div>
                     `;
-                  }).join('');
-                })() : ''}
+                  } else {
+                    return `
+                      <div style="text-align: center; border: 2px solid #dc2626; padding: 4px; border-radius: 4px; background: #fef2f2;">
+                        <div style="width: 100px; height: 100px; border: 1px solid #ccc; display: flex; align-items: center; justify-content: center; color: #666; font-size: 8px; border-radius: 3px;">No Photo Available</div>
+                        <div style="font-size: 7px; color: #dc2626; margin-top: 2px; font-weight: bold;">All Items</div>
+                      </div>
+                    `;
+                  }
+                })()}
               </div>
             </div>
           </div>
@@ -464,7 +441,7 @@ const LoanPrintout: React.FC<LoanPrintoutProps> = ({ loanData, token, onClose })
                 <div class="section">
                   <h3>Auction Information</h3>
                   <p><strong>Loan Disbursement Date:</strong> ${formatDate(loanData.createdAt)}</p>
-                  <p><strong>Final Auction Date:</strong> ${calculateAuctionDate(loanData.createdAt)}</p>
+                  <p><strong>Final Auction Date:</strong> <span style="color: #dc2626; font-weight: bold;">${calculateAuctionDate(loanData.createdAt)}</span></p>
                 </div>
               </div>
 
@@ -474,13 +451,15 @@ const LoanPrintout: React.FC<LoanPrintoutProps> = ({ loanData, token, onClose })
                 <p style="color: #dc2626; font-weight: bold; background: #fef2f2; padding: 4px; border: 1px solid #dc2626; border-radius: 3px; margin: 4px 0;">⚠️ IMPORTANT: The above gold items will be auctioned if loan is not paid before the final upgrade date.</p>
               </div>
 
-              <div class="signatures">
+              <div class="signatures" style="position: absolute; bottom: 20px; left: 0; right: 0; display: flex; justify-content: space-between; padding: 0 20px;">
                 <div class="signature">
                   <div><strong>Borrower Signature</strong></div>
+                  <div style="height: 30px; border-bottom: 1px solid #000; margin: 10px 0;"></div>
                   <div>${loanData.name}</div>
                 </div>
                 <div class="signature">
                   <div><strong>Lender Signature</strong></div>
+                  <div style="height: 30px; border-bottom: 1px solid #000; margin: 10px 0;"></div>
                   <div>Cyan Finance</div>
                 </div>
               </div>
@@ -500,13 +479,23 @@ const LoanPrintout: React.FC<LoanPrintoutProps> = ({ loanData, token, onClose })
                 <p><strong>Loan ID:</strong> ${loanData.loanId}</p>
               </div>
 
-              <div class="section">
-                <h3>Customer Information</h3>
-                <p><strong>Name:</strong> ${loanData.name}</p>
-                <p><strong>Aadhar Number:</strong> ${loanData.aadharNumber}</p>
-                <p><strong>Email:</strong> ${loanData.email}</p>
-                <p><strong>Primary Mobile:</strong> ${loanData.primaryMobile}</p>
-                <p><strong>Emergency Contact:</strong> ${loanData.emergencyContact.mobile} (${loanData.emergencyContact.relation})</p>
+              <div class="section" style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px;">
+                <div>
+                  <h3>Customer Information</h3>
+                  <p><strong>Name:</strong> ${loanData.name}</p>
+                  <p><strong>Aadhar Number:</strong> ${loanData.aadharNumber}</p>
+                  <p><strong>Email:</strong> ${loanData.email}</p>
+                  <p><strong>Primary Mobile:</strong> ${loanData.primaryMobile}</p>
+                  <p><strong>Emergency Contact:</strong> ${loanData.emergencyContact.mobile} (${loanData.emergencyContact.relation})</p>
+                </div>
+                <div>
+                  <h3>Office Address</h3>
+                  <p><strong>Cyan Finance</strong></p>
+                  <p>BK Towers, Akkayyapalem</p>
+                  <p>Visakhapatnam, Andhra Pradesh - 530016</p>
+                  <p><strong>Phone:</strong> +91-9700049444</p>
+                  <p><strong>Email:</strong> support@cyanfinance.in</p>
+                </div>
               </div>
 
               <div class="section">
@@ -524,89 +513,54 @@ const LoanPrintout: React.FC<LoanPrintoutProps> = ({ loanData, token, onClose })
                       <th style="border: 1px solid #ccc; padding: 3px; text-align: left; font-size: 8px; font-weight: bold;">Description</th>
                       <th style="border: 1px solid #ccc; padding: 3px; text-align: center; font-size: 8px; font-weight: bold;">Gross Weight</th>
                       <th style="border: 1px solid #ccc; padding: 3px; text-align: center; font-size: 8px; font-weight: bold;">Net Weight</th>
-                      <th style="border: 1px solid #ccc; padding: 3px; text-align: center; font-size: 8px; font-weight: bold;">Photo</th>
                     </tr>
                   </thead>
                   <tbody>
                     ${loanData.goldItems.map((item, index) => {
-                      const itemPhotos = photos[index] || photos[String(index)] || photos['undefined'] || [];
-                      const firstPhoto = itemPhotos[0];
-                      let photoHtml = '<div style="text-align: center; color: #666; font-size: 7px;">No photo</div>';
-                      
-                      if (firstPhoto) {
-                        const base64Key = `${index}_${firstPhoto._id}`;
-                        const base64KeyAlt1 = `undefined_${firstPhoto._id}`;
-                        const base64KeyAlt2 = `${String(index)}_${firstPhoto._id}`;
-                        const base64Data = base64Images[base64Key] || base64Images[base64KeyAlt1] || base64Images[base64KeyAlt2] || '';
-                        const imageUrl = base64Data || `http://localhost:5001/api/loans/${loanData._id}/photos/${firstPhoto._id}/image`;
-                        
-                        photoHtml = `
-                          <div style="text-align: center;">
-                            <img src="${imageUrl}" style="width: 30px; height: 30px; object-fit: cover; border: 1px solid #ccc; border-radius: 2px; display: block;" onerror="this.style.display='none'; this.nextElementSibling.style.display='flex';" />
-                            <div style="width: 30px; height: 30px; border: 1px solid #ccc; display: none; align-items: center; justify-content: center; color: #666; font-size: 6px; border-radius: 2px;">N/A</div>
-                          </div>
-                        `;
-                      }
-                      
                       return `
                         <tr>
-                              <td style="border: 1px solid #ccc; padding: 3px; font-size: 8px; text-align: center;">${index + 1}</td>
-                              <td style="border: 1px solid #ccc; padding: 3px; font-size: 8px;">${item.description}</td>
-                              <td style="border: 1px solid #ccc; padding: 3px; font-size: 8px; text-align: center;">${item.grossWeight} g</td>
-                              <td style="border: 1px solid #ccc; padding: 3px; font-size: 8px; text-align: center;">${item.netWeight} g</td>
-                              <td style="border: 1px solid #ccc; padding: 3px; font-size: 8px; text-align: center;">${photoHtml}</td>
+                              <td style="border: 1px solid #ccc; padding: 3px; font-size: 8px; text-align: center; font-weight: bold;">${index + 1}</td>
+                              <td style="border: 1px solid #ccc; padding: 3px; font-size: 8px; font-weight: bold;">${item.description}</td>
+                              <td style="border: 1px solid #ccc; padding: 3px; font-size: 8px; text-align: center; font-weight: bold;">${item.grossWeight} g</td>
+                              <td style="border: 1px solid #ccc; padding: 3px; font-size: 8px; text-align: center; font-weight: bold;">${item.netWeight} g</td>
                         </tr>
                       `;
                     }).join('')}
                     <tr style="background: #f8f9fa; font-weight: bold;">
-                      <td style="border: 1px solid #ccc; padding: 3px; font-size: 8px; text-align: center;" colspan="4">TOTAL WEIGHT</td>
-                      <td style="border: 1px solid #ccc; padding: 3px; font-size: 8px; text-align: center;">${loanData.goldItems.reduce((sum, item) => sum + (parseFloat(String(item.grossWeight)) || 0), 0).toFixed(2)} g</td>
+                      <td style="border: 1px solid #ccc; padding: 3px; font-size: 8px; text-align: center;" colspan="3">TOTAL WEIGHT</td>
+                      <td style="border: 1px solid #ccc; padding: 3px; font-size: 8px; text-align: center; font-weight: bold;">${loanData.goldItems.reduce((sum, item) => sum + (parseFloat(String(item.grossWeight)) || 0), 0).toFixed(2)} g</td>
                     </tr>
                   </tbody>
                 </table>
                 
                 <!-- Photos Section -->
                 <div style="margin-top: 8px;">
-                  <h4 style="font-size: 9px; font-weight: bold; margin-bottom: 4px; color: #1e40af;">All Items</h4>
-                  <div style="display: flex; flex-wrap: wrap; gap: 4px; justify-content: flex-start;">
-                    ${loanData.goldItems.map((item, index) => {
-                      const itemPhotos = photos[index] || photos[String(index)] || photos['undefined'] || [];
-                      // Skip the first photo since it's already in the table
-                      return itemPhotos.slice(1).map((photo, photoIndex) => {
-                        const base64Key = `${index}_${photo._id}`;
-                        const base64KeyAlt1 = `undefined_${photo._id}`;
-                        const base64KeyAlt2 = `${String(index)}_${photo._id}`;
-                        const base64Data = base64Images[base64Key] || base64Images[base64KeyAlt1] || base64Images[base64KeyAlt2] || '';
-                        
-                        const imageUrl = base64Data || `http://localhost:5001/api/loans/${loanData._id}/photos/${photo._id}/image`;
-                        
-                        return `
-                          <div style="text-align: center; border: 1px solid #ddd; padding: 2px; border-radius: 3px; background: white;">
-                            <img src="${imageUrl}" style="width: 50px; height: 50px; object-fit: cover; border-radius: 2px; display: block;" onerror="this.style.display='none'; this.nextElementSibling.style.display='flex';" />
-                            <div style="width: 50px; height: 50px; border: 1px solid #ccc; display: none; align-items: center; justify-content: center; color: #666; font-size: 6px; border-radius: 2px;">N/A</div>
-                            <div style="font-size: 6px; color: #666; margin-top: 1px;">Item ${index + 1}</div>
-                          </div>
-                        `;
-                      }).join('');
-                    }).join('')}
-                    
-                    <!-- All Items Together Photo (if multiple items) -->
-                    ${loanData.goldItems.length > 1 ? (() => {
+                  <h4 style="font-size: 9px; font-weight: bold; margin-bottom: 4px; color: #1e40af;">All Items Photo</h4>
+                  <div style="display: flex; justify-content: center;">
+                    ${(() => {
                       const allItemsPhotos = photos[-1] || photos['-1'] || [];
-                      return allItemsPhotos.map((photo, photoIndex) => {
-                        const base64Key = `-1_${photo._id}`;
+                      if (allItemsPhotos.length > 0) {
+                        const firstPhoto = allItemsPhotos[0];
+                        const base64Key = `-1_${firstPhoto._id}`;
                         const base64Data = base64Images[base64Key] || '';
-                        const imageUrl = base64Data || `http://localhost:5001/api/loans/${loanData._id}/photos/${photo._id}/image`;
+                        const imageUrl = base64Data || `http://localhost:5001/api/loans/${loanData._id}/photos/${firstPhoto._id}/image`;
                         
                         return `
-                          <div style="text-align: center; border: 2px solid #dc2626; padding: 2px; border-radius: 3px; background: #fef2f2;">
-                            <img src="${imageUrl}" style="width: 50px; height: 50px; object-fit: cover; border-radius: 2px; display: block;" onerror="this.style.display='none'; this.nextElementSibling.style.display='flex';" />
-                            <div style="width: 50px; height: 50px; border: 1px solid #ccc; display: none; align-items: center; justify-content: center; color: #666; font-size: 6px; border-radius: 2px;">N/A</div>
-                            <div style="font-size: 6px; color: #dc2626; margin-top: 1px; font-weight: bold;">All Items</div>
+                          <div style="text-align: center; border: 2px solid #dc2626; padding: 4px; border-radius: 4px; background: #fef2f2;">
+                            <img src="${imageUrl}" style="width: 100px; height: 100px; object-fit: cover; border-radius: 3px; display: block;" onerror="this.style.display='none'; this.nextElementSibling.style.display='flex';" />
+                            <div style="width: 100px; height: 100px; border: 1px solid #ccc; display: none; align-items: center; justify-content: center; color: #666; font-size: 8px; border-radius: 3px;">No Photo</div>
+                            <div style="font-size: 7px; color: #dc2626; margin-top: 2px; font-weight: bold;">All Items</div>
                           </div>
                         `;
-                      }).join('');
-                    })() : ''}
+                      } else {
+                        return `
+                          <div style="text-align: center; border: 2px solid #dc2626; padding: 4px; border-radius: 4px; background: #fef2f2;">
+                            <div style="width: 100px; height: 100px; border: 1px solid #ccc; display: flex; align-items: center; justify-content: center; color: #666; font-size: 8px; border-radius: 3px;">No Photo Available</div>
+                            <div style="font-size: 7px; color: #dc2626; margin-top: 2px; font-weight: bold;">All Items</div>
+                          </div>
+                        `;
+                      }
+                    })()}
                   </div>
                 </div>
               </div>
@@ -621,7 +575,7 @@ const LoanPrintout: React.FC<LoanPrintoutProps> = ({ loanData, token, onClose })
             <div class="section">
               <h3>Auction Information</h3>
               <p><strong>Loan Disbursement Date:</strong> ${formatDate(loanData.createdAt)}</p>
-              <p><strong>Final Auction Date:</strong> ${calculateAuctionDate(loanData.createdAt)}</p>
+              <p><strong>Final Auction Date:</strong> <span style="color: #dc2626; font-weight: bold;">${calculateAuctionDate(loanData.createdAt)}</span></p>
             </div>
           </div>
 
@@ -631,13 +585,15 @@ const LoanPrintout: React.FC<LoanPrintoutProps> = ({ loanData, token, onClose })
             <p style="color: #dc2626; font-weight: bold; background: #fef2f2; padding: 4px; border: 1px solid #dc2626; border-radius: 3px; margin: 4px 0;">⚠️ IMPORTANT: The above gold items will be auctioned if loan is not paid before the final upgrade date.</p>
           </div>
 
-          <div class="signatures">
+          <div class="signatures" style="position: absolute; bottom: 20px; left: 0; right: 0; display: flex; justify-content: space-between; padding: 0 20px;">
             <div class="signature">
               <div><strong>Borrower Signature</strong></div>
+              <div style="height: 30px; border-bottom: 1px solid #000; margin: 10px 0;"></div>
               <div>${loanData.name}</div>
             </div>
             <div class="signature">
               <div><strong>Lender Signature</strong></div>
+              <div style="height: 30px; border-bottom: 1px solid #000; margin: 10px 0;"></div>
               <div>Cyan Finance</div>
             </div>
           </div>
@@ -837,7 +793,21 @@ const LoanPrintout: React.FC<LoanPrintoutProps> = ({ loanData, token, onClose })
                 </div>
               </div>
 
-              {/* Address Information */}
+              {/* Office Address */}
+              <div className="bg-gray-50 p-4 rounded-lg">
+                <h3 className="text-lg font-semibold mb-4 text-blue-800">Office Address</h3>
+                <div className="space-y-2 text-sm">
+                  <div><strong>Cyan Finance</strong></div>
+                  <div>BK Towers, Akkayyapalem</div>
+                  <div>Visakhapatnam, Andhra Pradesh - 530016</div>
+                  <div><strong>Phone:</strong> +91-22-1234-5678</div>
+                  <div><strong>Email:</strong> info@cyanfinance.in</div>
+                </div>
+              </div>
+            </div>
+
+            {/* Address Information */}
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
               <div className="bg-gray-50 p-4 rounded-lg">
                 <h3 className="text-lg font-semibold mb-4 text-blue-800">Address Information</h3>
                 <div className="space-y-2 text-sm">
@@ -858,71 +828,79 @@ const LoanPrintout: React.FC<LoanPrintoutProps> = ({ loanData, token, onClose })
                       <th className="border border-gray-300 px-4 py-3 text-left font-semibold text-blue-800">Description</th>
                       <th className="border border-gray-300 px-4 py-3 text-left font-semibold text-blue-800">Gross Weight</th>
                       <th className="border border-gray-300 px-4 py-3 text-left font-semibold text-blue-800">Net Weight</th>
-                      <th className="border border-gray-300 px-4 py-3 text-left font-semibold text-blue-800">Photos</th>
                     </tr>
                   </thead>
                   <tbody>
                     {loanData.goldItems.map((item, index) => (
                       <tr key={index} className="hover:bg-gray-50">
-                        <td className="border border-gray-300 px-4 py-3 font-medium text-gray-700">
+                        <td className="border border-gray-300 px-4 py-3 font-bold text-gray-700">
                           {index + 1}
                         </td>
-                        <td className="border border-gray-300 px-4 py-3 text-gray-700">
+                        <td className="border border-gray-300 px-4 py-3 font-bold text-gray-700">
                           {item.description}
                         </td>
-                        <td className="border border-gray-300 px-4 py-3 text-gray-700">
+                        <td className="border border-gray-300 px-4 py-3 font-bold text-gray-700">
                           {item.grossWeight} g
                         </td>
-                        <td className="border border-gray-300 px-4 py-3 text-gray-700">
+                        <td className="border border-gray-300 px-4 py-3 font-bold text-gray-700">
                           {item.netWeight} g
-                        </td>
-                        <td className="border border-gray-300 px-4 py-3">
-                          {loadingPhotos ? (
-                            <div className="text-gray-500 italic text-sm">Loading...</div>
-                          ) : (() => {
-                            console.log(`Checking photos for item ${index}:`, photos[index]);
-                            console.log('All photos object:', photos);
-                            console.log('Photos keys:', Object.keys(photos));
-                            console.log('Looking for index:', index, 'type:', typeof index);
-                            
-                            // Try different key formats to find photos
-                            const photosForItem = photos[index] || photos[String(index)] || photos['undefined'];
-                            console.log('Found photos for item:', photosForItem);
-                            
-                            return photosForItem && photosForItem.length > 0;
-                          })() ? (
-                            <div className="flex gap-2 flex-wrap">
-                              {(photos[index] || photos[String(index)] || photos['undefined']).map((photo, photoIndex) => (
-                                <div key={photoIndex} className="text-center">
-                                  <img 
-                                    src={getImageUrl(photo)} 
-                                    alt={`${item.description} - Photo ${photoIndex + 1}`}
-                                    className="w-16 h-16 object-cover border border-gray-300 rounded shadow-sm"
-                                    onError={(e) => {
-                                      console.error('Image failed to load:', getImageUrl(photo));
-                                      const target = e.target as HTMLImageElement;
-                                      target.style.display = 'none';
-                                    }}
-                                    onLoad={() => {
-                                      console.log('Image loaded successfully:', getImageUrl(photo));
-                                    }}
-                                  />
-                                  <div className="text-xs text-gray-500 mt-1">
-                                    {photoIndex + 1}
-                                  </div>
-                                </div>
-                              ))}
-                            </div>
-                          ) : (
-                            <div className="text-gray-500 italic text-sm text-center">
-                              No photos
-                            </div>
-                          )}
                         </td>
                       </tr>
                     ))}
+                    <tr className="bg-gray-100 font-bold">
+                      <td className="border border-gray-300 px-4 py-3 text-center" colSpan={3}>
+                        TOTAL WEIGHT
+                      </td>
+                      <td className="border border-gray-300 px-4 py-3 text-center font-bold">
+                        {loanData.goldItems.reduce((sum, item) => sum + (parseFloat(String(item.grossWeight)) || 0), 0).toFixed(2)} g
+                      </td>
+                    </tr>
                   </tbody>
                 </table>
+              </div>
+              
+              {/* Photos Section */}
+              <div className="mt-4">
+                <h4 className="text-sm font-semibold mb-3 text-blue-800">All Items Photo</h4>
+                <div className="flex justify-center">
+                  {(() => {
+                    const allItemsPhotos = photos[-1] || photos['-1'] || [];
+                    if (allItemsPhotos.length > 0) {
+                      const firstPhoto = allItemsPhotos[0];
+                      return (
+                        <div className="text-center border-2 border-red-500 p-3 rounded-lg bg-red-50 shadow-sm">
+                          <img 
+                            src={getImageUrl(firstPhoto)} 
+                            alt="All Items Together"
+                            className="w-32 h-32 object-cover border border-red-300 rounded shadow-sm"
+                            onError={(e) => {
+                              console.error('Image failed to load:', getImageUrl(firstPhoto));
+                              const target = e.target as HTMLImageElement;
+                              target.style.display = 'none';
+                            }}
+                            onLoad={() => {
+                              console.log('Image loaded successfully:', getImageUrl(firstPhoto));
+                            }}
+                          />
+                          <div className="text-sm text-red-600 mt-2 font-bold">
+                            All Items
+                          </div>
+                        </div>
+                      );
+                    } else {
+                      return (
+                        <div className="text-center border-2 border-red-500 p-3 rounded-lg bg-red-50 shadow-sm">
+                          <div className="w-32 h-32 border border-red-300 rounded flex items-center justify-center text-gray-500 text-sm">
+                            No Photo Available
+                          </div>
+                          <div className="text-sm text-red-600 mt-2 font-bold">
+                            All Items
+                          </div>
+                        </div>
+                      );
+                    }
+                  })()}
+                </div>
               </div>
             </div>
 
@@ -942,7 +920,7 @@ const LoanPrintout: React.FC<LoanPrintoutProps> = ({ loanData, token, onClose })
                 <h3 className="text-lg font-semibold mb-4 text-blue-800">Auction Information</h3>
                 <div className="space-y-2 text-sm">
                   <div><strong>Loan Disbursement Date:</strong> {formatDate(loanData.createdAt)}</div>
-                  <div><strong>Final Auction Date:</strong> {calculateAuctionDate(loanData.createdAt)}</div>
+                  <div><strong>Final Auction Date:</strong> <span className="text-red-600 font-bold">{calculateAuctionDate(loanData.createdAt)}</span></div>
                   {/* <div className="text-red-600 font-bold text-xs">⚠️ Gold items will be auctioned if loan is not paid before the final auction date.</div> */}
                 </div>
               </div>
@@ -963,13 +941,15 @@ const LoanPrintout: React.FC<LoanPrintoutProps> = ({ loanData, token, onClose })
             </div>
 
             {/* Signatures */}
-            <div className="flex justify-between items-end mt-8 pt-6 border-t">
+            <div className="flex justify-between items-end mt-8 pt-6 border-t" style={{ position: 'sticky', bottom: 0, backgroundColor: 'white', paddingTop: '20px' }}>
               <div className="text-center">
-                <div className="font-semibold mb-8 border-b border-gray-400 pb-2">Borrower Signature</div>
+                <div className="font-semibold mb-2">Borrower Signature</div>
+                <div className="h-8 border-b border-gray-400 mb-2"></div>
                 <div className="text-sm text-gray-600">{loanData.name}</div>
               </div>
               <div className="text-center">
-                <div className="font-semibold mb-8 border-b border-gray-400 pb-2">Lender Signature</div>
+                <div className="font-semibold mb-2">Lender Signature</div>
+                <div className="h-8 border-b border-gray-400 mb-2"></div>
                 <div className="text-sm text-gray-600">Cyan Finance</div>
               </div>
             </div>
