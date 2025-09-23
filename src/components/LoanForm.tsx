@@ -550,8 +550,8 @@ const LoanForm: React.FC<LoanFormProps> = ({ apiPrefix, token, user, onSuccess }
           if (!res.ok) throw new Error(data.message || 'Calculation failed');
           setFormData(prev => ({
             ...prev,
-            monthlyPayment: data.monthlyPayment.toString(),
-            totalAmount: data.totalAmount.toString()
+            monthlyPayment: data.monthlyPayment ? data.monthlyPayment.toString() : '',
+            totalAmount: data.totalAmount ? data.totalAmount.toString() : ''
           }));
         } catch {
           setFormData(prev => ({
