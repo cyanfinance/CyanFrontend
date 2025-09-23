@@ -554,10 +554,16 @@ const LoanForm: React.FC<LoanFormProps> = ({ apiPrefix, token, user, onSuccess }
             totalAmount: data.totalAmount ? data.totalAmount.toString() : ''
           }));
         } catch {
+          // Fallback calculation if API fails
+          const timeInYears = months / 12;
+          const totalInterest = (principal * yearlyRate * timeInYears) / 100;
+          const totalAmount = principal + totalInterest;
+          const monthlyPayment = totalAmount / months;
+          
           setFormData(prev => ({
             ...prev,
-            monthlyPayment: '',
-            totalAmount: ''
+            monthlyPayment: monthlyPayment.toString(),
+            totalAmount: totalAmount.toString()
           }));
         }
       } else {
