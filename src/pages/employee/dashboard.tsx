@@ -609,7 +609,8 @@ const EmployeeDashboard = () => {
               principal,
               annualRate: yearlyRate,
               disbursementDate: disbursementDate.toISOString(),
-              closureDate: closureDate.toISOString()
+              closureDate: closureDate.toISOString(),
+              termMonths: months
             })
           });
           const data = await res.json();
@@ -620,10 +621,16 @@ const EmployeeDashboard = () => {
             totalAmount: data.totalAmount
           }));
         } catch {
+          // Fallback calculation if API fails
+          const timeInYears = months / 12;
+          const totalInterest = (principal * yearlyRate * timeInYears) / 100;
+          const totalAmount = principal + totalInterest;
+          const monthlyPayment = totalAmount / months;
+          
           setFormData(prev => ({
             ...prev,
-            monthlyPayment: 0,
-            totalAmount: 0
+            monthlyPayment: Math.round(monthlyPayment),
+            totalAmount: Math.round(totalAmount)
           }));
         }
       } else {

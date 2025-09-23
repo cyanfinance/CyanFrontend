@@ -549,21 +549,17 @@ const LoanForm: React.FC<LoanFormProps> = ({ apiPrefix, token, user, onSuccess }
           });
           const data = await res.json();
           if (!res.ok) throw new Error(data.message || 'Calculation failed');
-          console.log('API Response:', data); // Debug log
           setFormData(prev => ({
             ...prev,
             monthlyPayment: data.monthlyPayment ? data.monthlyPayment.toString() : '',
             totalAmount: data.totalAmount ? data.totalAmount.toString() : ''
           }));
-        } catch (error) {
-          console.log('API Error, using fallback:', error); // Debug log
+        } catch {
           // Fallback calculation if API fails
           const timeInYears = months / 12;
           const totalInterest = (principal * yearlyRate * timeInYears) / 100;
           const totalAmount = principal + totalInterest;
           const monthlyPayment = totalAmount / months;
-          
-          console.log('Fallback calculation:', { principal, yearlyRate, months, timeInYears, totalInterest, totalAmount, monthlyPayment }); // Debug log
           
           setFormData(prev => ({
             ...prev,
