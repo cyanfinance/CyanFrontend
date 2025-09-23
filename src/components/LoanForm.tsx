@@ -543,22 +543,27 @@ const LoanForm: React.FC<LoanFormProps> = ({ apiPrefix, token, user, onSuccess }
               principal,
               annualRate: yearlyRate,
               disbursementDate: disbursementDate.toISOString(),
-              closureDate: closureDate.toISOString()
+              closureDate: closureDate.toISOString(),
+              termMonths: months
             })
           });
           const data = await res.json();
           if (!res.ok) throw new Error(data.message || 'Calculation failed');
+          console.log('API Response:', data); // Debug log
           setFormData(prev => ({
             ...prev,
             monthlyPayment: data.monthlyPayment ? data.monthlyPayment.toString() : '',
             totalAmount: data.totalAmount ? data.totalAmount.toString() : ''
           }));
-        } catch {
+        } catch (error) {
+          console.log('API Error, using fallback:', error); // Debug log
           // Fallback calculation if API fails
           const timeInYears = months / 12;
           const totalInterest = (principal * yearlyRate * timeInYears) / 100;
           const totalAmount = principal + totalInterest;
           const monthlyPayment = totalAmount / months;
+          
+          console.log('Fallback calculation:', { principal, yearlyRate, months, timeInYears, totalInterest, totalAmount, monthlyPayment }); // Debug log
           
           setFormData(prev => ({
             ...prev,
@@ -855,11 +860,11 @@ const LoanForm: React.FC<LoanFormProps> = ({ apiPrefix, token, user, onSuccess }
                       <div className="text-sm text-green-800">
                         <div className="flex justify-between">
                           <span>Monthly Interest:</span>
-                          <span className="font-semibold">₹{Math.round((Number(formData.totalAmount) - Number(formData.loanAmount)) / (Number(formData.duration) || 1)).toLocaleString()}</span>
+                          <span className="font-semibold">₹{Math.round((Number(formData.loanAmount) * Number(formData.interestRate)) / (12 * 100)).toLocaleString()}</span>
                         </div>
                         <div className="flex justify-between">
                           <span>Monthly Principal:</span>
-                          <span className="font-semibold">₹{Math.round(Number(formData.monthlyPayment) - (Number(formData.totalAmount) - Number(formData.loanAmount)) / (Number(formData.duration) || 1)).toLocaleString()}</span>
+                          <span className="font-semibold">₹{Math.round(Number(formData.monthlyPayment) - (Number(formData.loanAmount) * Number(formData.interestRate)) / (12 * 100)).toLocaleString()}</span>
                         </div>
                       </div>
                     </div>
