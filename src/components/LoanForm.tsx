@@ -851,7 +851,7 @@ const LoanForm: React.FC<LoanFormProps> = ({ apiPrefix, token, user, onSuccess }
                 <div>
                   <label className="block text-sm font-semibold text-gray-700">Monthly Payment (₹)</label>
                   <input type="number" name="monthlyPayment" value={formData.monthlyPayment} onChange={handleInputChange} placeholder="Monthly Payment" className="w-full p-3 border rounded-xl focus:ring-2 focus:ring-yellow-300 focus:border-yellow-400 transition-all duration-200 bg-white/80" min="0" step="1" required />
-                  {formData.monthlyPayment && Number(formData.monthlyPayment) > 0 && (
+                  {(formData.monthlyPayment && Number(formData.monthlyPayment) > 0) || (formData.loanAmount && formData.interestRate && formData.duration) && (
                     <div className="mt-2 p-2 bg-green-50 border border-green-200 rounded-lg">
                       <div className="text-sm text-green-800">
                         <div className="flex justify-between">
