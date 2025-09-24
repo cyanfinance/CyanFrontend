@@ -114,7 +114,7 @@ const PaymentReceipt: React.FC<{
       </div>
       <div style={{ marginBottom: 16, fontSize: 15 }}>
         <div><b>Date:</b> {new Date(payment.date || payment.createdAt).toLocaleString('en-IN')}</div>
-        <div><b>Receipt No:</b> {typeof loan.customerId === 'object' ? loan.customerId.aadharNumber : loan.customerId || loan._id}</div>
+        <div><b>Receipt No:</b> {typeof loan.customerId === 'object' && loan.customerId?.aadharNumber ? loan.customerId.aadharNumber : (typeof loan.customerId === 'string' ? loan.customerId : loan._id)}</div>
         <div><b>Customer Name:</b> {loan.name}</div>
         <div><b>Customer Email:</b> {loan.email}</div>
         <div><b>Customer Mobile:</b> {loan.primaryMobile}</div>
@@ -770,9 +770,9 @@ const LoansPage = () => {
   // Filter loans based on search
   const filteredLoans = loans.filter((loan) => {
     const query = search.toLowerCase();
-    const customerIdStr = typeof loan.customerId === 'object' 
+    const customerIdStr = typeof loan.customerId === 'object' && loan.customerId?.aadharNumber
       ? loan.customerId.aadharNumber 
-      : loan.customerId;
+      : (typeof loan.customerId === 'string' ? loan.customerId : '');
     return (
       loan.name.toLowerCase().includes(query) ||
       loan.primaryMobile.includes(query) ||

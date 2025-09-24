@@ -964,7 +964,7 @@ const AdminDashboard = () => {
 
       const requestData = {
         // Customer details
-        customerId: formData.aadharNumber,
+        customerId: customerId, // Use the actual customer ID from OTP verification
         aadharNumber: formData.aadharNumber,
         name: formData.name,
         email: formData.email,
@@ -1090,8 +1090,8 @@ const AdminDashboard = () => {
     }
     
     // Then filter by search term
-    const customerName = typeof loan.customerId === 'object' ? loan.customerId.name : '';
-    const customerAadhar = typeof loan.customerId === 'object' ? loan.customerId.aadharNumber : '';
+    const customerName = (typeof loan.customerId === 'object' && loan.customerId?.name) ? loan.customerId.name : '';
+    const customerAadhar = (typeof loan.customerId === 'object' && loan.customerId?.aadharNumber) ? loan.customerId.aadharNumber : '';
     
     return (
       customerName.toLowerCase().includes(search.toLowerCase()) ||
@@ -1738,10 +1738,10 @@ const AdminDashboard = () => {
                         <td className="px-3 py-2 whitespace-nowrap text-sm text-gray-500">{formatDate(loan.createdAt)}</td>
                         <td className="px-4 py-3 max-w-[120px] truncate">
                           <div className="text-sm font-medium text-gray-900 truncate">
-                            {typeof loan.customerId === 'object' ? loan.customerId.name : loan.name}
+                            {typeof loan.customerId === 'object' && loan.customerId?.name ? loan.customerId.name : loan.name}
                           </div>
                           <div className="text-xs text-gray-500 truncate">
-                            {typeof loan.customerId === 'object' ? loan.customerId.aadharNumber : ''}
+                            {typeof loan.customerId === 'object' && loan.customerId?.aadharNumber ? loan.customerId.aadharNumber : ''}
                           </div>
                         </td>
                         <td className="px-3 py-2">

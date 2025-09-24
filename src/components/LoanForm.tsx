@@ -614,7 +614,7 @@ const LoanForm: React.FC<LoanFormProps> = ({ apiPrefix, token, user, onSuccess }
         throw new Error('Invalid total payment amount');
       }
       const requestData = {
-        customerId: formData.aadharNumber,
+        customerId: customerId, // Use the actual customer ID from OTP verification
         aadharNumber: formData.aadharNumber,
         name: formData.name,
         email: formData.email,

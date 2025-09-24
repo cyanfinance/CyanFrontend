@@ -829,7 +829,7 @@ const EmployeeDashboard = () => {
 
       const requestData = {
         // Customer details
-        customerId: formData.aadharNumber,
+        customerId: customerId, // Use the actual customer ID from OTP verification
         aadharNumber: formData.aadharNumber,
         name: formData.name,
         email: formData.email,

@@ -802,8 +802,8 @@ const LoanPrintout: React.FC<LoanPrintoutProps> = ({ loanData, token, onClose })
                   <div><strong>Cyan Finance</strong></div>
                   <div>BK Towers, Akkayyapalem</div>
                   <div>Visakhapatnam, Andhra Pradesh - 530016</div>
-                  <div><strong>Phone:</strong> +91-22-1234-5678</div>
-                  <div><strong>Email:</strong> info@cyanfinance.in</div>
+                  <div><strong>Phone:</strong> +91-9700049444</div>
+                  <div><strong>Email:</strong> support@cyanfinance.in</div>
                 </div>
               </div>
             </div>
