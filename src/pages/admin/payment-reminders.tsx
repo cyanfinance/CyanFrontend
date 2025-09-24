@@ -50,7 +50,7 @@ const PaymentReminders: React.FC = () => {
     try {
       setLoading(true);
       setError(null);
-      console.log('Fetching upcoming payments with days filter:', daysFilter);
+      // console.log('Fetching upcoming payments with days filter:', daysFilter);
       
       const response = await fetch(`${API_URL}/notifications/upcoming-payments?days=${daysFilter}`, {
         headers: {
@@ -65,7 +65,7 @@ const PaymentReminders: React.FC = () => {
       
       const data = await response.json();
       
-      console.log('Upcoming payments response:', data);
+      // console.log('Upcoming payments response:', data);
       setUpcomingPayments(data.data || []);
     } catch (error: any) {
       console.error('Error fetching upcoming payments:', error);
@@ -107,7 +107,7 @@ const PaymentReminders: React.FC = () => {
   const sendPaymentReminders = async () => {
     try {
       setSendingReminders(true);
-      console.log('Sending payment reminders with type:', reminderType);
+      // console.log('Sending payment reminders with type:', reminderType);
       
       const response = await fetch(`${API_URL}/notifications/send-payment-reminders`, {
         method: 'POST',
@@ -118,7 +118,7 @@ const PaymentReminders: React.FC = () => {
         body: JSON.stringify({ type: reminderType })
       });
       
-      console.log('Send reminders response status:', response.status);
+      // console.log('Send reminders response status:', response.status);
       
       if (!response.ok) {
         const errorText = await response.text();
@@ -127,7 +127,7 @@ const PaymentReminders: React.FC = () => {
       }
       
       const data = await response.json();
-      console.log('Send reminders response data:', data);
+      // console.log('Send reminders response data:', data);
       
       alert(`Successfully sent ${data.data.totalSent} reminder emails!`);
       

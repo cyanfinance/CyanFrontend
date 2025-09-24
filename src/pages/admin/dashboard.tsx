@@ -1121,13 +1121,13 @@ const AdminDashboard = () => {
       setTimeout(() => setMessage(''), 3000);
     } catch (error: any) {
       console.error('Error updating gold rate:', error);
-      if (error.response) {
-        console.log('Error response:', {
-          status: error.response.status,
-          data: error.response.data,
-          headers: error.response.headers
-        });
-      }
+      // if (error.response) {
+      //   console.log('Error response:', {
+      //     status: error.response.status,
+      //     data: error.response.data,
+      //     headers: error.response.headers
+      //   });
+      // }
       setMessage(error.response?.data?.message || 'Failed to update gold rate. Please try again.');
     } finally {
       setLoading(false);

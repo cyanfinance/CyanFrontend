@@ -210,9 +210,9 @@ const PhotoGallery: React.FC<PhotoGalleryProps> = ({
                 className="w-full h-full object-cover cursor-pointer"
                 onClick={() => setShowPreview(photo)}
                 loading="lazy"
-                onLoad={() => {
-                  console.log('Image loaded successfully:', `${API_URL}${photo.thumbnailUrl}`);
-                }}
+                // onLoad={() => {
+                //   console.log('Image loaded successfully:', `${API_URL}${photo.thumbnailUrl}`);
+                // }}
                 onError={(e) => {
                   console.error('Failed to load image:', {
                     url: `${API_URL}${photo.thumbnailUrl}`,

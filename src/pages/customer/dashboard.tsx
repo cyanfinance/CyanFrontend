@@ -81,9 +81,9 @@ const CustomerDashboard = () => {
 
   const downloadPaymentReceipt = async (loanId: string, paymentId: string) => {
     try {
-      console.log(`=== DOWNLOAD FUNCTION CALLED ===`);
-      console.log(`Loan ID: ${loanId}`);
-      console.log(`Payment ID: ${paymentId}`);
+      // console.log(`=== DOWNLOAD FUNCTION CALLED ===`);
+      // console.log(`Loan ID: ${loanId}`);
+      // console.log(`Payment ID: ${paymentId}`);
       
       // Find the loan and payment data
       const loan = loans.find(l => l._id === loanId);
@@ -117,7 +117,7 @@ const CustomerDashboard = () => {
         receiptNumber: `${loan.loanId}_${payment.installmentNumber}`
       };
       
-      console.log(`Generating receipt with data:`, receiptData);
+      // console.log(`Generating receipt with data:`, receiptData);
       
       // Generate preview and open in new tab
       const pdfDataUri = await previewReceipt(receiptData);
@@ -166,7 +166,7 @@ const CustomerDashboard = () => {
         newWindow.document.close();
       }
       
-      console.log(`=== PREVIEW OPENED ===`);
+      // console.log(`=== PREVIEW OPENED ===`);
       
     } catch (err) {
       console.error('Error generating receipt:', err);
@@ -673,14 +673,14 @@ const CustomerDashboard = () => {
                           <td className="px-4 py-2">
                             <button
                               onClick={() => {
-                                console.log(`=== DOWNLOADING RECEIPT FOR PAYMENT ${index + 1} ===`);
-                                console.log(`Loan ID: ${selectedLoan._id}`);
-                                console.log(`Payment ID: ${payment._id}`);
-                                console.log(`Payment Amount: ₹${payment.amount}`);
-                                console.log(`Payment Date: ${payment.date}`);
-                                console.log(`Payment Method: ${payment.method}`);
-                                console.log(`Installment: ${payment.installmentNumber}`);
-                                console.log(`Full Payment Object:`, payment);
+                                // console.log(`=== DOWNLOADING RECEIPT FOR PAYMENT ${index + 1} ===`);
+                                // console.log(`Loan ID: ${selectedLoan._id}`);
+                                // console.log(`Payment ID: ${payment._id}`);
+                                // console.log(`Payment Amount: ₹${payment.amount}`);
+                                // console.log(`Payment Date: ${payment.date}`);
+                                // console.log(`Payment Method: ${payment.method}`);
+                                // console.log(`Installment: ${payment.installmentNumber}`);
+                                // console.log(`Full Payment Object:`, payment);
                                 downloadPaymentReceipt(selectedLoan._id, payment._id);
                               }}
                               className="bg-gradient-to-r from-blue-600 to-blue-700 text-white px-4 py-2 rounded-lg text-sm hover:from-blue-700 hover:to-blue-800 transition-all duration-300 shadow-md hover:shadow-lg flex items-center space-x-1"

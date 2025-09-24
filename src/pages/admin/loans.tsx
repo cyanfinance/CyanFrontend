@@ -784,7 +784,7 @@ const LoansPage = () => {
   const handleRepay = async (amount: number, paymentMethod: string, transactionId?: string, bankName?: string, paymentType?: string) => {
     if (!repayLoan) return;
     
-    console.log('Processing repayment:', { amount, paymentMethod, transactionId, bankName, paymentType });
+    // console.log('Processing repayment:', { amount, paymentMethod, transactionId, bankName, paymentType });
     
     const response = await fetch(`${API_URL}/loans/${repayLoan._id}/payment`, {
       method: 'POST',
@@ -801,18 +801,18 @@ const LoansPage = () => {
       throw new Error(data.message || data.errors?.[0]?.msg || 'Failed to process repayment');
     }
     
-    console.log('Payment successful:', data);
+    // console.log('Payment successful:', data);
     await fetchLoans();
   };
 
   const handleDeleteLoan = async () => {
     if (!deleteLoan || !token) return;
     
-    console.log('Delete loan request:', {
-      loanId: deleteLoan._id,
-      token: token ? 'Present' : 'Missing',
-      userRole: user?.role
-    });
+    // console.log('Delete loan request:', {
+    //   loanId: deleteLoan._id,
+    //   token: token ? 'Present' : 'Missing',
+    //   userRole: user?.role
+    // });
     
     try {
       const response = await fetch(`${API_URL}/loans/${deleteLoan._id}`, {
@@ -822,9 +822,9 @@ const LoansPage = () => {
         }
       });
       
-      console.log('Delete response status:', response.status);
+      // console.log('Delete response status:', response.status);
       const data = await response.json();
-      console.log('Delete response data:', data);
+      // console.log('Delete response data:', data);
       
       if (!response.ok) {
         throw new Error(data.message || 'Failed to delete loan');

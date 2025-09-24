@@ -64,22 +64,22 @@ const LoanPrintout: React.FC<LoanPrintoutProps> = ({ loanData, token, onClose })
 
         if (response.ok) {
           const responseData = await response.json();
-          console.log('Fetched photos data:', responseData);
+          // console.log('Fetched photos data:', responseData);
           const photosByItem: {[key: number]: any[]} = {};
           
           // Extract the actual photos array from the response
           const photos = responseData.data || responseData;
-          console.log('Photos array:', photos);
+          // console.log('Photos array:', photos);
           
           if (Array.isArray(photos)) {
             photos.forEach((photo: any) => {
-              console.log('Processing photo:', photo);
-              console.log('Photo goldItemIndex:', photo.goldItemIndex);
-              console.log('Photo itemIndex:', photo.itemIndex);
-              console.log('Photo keys:', Object.keys(photo));
+              // console.log('Processing photo:', photo);
+              // console.log('Photo goldItemIndex:', photo.goldItemIndex);
+              // console.log('Photo itemIndex:', photo.itemIndex);
+              // console.log('Photo keys:', Object.keys(photo));
               // Use goldItemIndex instead of itemIndex
               const itemIndex = photo.goldItemIndex !== undefined ? photo.goldItemIndex : (photo.itemIndex !== undefined ? photo.itemIndex : 0);
-              console.log('Using item index:', itemIndex);
+              // console.log('Using item index:', itemIndex);
               if (!photosByItem[itemIndex]) {
                 photosByItem[itemIndex] = [];
               }
@@ -87,7 +87,7 @@ const LoanPrintout: React.FC<LoanPrintoutProps> = ({ loanData, token, onClose })
             });
           }
           
-          console.log('Photos by item:', photosByItem);
+          // console.log('Photos by item:', photosByItem);
           setPhotos(photosByItem);
         } else {
           console.error('Failed to fetch photos:', response.status, response.statusText);
@@ -104,7 +104,7 @@ const LoanPrintout: React.FC<LoanPrintoutProps> = ({ loanData, token, onClose })
 
   const getImageUrl = (photo: any) => {
     const url = `${API_URL}/loans/${loanData._id}/photos/${photo._id}/image`;
-    console.log('Generated image URL:', url);
+    // console.log('Generated image URL:', url);
     return url;
   };
 
@@ -144,7 +144,7 @@ const LoanPrintout: React.FC<LoanPrintoutProps> = ({ loanData, token, onClose })
     
     for (const logoPath of importedLogos) {
       try {
-        console.log(`🔄 Attempting to load imported logo: ${logoPath}`);
+        // console.log(`🔄 Attempting to load imported logo: ${logoPath}`);
         const response = await fetch(logoPath);
         if (response.ok) {
           const contentType = response.headers.get('content-type');
@@ -155,7 +155,7 @@ const LoanPrintout: React.FC<LoanPrintoutProps> = ({ loanData, token, onClose })
               reader.onload = () => {
                 const result = reader.result as string;
                 if (result && result.length > 1000 && result.includes('data:image/png;base64,')) {
-                  console.log(`✅ Logo loaded successfully from imported path: ${logoPath}`);
+                  // console.log(`✅ Logo loaded successfully from imported path: ${logoPath}`);
                   resolve(result);
                 } else {
                   console.warn(`Invalid logo data from ${logoPath}, trying next`);
@@ -180,7 +180,7 @@ const LoanPrintout: React.FC<LoanPrintoutProps> = ({ loanData, token, onClose })
     
     for (const path of publicPaths) {
       try {
-        console.log(`🔄 Attempting to load logo from public path: ${path}`);
+        // console.log(`🔄 Attempting to load logo from public path: ${path}`);
         const response = await fetch(path);
         if (response.ok) {
           const contentType = response.headers.get('content-type');
@@ -191,7 +191,7 @@ const LoanPrintout: React.FC<LoanPrintoutProps> = ({ loanData, token, onClose })
               reader.onload = () => {
                 const result = reader.result as string;
                 if (result && result.length > 1000 && result.includes('data:image/png;base64,')) {
-                  console.log(`✅ Logo loaded successfully from public path: ${path}`);
+                  // console.log(`✅ Logo loaded successfully from public path: ${path}`);
                   resolve(result);
                 } else {
                   console.warn(`Invalid logo data from ${path}, trying next`);
@@ -211,13 +211,13 @@ const LoanPrintout: React.FC<LoanPrintoutProps> = ({ loanData, token, onClose })
       }
     }
     
-    console.log('⚠️ No logo could be loaded, using text fallback');
+    // console.log('⚠️ No logo could be loaded, using text fallback');
     return '';
   };
 
   const getImageAsBase64 = async (photo: any): Promise<string> => {
     try {
-      console.log('Converting image to base64:', photo._id, getImageUrl(photo));
+      // console.log('Converting image to base64:', photo._id, getImageUrl(photo));
       
       // Use fetch with timeout for faster response
       const controller = new AbortController();
@@ -229,14 +229,14 @@ const LoanPrintout: React.FC<LoanPrintoutProps> = ({ loanData, token, onClose })
       });
       
       clearTimeout(timeoutId);
-      console.log('Image fetch response status:', response.status);
+      // console.log('Image fetch response status:', response.status);
       
       if (!response.ok) {
         throw new Error(`Failed to fetch image: ${response.status} ${response.statusText}`);
       }
       
       const blob = await response.blob();
-      console.log('Image blob size:', blob.size);
+      // console.log('Image blob size:', blob.size);
       
       // Optimize blob size for faster conversion
       let optimizedBlob = blob;
@@ -255,7 +255,7 @@ const LoanPrintout: React.FC<LoanPrintoutProps> = ({ loanData, token, onClose })
             
             ctx?.drawImage(img, 0, 0, canvas.width, canvas.height);
             const compressedDataUrl = canvas.toDataURL('image/jpeg', 0.8);
-            console.log('Compressed image for faster conversion');
+            // console.log('Compressed image for faster conversion');
             resolve(compressedDataUrl);
           };
           img.src = URL.createObjectURL(blob);
@@ -266,7 +266,7 @@ const LoanPrintout: React.FC<LoanPrintoutProps> = ({ loanData, token, onClose })
         const reader = new FileReader();
         reader.onload = () => {
           const result = reader.result as string;
-          console.log('Base64 conversion result length:', result.length);
+          // console.log('Base64 conversion result length:', result.length);
           resolve(result);
         };
         reader.readAsDataURL(optimizedBlob);
@@ -650,7 +650,7 @@ const LoanPrintout: React.FC<LoanPrintoutProps> = ({ loanData, token, onClose })
       document.body.appendChild(loadingMessage);
 
       try {
-        console.log('Starting optimized base64 conversion for photos:', photos);
+        // console.log('Starting optimized base64 conversion for photos:', photos);
         
         // Convert photos in parallel for faster processing
         const conversionPromises: Promise<{key: string, base64: string}>[] = [];
@@ -682,7 +682,7 @@ const LoanPrintout: React.FC<LoanPrintoutProps> = ({ loanData, token, onClose })
           base64Images[key] = base64;
         });
 
-        console.log('Optimized base64 conversion completed. Results:', Object.keys(base64Images));
+        // console.log('Optimized base64 conversion completed. Results:', Object.keys(base64Images));
 
       } catch (error) {
         console.error('Error preparing images for printing:', error);
@@ -883,9 +883,9 @@ const LoanPrintout: React.FC<LoanPrintoutProps> = ({ loanData, token, onClose })
                               const target = e.target as HTMLImageElement;
                               target.style.display = 'none';
                             }}
-                            onLoad={() => {
-                              console.log('Image loaded successfully:', getImageUrl(firstPhoto));
-                            }}
+                            // onLoad={() => {
+                            //   console.log('Image loaded successfully:', getImageUrl(firstPhoto));
+                            // }}
                           />
                           <div className="text-sm text-red-600 mt-2 font-bold">
                             All Items

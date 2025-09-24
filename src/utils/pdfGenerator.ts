@@ -19,7 +19,7 @@ export const generatePaymentReceipt = async (data: PaymentReceiptData): Promise<
   const pageWidth = doc.internal.pageSize.width;
   
   // Try to load the logo image with more robust fetch method
-  console.log('🔄 Attempting to load logo for PDF generation...');
+  // console.log('🔄 Attempting to load logo for PDF generation...');
   let logoBase64 = '';
   
   // Try direct fetch first (most reliable for deployed environments)
@@ -36,7 +36,7 @@ export const generatePaymentReceipt = async (data: PaymentReceiptData): Promise<
             // Test if the base64 is valid by creating a test image
             const testImg = new Image();
             testImg.onload = () => {
-              console.log('✅ Logo loaded via fetch, length:', result.length);
+              // console.log('✅ Logo loaded via fetch, length:', result.length);
               resolve(result);
             };
             testImg.onerror = () => {
@@ -66,7 +66,7 @@ export const generatePaymentReceipt = async (data: PaymentReceiptData): Promise<
       logoBase64 = await getLogoBase64();
       
       if (!logoBase64) {
-        console.log('🔄 First method failed, trying fetch-based method...');
+        // console.log('🔄 First method failed, trying fetch-based method...');
         logoBase64 = await getLogoBase64ViaFetch();
       }
     } catch (error) {
@@ -77,16 +77,16 @@ export const generatePaymentReceipt = async (data: PaymentReceiptData): Promise<
   
   // Final check: if we still don't have a valid logo, use empty string to trigger text fallback
   if (logoBase64 && logoBase64.includes('iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNkYPhfDwAChwGA60e6kgAAAABJRU5ErkJggg==')) {
-    console.log('⚠️ Detected fallback logo, using text instead');
+    // console.log('⚠️ Detected fallback logo, using text instead');
     logoBase64 = '';
   }
   
-  console.log('📊 Logo loading result:', logoBase64 ? 'SUCCESS' : 'FAILED');
+  // console.log('📊 Logo loading result:', logoBase64 ? 'SUCCESS' : 'FAILED');
   
   // Add logo if available, otherwise use text
   if (logoBase64 && logoBase64.length > 1000 && !logoBase64.includes('iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNkYPhfDwAChwGA60e6kgAAAABJRU5ErkJggg==')) {
     try {
-      console.log('✅ Adding logo image to PDF');
+      // console.log('✅ Adding logo image to PDF');
       // Add logo image (resize to fit nicely)
       const logoWidth = 40;
       const logoHeight = 20;
@@ -94,15 +94,15 @@ export const generatePaymentReceipt = async (data: PaymentReceiptData): Promise<
       
       // Try to add the image with error handling
       doc.addImage(logoBase64, 'PNG', logoX, 10, logoWidth, logoHeight);
-      console.log('✅ Logo successfully added to PDF');
+      // console.log('✅ Logo successfully added to PDF');
       
     } catch (error) {
       console.warn('❌ Failed to add logo image to PDF:', error);
-      console.log('⚠️ Falling back to text logo due to image error');
+      // console.log('⚠️ Falling back to text logo due to image error');
       addTextLogo(doc, pageWidth / 2, 25, pageWidth);
     }
   } else {
-    console.log('⚠️ Using text-only logo (no valid image loaded or fallback detected)');
+    // console.log('⚠️ Using text-only logo (no valid image loaded or fallback detected)');
     // Use text logo only when logo loading fails
     addTextLogo(doc, pageWidth / 2, 25, pageWidth);
   }

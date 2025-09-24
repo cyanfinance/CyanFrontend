@@ -35,7 +35,7 @@ const loadLogoAsBase64 = async (): Promise<string> => {
   
   for (const logoPath of importedLogos) {
     try {
-      console.log(`🔄 Attempting to load imported logo: ${logoPath}`);
+      // console.log(`🔄 Attempting to load imported logo: ${logoPath}`);
       const response = await fetch(logoPath);
       if (response.ok) {
         const contentType = response.headers.get('content-type');
@@ -46,7 +46,7 @@ const loadLogoAsBase64 = async (): Promise<string> => {
             reader.onload = () => {
               const result = reader.result as string;
               if (result && result.length > 1000 && result.includes('data:image/png;base64,')) {
-                console.log(`✅ Logo loaded successfully from imported path: ${logoPath}`);
+                // console.log(`✅ Logo loaded successfully from imported path: ${logoPath}`);
                 resolve(result);
               } else {
                 console.warn(`Invalid logo data from ${logoPath}, trying next`);
@@ -71,7 +71,7 @@ const loadLogoAsBase64 = async (): Promise<string> => {
   
   for (const path of publicPaths) {
     try {
-      console.log(`🔄 Attempting to load logo from public path: ${path}`);
+      // console.log(`🔄 Attempting to load logo from public path: ${path}`);
       const response = await fetch(path);
       if (response.ok) {
         const contentType = response.headers.get('content-type');
@@ -82,7 +82,7 @@ const loadLogoAsBase64 = async (): Promise<string> => {
             reader.onload = () => {
               const result = reader.result as string;
               if (result && result.length > 1000 && result.includes('data:image/png;base64,')) {
-                console.log(`✅ Logo loaded successfully from public path: ${path}`);
+                // console.log(`✅ Logo loaded successfully from public path: ${path}`);
                 resolve(result);
               } else {
                 console.warn(`Invalid logo data from ${path}, trying next`);
@@ -102,7 +102,7 @@ const loadLogoAsBase64 = async (): Promise<string> => {
     }
   }
   
-  console.log('⚠️ No logo could be loaded, using text fallback');
+  // console.log('⚠️ No logo could be loaded, using text fallback');
   return '';
 };
 
@@ -116,12 +116,12 @@ export const generatePaymentReceipt = async (data: PaymentReceiptData): Promise<
   const pageWidth = doc.internal.pageSize.width;
 
   // Debug environment info
-  console.log('🔍 Environment info:', {
-    origin: window.location.origin,
-    pathname: window.location.pathname,
-    isLocalhost: window.location.hostname === 'localhost',
-    isVercel: window.location.hostname.includes('vercel.app')
-  });
+  // console.log('🔍 Environment info:', {
+  //   origin: window.location.origin,
+  //   pathname: window.location.pathname,
+  //   isLocalhost: window.location.hostname === 'localhost',
+  //   isVercel: window.location.hostname.includes('vercel.app')
+  // });
 
   // Load and add company logo
   const logoBase64 = await loadLogoAsBase64();
@@ -135,13 +135,13 @@ export const generatePaymentReceipt = async (data: PaymentReceiptData): Promise<
       const logoY = 10; // Top margin
       
       doc.addImage(logoBase64, 'PNG', logoX, logoY, logoWidth, logoHeight);
-      console.log('✅ Logo successfully added to payment receipt');
+      // console.log('✅ Logo successfully added to payment receipt');
     } catch (error) {
       console.warn('❌ Failed to add logo image, using text fallback:', error);
       addTextLogo(doc, 10, 20, pageWidth); // Left aligned text logo
     }
   } else {
-    console.log('⚠️ Logo not available, using text fallback');
+    // console.log('⚠️ Logo not available, using text fallback');
     addTextLogo(doc, 10, 20, pageWidth); // Left aligned text logo
   }
 

@@ -44,7 +44,7 @@ export const getImageAsBase64 = (imagePath: string): Promise<string> => {
         
         // Validate the base64 data
         if (dataURL && dataURL.length > 100 && dataURL.startsWith('data:image/png;base64,')) {
-          console.log('✅ Successfully converted image to base64, length:', dataURL.length);
+          // console.log('✅ Successfully converted image to base64, length:', dataURL.length);
           resolve(dataURL);
         } else {
           console.warn('❌ Invalid base64 data generated');
@@ -74,7 +74,7 @@ export const getLogoBase64 = async (): Promise<string> => {
   try {
     const base64 = await getImageAsBase64(PRODUCTION_LOGO_PATH);
     if (base64) {
-      console.log('✅ Logo loaded successfully from production path:', PRODUCTION_LOGO_PATH);
+      // console.log('✅ Logo loaded successfully from production path:', PRODUCTION_LOGO_PATH);
       return base64;
     }
   } catch (error) {
@@ -97,7 +97,7 @@ export const getLogoBase64 = async (): Promise<string> => {
     try {
       const base64 = await getImageAsBase64(path);
       if (base64) {
-        console.log('✅ Logo loaded successfully from:', path);
+        // console.log('✅ Logo loaded successfully from:', path);
         return base64;
       }
     } catch (error) {
@@ -119,7 +119,7 @@ export const getLogoBase64ViaFetch = async (): Promise<string> => {
   
   for (const path of fetchPaths) {
     try {
-      console.log('🔄 Trying to load logo via fetch API from:', path);
+      // console.log('🔄 Trying to load logo via fetch API from:', path);
       const response = await fetch(path);
       if (!response.ok) {
         console.warn(`❌ HTTP ${response.status}: ${response.statusText} for path: ${path}`);
@@ -134,7 +134,7 @@ export const getLogoBase64ViaFetch = async (): Promise<string> => {
           
           // Validate the base64 data
           if (result && result.length > 100 && result.startsWith('data:image/png;base64,')) {
-            console.log('✅ Logo loaded successfully via fetch API from:', path, 'length:', result.length);
+            // console.log('✅ Logo loaded successfully via fetch API from:', path, 'length:', result.length);
             resolve(result);
           } else {
             console.warn('❌ Invalid base64 data from fetch API for path:', path);
@@ -175,11 +175,11 @@ export const checkLogoExists = async (path: string): Promise<boolean> => {
   return new Promise((resolve) => {
     const img = new Image();
     img.onload = () => {
-      console.log(`✅ Image loaded successfully from: ${path}`);
+      // console.log(`✅ Image loaded successfully from: ${path}`);
       resolve(true);
     };
     img.onerror = (error) => {
-      console.log(`❌ Image failed to load from: ${path}`, error);
+      // console.log(`❌ Image failed to load from: ${path}`, error);
       resolve(false);
     };
     img.src = path;
