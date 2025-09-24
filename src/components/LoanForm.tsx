@@ -392,7 +392,7 @@ const LoanForm: React.FC<LoanFormProps> = ({ apiPrefix, token, user, onSuccess }
         body: JSON.stringify({
           aadharNumber: formData.aadharNumber,
           name: formData.name,
-          email: formData.email,
+          email: formData.email || '', // Allow empty email
           primaryMobile: formData.primaryMobile,
           secondaryMobile: formData.secondaryMobile,
           presentAddress: formData.presentAddress,
@@ -410,7 +410,9 @@ const LoanForm: React.FC<LoanFormProps> = ({ apiPrefix, token, user, onSuccess }
           throw new Error(data.message || 'Failed to add customer');
         }
       }
-      setCustomerEmail(formData.email);
+      setCustomerEmail(formData.email || '');
+      
+      // Always proceed to OTP verification step (SMS-based)
       setLoanStep(2);
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to add customer');
@@ -425,11 +427,12 @@ const LoanForm: React.FC<LoanFormProps> = ({ apiPrefix, token, user, onSuccess }
       return;
     }
 
-    if (!customerEmail) {
+    // For SMS OTP verification, we need either email or phone number
+    if ((!customerEmail || !customerEmail.trim()) && (!formData.primaryMobile || !formData.primaryMobile.trim())) {
       setOtpValidation({
         isValidating: false,
         isValid: false,
-        message: 'No customer email found. Please go back and try again.'
+        message: 'No customer contact information found. Please go back and try again.'
       });
       return;
     }
@@ -447,7 +450,11 @@ const LoanForm: React.FC<LoanFormProps> = ({ apiPrefix, token, user, onSuccess }
           'Content-Type': 'application/json',
           'x-auth-token': token
         },
-        body: JSON.stringify({ email: customerEmail, otp: otpValue })
+        body: JSON.stringify({ 
+          email: customerEmail, 
+          otp: otpValue,
+          phoneNumber: formData.primaryMobile 
+        })
       });
       
       const data = await response.json();
@@ -496,7 +503,11 @@ const LoanForm: React.FC<LoanFormProps> = ({ apiPrefix, token, user, onSuccess }
           'Content-Type': 'application/json',
           'x-auth-token': token
         },
-        body: JSON.stringify({ email: customerEmail, otp })
+        body: JSON.stringify({ 
+          email: customerEmail, 
+          otp,
+          phoneNumber: formData.primaryMobile 
+        })
       });
       const data = await response.json();
       if (!response.ok) throw new Error(data.message || 'OTP verification failed');
@@ -526,7 +537,7 @@ const LoanForm: React.FC<LoanFormProps> = ({ apiPrefix, token, user, onSuccess }
         throw new Error('Aadhar number must be exactly 12 digits');
       }
       // Validate required fields
-      if (!formData.aadharNumber || !formData.name || !formData.email || !formData.primaryMobile ||
+      if (!formData.aadharNumber || !formData.name || !formData.primaryMobile ||
           !formData.presentAddress || !formData.permanentAddress) {
         throw new Error('Please fill in all required fields');
       }
@@ -721,9 +732,9 @@ const LoanForm: React.FC<LoanFormProps> = ({ apiPrefix, token, user, onSuccess }
                 <label className="block text-sm font-semibold text-gray-700">Full Name</label>
                 <input type="text" name="name" value={formData.name} onChange={handleInputChange} placeholder="Full Name" className="w-full p-3 border rounded-xl focus:ring-2 focus:ring-blue-300 focus:border-blue-400 transition-all duration-200 bg-white/80" required />
                 <label className="block text-sm font-semibold text-gray-700">Email
-                  <span className="block text-xs text-gray-400">OTP will be sent here</span>
+                  <span className="block text-xs text-gray-400">Optional - OTP will be sent here if provided</span>
                 </label>
-                <input type="email" name="email" value={formData.email} onChange={handleInputChange} placeholder="Email Address" className="w-full p-3 border rounded-xl focus:ring-2 focus:ring-blue-300 focus:border-blue-400 transition-all duration-200 bg-white/80" required />
+                <input type="email" name="email" value={formData.email} onChange={handleInputChange} placeholder="Email Address (Optional)" className="w-full p-3 border rounded-xl focus:ring-2 focus:ring-blue-300 focus:border-blue-400 transition-all duration-200 bg-white/80"/>
               </div>
               <div className="space-y-4">
                 <h3 className="text-lg font-semibold text-blue-600 mb-2 flex items-center gap-2"><span className="text-2xl">📞</span> Contact Info</h3>
@@ -766,7 +777,7 @@ const LoanForm: React.FC<LoanFormProps> = ({ apiPrefix, token, user, onSuccess }
                   </>
                 ) : (
                   <>
-                    <span>📧</span> Add Customer & Send OTP
+                    <span>📧</span> Add Customer {formData.email && formData.email.trim() ? '& Send OTP' : ''}
                   </>
                 )}
               </button>
@@ -776,8 +787,8 @@ const LoanForm: React.FC<LoanFormProps> = ({ apiPrefix, token, user, onSuccess }
         {/* Step 2: OTP verification */}
         {loanStep === 2 && (
           <form onSubmit={handleVerifyOtp} className="space-y-6 max-w-md mx-auto bg-white/80 shadow-xl rounded-2xl p-8 mt-8 mb-12 border border-cyan-200 animate-fade-in">
-            <h2 className="flex items-center gap-2 text-xl font-bold text-blue-700 mb-4"><span>📱</span> Verify Customer Mobile Number</h2>
-            <p className="text-gray-500 mb-6 text-sm">Enter the One-Time Password (OTP) sent to the customer's <strong>mobile number</strong> to verify their identity before proceeding with the loan process.</p>
+            <h2 className="flex items-center gap-2 text-xl font-bold text-blue-700 mb-4"><span>📱</span> Verify Customer via SMS OTP</h2>
+            <p className="text-gray-500 mb-6 text-sm">Enter the One-Time Password (OTP) sent to the customer's <strong>mobile number {formData.primaryMobile}</strong> to verify their identity before proceeding with the loan process.</p>
             <div>
               <label htmlFor="otp" className="block text-sm font-semibold text-gray-700 mb-1">OTP Code</label>
               <div className="relative">
@@ -879,9 +890,9 @@ const LoanForm: React.FC<LoanFormProps> = ({ apiPrefix, token, user, onSuccess }
                 <label className="block text-sm font-semibold text-gray-700">Full Name</label>
                 <input type="text" name="name" value={formData.name} onChange={handleInputChange} placeholder="Full Name" className="w-full p-3 border rounded-xl focus:ring-2 focus:ring-blue-300 focus:border-blue-400 transition-all duration-200 bg-white/80" required />
                 <label className="block text-sm font-semibold text-gray-700">Email
-                  <span className="block text-xs text-gray-400">We'll send an OTP for verification</span>
+                  <span className="block text-xs text-gray-400">Optional - We'll send an OTP for verification if provided</span>
                 </label>
-                <input type="email" name="email" value={formData.email} onChange={handleInputChange} placeholder="Email Address" className="w-full p-3 border rounded-xl focus:ring-2 focus:ring-blue-300 focus:border-blue-400 transition-all duration-200 bg-white/80" required />
+                <input type="email" name="email" value={formData.email} onChange={handleInputChange} placeholder="Email Address (Optional)" className="w-full p-3 border rounded-xl focus:ring-2 focus:ring-blue-300 focus:border-blue-400 transition-all duration-200 bg-white/80" />
                 <label className="block text-sm font-semibold text-gray-700">Primary Mobile</label>
                 <input type="tel" name="primaryMobile" value={formData.primaryMobile} onChange={handleInputChange} placeholder="Primary Mobile Number" className="w-full p-3 border rounded-xl focus:ring-2 focus:ring-blue-300 focus:border-blue-400 transition-all duration-200 bg-white/80" required />
                 <label className="block text-sm font-semibold text-gray-700">Secondary Mobile</label>

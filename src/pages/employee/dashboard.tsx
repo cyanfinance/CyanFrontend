@@ -750,7 +750,7 @@ const EmployeeDashboard = () => {
       }
 
       // Validate required fields
-      if (!formData.aadharNumber || !formData.name || !formData.email || !formData.primaryMobile ||
+      if (!formData.aadharNumber || !formData.name || !formData.primaryMobile ||
           !formData.presentAddress || !formData.permanentAddress) {
         throw new Error('Please fill in all required fields');
       }

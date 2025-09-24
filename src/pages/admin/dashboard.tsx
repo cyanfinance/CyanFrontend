@@ -889,7 +889,7 @@ const AdminDashboard = () => {
       }
 
       // Validate required fields
-      if (!formData.aadharNumber || !formData.name || !formData.email || !formData.primaryMobile ||
+      if (!formData.aadharNumber || !formData.name || !formData.primaryMobile ||
           !formData.presentAddress || !formData.permanentAddress) {
         throw new Error('Please fill in all required fields');
       }
@@ -1331,7 +1331,7 @@ const AdminDashboard = () => {
                           <label className="block text-sm font-semibold text-gray-700">Email
                             <span className="block text-xs text-gray-400">OTP will be sent here</span>
                           </label>
-                          <input type="email" name="email" value={formData.email} onChange={handleInputChange} placeholder="Email Address" className="w-full p-3 border rounded-lg focus:ring-2 focus:ring-blue-300 focus:border-blue-400 transition" required autoComplete="email" />
+                          <input type="email" name="email" value={formData.email} onChange={handleInputChange} placeholder="Email Address (Optional)" className="w-full p-3 border rounded-lg focus:ring-2 focus:ring-blue-300 focus:border-blue-400 transition" autoComplete="email" />
                         </div>
                         <div className="space-y-4">
                           <h3 className="text-lg font-semibold text-blue-600 mb-2 flex items-center gap-1"><span>📞</span> Contact Info</h3>
@@ -1522,7 +1522,7 @@ const AdminDashboard = () => {
                           <label className="block text-sm font-semibold text-gray-700">Email
                             <span className="block text-xs text-gray-400">We'll send an OTP for verification</span>
                           </label>
-                          <input type="email" name="email" value={formData.email} onChange={handleInputChange} placeholder="Email Address" className="w-full p-3 border rounded-lg focus:ring-2 focus:ring-blue-300 focus:border-blue-400 transition" required autoComplete="email" />
+                          <input type="email" name="email" value={formData.email} onChange={handleInputChange} placeholder="Email Address (Optional)" className="w-full p-3 border rounded-lg focus:ring-2 focus:ring-blue-300 focus:border-blue-400 transition" autoComplete="email" />
                           <label className="block text-sm font-semibold text-gray-700">Primary Mobile</label>
                           <input type="tel" name="primaryMobile" value={formData.primaryMobile} onChange={handleInputChange} placeholder="Primary Mobile Number" className="w-full p-3 border rounded-lg focus:ring-2 focus:ring-blue-300 focus:border-blue-400 transition" required autoComplete="tel" />
                           <label className="block text-sm font-semibold text-gray-700">Secondary Mobile</label>
