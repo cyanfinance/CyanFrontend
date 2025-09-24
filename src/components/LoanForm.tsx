@@ -78,6 +78,15 @@ const LoanForm: React.FC<LoanFormProps> = ({ apiPrefix, token, user, onSuccess }
   const [customerVerified, setCustomerVerified] = useState(false);
   const [customerId, setCustomerId] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const [otpValidation, setOtpValidation] = useState<{
+    isValidating: boolean;
+    isValid: boolean | null;
+    message: string;
+  }>({
+    isValidating: false,
+    isValid: null,
+    message: ''
+  });
   const [loading, setLoading] = useState(false);
   const [createdLoanId, setCreatedLoanId] = useState<string | null>(null);
   const [goldItemPhotos, setGoldItemPhotos] = useState<{[key: number]: any[]}>({});
@@ -93,6 +102,26 @@ const LoanForm: React.FC<LoanFormProps> = ({ apiPrefix, token, user, onSuccess }
     { label: 'Verify OTP', icon: '🔒' },
     { label: 'Loan Details & Photos', icon: '💰' },
   ];
+
+  // Handler for OTP input changes
+  const handleOtpChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const value = e.target.value.replace(/\D/g, ''); // Only allow digits
+    setOtp(value);
+    
+    // Clear previous validation state when user starts typing
+    if (value.length < 6) {
+      setOtpValidation({
+        isValidating: false,
+        isValid: null,
+        message: ''
+      });
+    }
+    
+    // Auto-verify when 6 digits are entered
+    if (value.length === 6) {
+      verifyOtpAutomatically(value);
+    }
+  };
 
   // Handler for input changes
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
@@ -293,6 +322,11 @@ const LoanForm: React.FC<LoanFormProps> = ({ apiPrefix, token, user, onSuccess }
     setAllItemsTogetherPhoto([]);
     setShowPrintout(false);
     setCreatedLoanData(null);
+    setOtpValidation({
+      isValidating: false,
+      isValid: null,
+      message: ''
+    });
     if (onSuccess) onSuccess();
   };
 
@@ -385,7 +419,72 @@ const LoanForm: React.FC<LoanFormProps> = ({ apiPrefix, token, user, onSuccess }
     }
   };
 
-  // Step 2: Verify OTP
+  // Automatic OTP verification function
+  const verifyOtpAutomatically = async (otpValue: string) => {
+    if (otpValue.length !== 6 || !/^\d{6}$/.test(otpValue)) {
+      return;
+    }
+
+    if (!customerEmail) {
+      setOtpValidation({
+        isValidating: false,
+        isValid: false,
+        message: 'No customer email found. Please go back and try again.'
+      });
+      return;
+    }
+
+    setOtpValidation({
+      isValidating: true,
+      isValid: null,
+      message: 'Verifying OTP...'
+    });
+
+    try {
+      const response = await fetch(`${API_URL}/${apiPrefix}/verify-customer-otp`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'x-auth-token': token
+        },
+        body: JSON.stringify({ email: customerEmail, otp: otpValue })
+      });
+      
+      const data = await response.json();
+      
+      if (response.ok) {
+        setOtpValidation({
+          isValidating: false,
+          isValid: true,
+          message: 'OTP verified successfully! ✅'
+        });
+        setCustomerVerified(true);
+        setCustomerId(data.customer._id);
+        setError(null);
+        
+        // Auto-advance to next step after a short delay
+        setTimeout(() => {
+          setLoanStep(3);
+        }, 1500);
+      } else {
+        setOtpValidation({
+          isValidating: false,
+          isValid: false,
+          message: 'Wrong OTP. Please check and try again. ❌'
+        });
+        setError(data.message || 'OTP verification failed');
+      }
+    } catch (err) {
+      setOtpValidation({
+        isValidating: false,
+        isValid: false,
+        message: 'Network error. Please try again. ❌'
+      });
+      setError(err instanceof Error ? err.message : 'OTP verification failed');
+    }
+  };
+
+  // Step 2: Verify OTP (manual verification as fallback)
   const handleVerifyOtp = async (e: React.FormEvent) => {
     e.preventDefault();
     setError(null);
@@ -681,34 +780,83 @@ const LoanForm: React.FC<LoanFormProps> = ({ apiPrefix, token, user, onSuccess }
             <p className="text-gray-500 mb-6 text-sm">Enter the One-Time Password (OTP) sent to the customer's <strong>mobile number</strong> to verify their identity before proceeding with the loan process.</p>
             <div>
               <label htmlFor="otp" className="block text-sm font-semibold text-gray-700 mb-1">OTP Code</label>
-              <input
-                id="otp"
-                type="text"
-                placeholder="Enter 6-digit OTP"
-                value={otp}
-                onChange={e => setOtp(e.target.value)}
-                required
-                className="w-full p-3 border rounded-xl focus:ring-2 focus:ring-cyan-300 focus:border-cyan-400 transition-all duration-200 tracking-widest text-lg text-center bg-white/90"
-                maxLength={6}
-              />
+              <div className="relative">
+                <input
+                  id="otp"
+                  type="text"
+                  placeholder="Enter 6-digit OTP"
+                  value={otp}
+                  onChange={handleOtpChange}
+                  required
+                  className={`w-full p-3 border rounded-xl focus:ring-2 focus:border-cyan-400 transition-all duration-200 tracking-widest text-lg text-center bg-white/90 ${
+                    otpValidation.isValid === true 
+                      ? 'border-green-500 bg-green-50' 
+                      : otpValidation.isValid === false 
+                        ? 'border-red-500 bg-red-50' 
+                        : 'border-gray-300 focus:ring-cyan-300'
+                  }`}
+                  maxLength={6}
+                  disabled={otpValidation.isValidating || otpValidation.isValid === true}
+                />
+                {otpValidation.isValidating && (
+                  <div className="absolute right-3 top-1/2 transform -translate-y-1/2">
+                    <svg className="animate-spin h-5 w-5 text-cyan-600" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                      <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                      <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                    </svg>
+                  </div>
+                )}
+                {otpValidation.isValid === true && (
+                  <div className="absolute right-3 top-1/2 transform -translate-y-1/2">
+                    <svg className="h-5 w-5 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                    </svg>
+                  </div>
+                )}
+                {otpValidation.isValid === false && (
+                  <div className="absolute right-3 top-1/2 transform -translate-y-1/2">
+                    <svg className="h-5 w-5 text-red-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                    </svg>
+                  </div>
+                )}
+              </div>
+              
+              {/* Validation message */}
+              {otpValidation.message && (
+                <div className={`mt-2 p-2 rounded-lg text-sm font-medium ${
+                  otpValidation.isValid === true 
+                    ? 'bg-green-100 text-green-800 border border-green-200' 
+                    : otpValidation.isValid === false 
+                      ? 'bg-red-100 text-red-800 border border-red-200' 
+                      : 'bg-blue-100 text-blue-800 border border-blue-200'
+                }`}>
+                  {otpValidation.message}
+                </div>
+              )}
+              
               <p className="text-xs text-gray-400 mt-1">Didn't receive the OTP? Ask the customer to check their mobile phone or resend the OTP.</p>
             </div>
             <button 
               type="submit" 
-              disabled={verifyingOtp}
+              disabled={verifyingOtp || otpValidation.isValidating || otpValidation.isValid === true}
               className={`w-full py-4 rounded-2xl text-lg font-bold shadow-xl flex items-center gap-2 justify-center transition-all duration-200 ${
-                verifyingOtp 
+                verifyingOtp || otpValidation.isValidating || otpValidation.isValid === true
                   ? 'bg-gray-400 cursor-not-allowed' 
                   : 'bg-gradient-to-r from-cyan-400 to-blue-600 hover:from-cyan-500 hover:to-blue-700'
               } text-white`}
             >
-              {verifyingOtp ? (
+              {verifyingOtp || otpValidation.isValidating ? (
                 <>
                   <svg className="animate-spin h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
                     <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
                     <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
                   </svg>
-                  Verifying OTP...
+                  {otpValidation.isValidating ? 'Verifying...' : 'Verifying OTP...'}
+                </>
+              ) : otpValidation.isValid === true ? (
+                <>
+                  <span>✅</span> OTP Verified - Proceeding...
                 </>
               ) : (
                 <>
