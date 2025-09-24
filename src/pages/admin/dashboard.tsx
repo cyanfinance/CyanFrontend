@@ -11,6 +11,34 @@ import UpgradedLoansList from '../../components/UpgradedLoansList';
 import { Bell, AlertCircle, DollarSign, Calendar, Clock } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 
+// Custom styles for input cursor icon
+const inputCursorStyles = `
+  .input-with-cursor {
+    position: relative;
+    cursor: text !important;
+  }
+  .input-with-cursor:hover::after {
+    content: '✏️';
+    position: absolute;
+    right: 12px;
+    top: 50%;
+    transform: translateY(-50%);
+    font-size: 18px;
+    pointer-events: none;
+    z-index: 1000;
+    opacity: 1;
+    transition: opacity 0.2s ease-in;
+    background: white;
+    padding: 2px 4px;
+    border-radius: 3px;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.2);
+  }
+  .input-with-cursor:not(:hover)::after {
+    opacity: 0;
+    transition: opacity 0.2s ease-out;
+  }
+`;
+
 interface GoldItem {
   description: string;
   grossWeight: number;
@@ -439,6 +467,16 @@ const RepaymentModal: React.FC<RepaymentModalProps> = ({ loan: _loan, onClose, o
 };
 
 const AdminDashboard = () => {
+  // Add custom styles for input cursor icon
+  useEffect(() => {
+    const style = document.createElement('style');
+    style.textContent = inputCursorStyles;
+    document.head.appendChild(style);
+    return () => {
+      document.head.removeChild(style);
+    };
+  }, []);
+
   const [showLoanForm, setShowLoanForm] = useState(false);
   const [loans, setLoans] = useState<Loan[]>([]);
   const [loading, setLoading] = useState(true);
@@ -1325,34 +1363,34 @@ const AdminDashboard = () => {
                           <label className="block text-sm font-semibold text-gray-700">Aadhar Number
                             <span className="block text-xs text-gray-400">12-digit unique ID</span>
                           </label>
-                          <input type="text" name="aadharNumber" value={formData.aadharNumber} onChange={handleInputChange} placeholder="Aadhar Number" className="w-full p-3 border rounded-lg focus:ring-2 focus:ring-blue-300 focus:border-blue-400 transition" required autoComplete="off" />
+                          <input type="text" name="aadharNumber" value={formData.aadharNumber} onChange={handleInputChange} placeholder="Aadhar Number" className="input-with-cursor w-full p-3 border rounded-lg focus:ring-2 focus:ring-blue-300 focus:border-blue-400 transition" required autoComplete="off" />
                           <label className="block text-sm font-semibold text-gray-700">Full Name</label>
-                          <input type="text" name="name" value={formData.name} onChange={handleInputChange} placeholder="Full Name" className="w-full p-3 border rounded-lg focus:ring-2 focus:ring-blue-300 focus:border-blue-400 transition" required style={{ textTransform: 'capitalize' }} autoComplete="name" />
+                          <input type="text" name="name" value={formData.name} onChange={handleInputChange} placeholder="Full Name" className="input-with-cursor w-full p-3 border rounded-lg focus:ring-2 focus:ring-blue-300 focus:border-blue-400 transition" required style={{ textTransform: 'capitalize' }} autoComplete="name" />
                           <label className="block text-sm font-semibold text-gray-700">Email
                             <span className="block text-xs text-gray-400">OTP will be sent here</span>
                           </label>
-                          <input type="email" name="email" value={formData.email} onChange={handleInputChange} placeholder="Email Address (Optional)" className="w-full p-3 border rounded-lg focus:ring-2 focus:ring-blue-300 focus:border-blue-400 transition" autoComplete="email" />
+                          <input type="email" name="email" value={formData.email} onChange={handleInputChange} placeholder="Email Address (Optional)" className="input-with-cursor w-full p-3 border rounded-lg focus:ring-2 focus:ring-blue-300 focus:border-blue-400 transition" autoComplete="email" />
                         </div>
                         <div className="space-y-4">
                           <h3 className="text-lg font-semibold text-blue-600 mb-2 flex items-center gap-1"><span>📞</span> Contact Info</h3>
                           <label className="block text-sm font-semibold text-gray-700">Primary Mobile</label>
-                          <input type="tel" name="primaryMobile" value={formData.primaryMobile} onChange={handleInputChange} placeholder="Primary Mobile Number" className="w-full p-3 border rounded-lg focus:ring-2 focus:ring-blue-300 focus:border-blue-400 transition" required autoComplete="tel" />
+                          <input type="tel" name="primaryMobile" value={formData.primaryMobile} onChange={handleInputChange} placeholder="Primary Mobile Number" className="input-with-cursor w-full p-3 border rounded-lg focus:ring-2 focus:ring-blue-300 focus:border-blue-400 transition" required autoComplete="tel" />
                           <label className="block text-sm font-semibold text-gray-700">Secondary Mobile</label>
-                          <input type="tel" name="secondaryMobile" value={formData.secondaryMobile} onChange={handleInputChange} placeholder="Secondary Mobile Number" className="w-full p-3 border rounded-lg focus:ring-2 focus:ring-blue-300 focus:border-blue-400 transition" autoComplete="tel" />
+                          <input type="tel" name="secondaryMobile" value={formData.secondaryMobile} onChange={handleInputChange} placeholder="Secondary Mobile Number" className="input-with-cursor w-full p-3 border rounded-lg focus:ring-2 focus:ring-blue-300 focus:border-blue-400 transition" autoComplete="tel" />
                           <label className="block text-sm font-semibold text-gray-700">Emergency Contact Number</label>
-                          <input type="tel" name="emergencyContact.mobile" value={formData.emergencyContact.mobile} onChange={handleInputChange} placeholder="Emergency Contact Number" className="w-full p-3 border rounded-lg focus:ring-2 focus:ring-blue-300 focus:border-blue-400 transition" required autoComplete="tel" />
+                          <input type="tel" name="emergencyContact.mobile" value={formData.emergencyContact.mobile} onChange={handleInputChange} placeholder="Emergency Contact Number" className="input-with-cursor w-full p-3 border rounded-lg focus:ring-2 focus:ring-blue-300 focus:border-blue-400 transition" required autoComplete="tel" />
                           <label className="block text-sm font-semibold text-gray-700">Relation with Emergency Contact
                             <span className="block text-xs text-gray-400">e.g., Father, Mother</span>
                           </label>
-                          <input type="text" name="emergencyContact.relation" value={formData.emergencyContact.relation} onChange={handleInputChange} placeholder="Relation (e.g., Father, Mother)" className="w-full p-3 border rounded-lg focus:ring-2 focus:ring-blue-300 focus:border-blue-400 transition" required style={{ textTransform: 'capitalize' }} autoComplete="relationship" />
+                          <input type="text" name="emergencyContact.relation" value={formData.emergencyContact.relation} onChange={handleInputChange} placeholder="Relation (e.g., Father, Mother)" className="input-with-cursor w-full p-3 border rounded-lg focus:ring-2 focus:ring-blue-300 focus:border-blue-400 transition" required style={{ textTransform: 'capitalize' }} autoComplete="relationship" />
                         </div>
                       </div>
                       <div className="space-y-4">
                         <h3 className="text-lg font-semibold text-blue-600 mb-2 flex items-center gap-1"><span>🏠</span> Address</h3>
                         <label className="block text-sm font-semibold text-gray-700">Present Address</label>
-                        <textarea name="presentAddress" value={formData.presentAddress} onChange={handleInputChange} placeholder="Present Address" className="w-full p-3 border rounded-lg focus:ring-2 focus:ring-blue-300 focus:border-blue-400 transition" required autoComplete="address-line1" />
+                        <textarea name="presentAddress" value={formData.presentAddress} onChange={handleInputChange} placeholder="Present Address" className="input-with-cursor w-full p-3 border rounded-lg focus:ring-2 focus:ring-blue-300 focus:border-blue-400 transition" required autoComplete="address-line1" />
                         <label className="block text-sm font-semibold text-gray-700">Permanent Address</label>
-                        <textarea name="permanentAddress" value={formData.permanentAddress} onChange={handleInputChange} placeholder="Permanent Address" className="w-full p-3 border rounded-lg focus:ring-2 focus:ring-blue-300 focus:border-blue-400 transition" required autoComplete="address-line2" />
+                        <textarea name="permanentAddress" value={formData.permanentAddress} onChange={handleInputChange} placeholder="Permanent Address" className="input-with-cursor w-full p-3 border rounded-lg focus:ring-2 focus:ring-blue-300 focus:border-blue-400 transition" required autoComplete="address-line2" />
                       </div>
                       <div className="flex justify-end mt-8">
                         <button 
@@ -1516,31 +1554,31 @@ const AdminDashboard = () => {
                           <label className="block text-sm font-semibold text-gray-700">Aadhar Number
                             <span className="block text-xs text-gray-400">12-digit unique ID</span>
                           </label>
-                          <input type="text" name="aadharNumber" value={formData.aadharNumber} onChange={handleInputChange} placeholder="Aadhar Number" className="w-full p-3 border rounded-lg focus:ring-2 focus:ring-blue-300 focus:border-blue-400 transition" required autoComplete="off" />
+                          <input type="text" name="aadharNumber" value={formData.aadharNumber} onChange={handleInputChange} placeholder="Aadhar Number" className="input-with-cursor w-full p-3 border rounded-lg focus:ring-2 focus:ring-blue-300 focus:border-blue-400 transition" required autoComplete="off" />
                           <label className="block text-sm font-semibold text-gray-700">Full Name</label>
-                          <input type="text" name="name" value={formData.name} onChange={handleInputChange} placeholder="Full Name" className="w-full p-3 border rounded-lg focus:ring-2 focus:ring-blue-300 focus:border-blue-400 transition" required style={{ textTransform: 'capitalize' }} autoComplete="name" />
+                          <input type="text" name="name" value={formData.name} onChange={handleInputChange} placeholder="Full Name" className="input-with-cursor w-full p-3 border rounded-lg focus:ring-2 focus:ring-blue-300 focus:border-blue-400 transition" required style={{ textTransform: 'capitalize' }} autoComplete="name" />
                           <label className="block text-sm font-semibold text-gray-700">Email
                             <span className="block text-xs text-gray-400">We'll send an OTP for verification</span>
                           </label>
-                          <input type="email" name="email" value={formData.email} onChange={handleInputChange} placeholder="Email Address (Optional)" className="w-full p-3 border rounded-lg focus:ring-2 focus:ring-blue-300 focus:border-blue-400 transition" autoComplete="email" />
+                          <input type="email" name="email" value={formData.email} onChange={handleInputChange} placeholder="Email Address (Optional)" className="input-with-cursor w-full p-3 border rounded-lg focus:ring-2 focus:ring-blue-300 focus:border-blue-400 transition" autoComplete="email" />
                           <label className="block text-sm font-semibold text-gray-700">Primary Mobile</label>
-                          <input type="tel" name="primaryMobile" value={formData.primaryMobile} onChange={handleInputChange} placeholder="Primary Mobile Number" className="w-full p-3 border rounded-lg focus:ring-2 focus:ring-blue-300 focus:border-blue-400 transition" required autoComplete="tel" />
+                          <input type="tel" name="primaryMobile" value={formData.primaryMobile} onChange={handleInputChange} placeholder="Primary Mobile Number" className="input-with-cursor w-full p-3 border rounded-lg focus:ring-2 focus:ring-blue-300 focus:border-blue-400 transition" required autoComplete="tel" />
                           <label className="block text-sm font-semibold text-gray-700">Secondary Mobile</label>
-                          <input type="tel" name="secondaryMobile" value={formData.secondaryMobile} onChange={handleInputChange} placeholder="Secondary Mobile Number" className="w-full p-3 border rounded-lg focus:ring-2 focus:ring-blue-300 focus:border-blue-400 transition" autoComplete="tel" />
+                          <input type="tel" name="secondaryMobile" value={formData.secondaryMobile} onChange={handleInputChange} placeholder="Secondary Mobile Number" className="input-with-cursor w-full p-3 border rounded-lg focus:ring-2 focus:ring-blue-300 focus:border-blue-400 transition" autoComplete="tel" />
                         </div>
                         <div className="space-y-4">
                           <h2 className="flex items-center gap-2 text-xl font-bold text-blue-700 mb-2"><span>📞</span> Emergency Contact</h2>
                           <label className="block text-sm font-semibold text-gray-700">Contact Number</label>
-                          <input type="tel" name="emergencyContact.mobile" value={formData.emergencyContact.mobile} onChange={handleInputChange} placeholder="Emergency Contact Number" className="w-full p-3 border rounded-lg focus:ring-2 focus:ring-blue-300 focus:border-blue-400 transition" required autoComplete="tel" />
+                          <input type="tel" name="emergencyContact.mobile" value={formData.emergencyContact.mobile} onChange={handleInputChange} placeholder="Emergency Contact Number" className="input-with-cursor w-full p-3 border rounded-lg focus:ring-2 focus:ring-blue-300 focus:border-blue-400 transition" required autoComplete="tel" />
                           <label className="block text-sm font-semibold text-gray-700">Relation
                             <span className="block text-xs text-gray-400">e.g., Father, Mother</span>
                           </label>
-                          <input type="text" name="emergencyContact.relation" value={formData.emergencyContact.relation} onChange={handleInputChange} placeholder="Relation (e.g., Father, Mother)" className="w-full p-3 border rounded-lg focus:ring-2 focus:ring-blue-300 focus:border-blue-400 transition" required style={{ textTransform: 'capitalize' }} autoComplete="relationship" />
+                          <input type="text" name="emergencyContact.relation" value={formData.emergencyContact.relation} onChange={handleInputChange} placeholder="Relation (e.g., Father, Mother)" className="input-with-cursor w-full p-3 border rounded-lg focus:ring-2 focus:ring-blue-300 focus:border-blue-400 transition" required style={{ textTransform: 'capitalize' }} autoComplete="relationship" />
                           <h2 className="flex items-center gap-2 text-xl font-bold text-blue-700 mt-6 mb-2"><span>🏠</span> Address</h2>
                           <label className="block text-sm font-semibold text-gray-700">Present Address</label>
-                          <textarea name="presentAddress" value={formData.presentAddress} onChange={handleInputChange} placeholder="Present Address" className="w-full p-3 border rounded-lg focus:ring-2 focus:ring-blue-300 focus:border-blue-400 transition" required autoComplete="address-line1" />
+                          <textarea name="presentAddress" value={formData.presentAddress} onChange={handleInputChange} placeholder="Present Address" className="input-with-cursor w-full p-3 border rounded-lg focus:ring-2 focus:ring-blue-300 focus:border-blue-400 transition" required autoComplete="address-line1" />
                           <label className="block text-sm font-semibold text-gray-700">Permanent Address</label>
-                          <textarea name="permanentAddress" value={formData.permanentAddress} onChange={handleInputChange} placeholder="Permanent Address" className="w-full p-3 border rounded-lg focus:ring-2 focus:ring-blue-300 focus:border-blue-400 transition" required autoComplete="address-line2" />
+                          <textarea name="permanentAddress" value={formData.permanentAddress} onChange={handleInputChange} placeholder="Permanent Address" className="input-with-cursor w-full p-3 border rounded-lg focus:ring-2 focus:ring-blue-300 focus:border-blue-400 transition" required autoComplete="address-line2" />
                         </div>
                       </div>
                       <div className="mt-8">

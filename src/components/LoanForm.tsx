@@ -2,7 +2,37 @@ import React, { useState, useEffect } from 'react';
 import axios from 'axios';
 import PhotoUpload from './PhotoUpload';
 import LoanPrintout from './LoanPrintout';
+import InputWithCursor from './InputWithCursor';
+import TextAreaWithCursor from './TextAreaWithCursor';
 import { formatAmountInWords } from '../utils/numberToWords';
+
+// Custom styles for input cursor icon
+const inputCursorStyles = `
+  .input-with-cursor {
+    position: relative;
+    cursor: text !important;
+  }
+  .input-with-cursor:hover::after {
+    content: '✏️';
+    position: absolute;
+    right: 12px;
+    top: 50%;
+    transform: translateY(-50%);
+    font-size: 18px;
+    pointer-events: none;
+    z-index: 1000;
+    opacity: 1;
+    transition: opacity 0.2s ease-in;
+    background: white;
+    padding: 2px 4px;
+    border-radius: 3px;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.2);
+  }
+  .input-with-cursor:not(:hover)::after {
+    opacity: 0;
+    transition: opacity 0.2s ease-out;
+  }
+`;
 
 // Types for props
 interface GoldItem {
@@ -53,6 +83,16 @@ interface LoanFormProps {
 }
 
 const LoanForm: React.FC<LoanFormProps> = ({ apiPrefix, token, user, onSuccess }) => {
+  // Add custom styles for input cursor icon
+  useEffect(() => {
+    const style = document.createElement('style');
+    style.textContent = inputCursorStyles;
+    document.head.appendChild(style);
+    return () => {
+      document.head.removeChild(style);
+    };
+  }, []);
+
   const [formData, setFormData] = useState<LoanFormData>({
     aadharNumber: '',
     name: '',
@@ -728,34 +768,34 @@ const LoanForm: React.FC<LoanFormProps> = ({ apiPrefix, token, user, onSuccess }
                 <label className="block text-sm font-semibold text-gray-700">Aadhar Number
                   <span className="block text-xs text-gray-400">12-digit unique ID</span>
                 </label>
-                <input type="text" name="aadharNumber" value={formData.aadharNumber} onChange={handleInputChange} placeholder="Aadhar Number" className="w-full p-3 border rounded-xl focus:ring-2 focus:ring-blue-300 focus:border-blue-400 transition-all duration-200 bg-white/80" required />
+                <InputWithCursor type="text" name="aadharNumber" value={formData.aadharNumber} onChange={handleInputChange} placeholder="Aadhar Number" required />
                 <label className="block text-sm font-semibold text-gray-700">Full Name</label>
-                <input type="text" name="name" value={formData.name} onChange={handleInputChange} placeholder="Full Name" className="w-full p-3 border rounded-xl focus:ring-2 focus:ring-blue-300 focus:border-blue-400 transition-all duration-200 bg-white/80" required />
+                <InputWithCursor type="text" name="name" value={formData.name} onChange={handleInputChange} placeholder="Full Name" required />
                 <label className="block text-sm font-semibold text-gray-700">Email
                   <span className="block text-xs text-gray-400">Optional - OTP will be sent here if provided</span>
                 </label>
-                <input type="email" name="email" value={formData.email} onChange={handleInputChange} placeholder="Email Address (Optional)" className="w-full p-3 border rounded-xl focus:ring-2 focus:ring-blue-300 focus:border-blue-400 transition-all duration-200 bg-white/80"/>
+                <InputWithCursor type="email" name="email" value={formData.email} onChange={handleInputChange} placeholder="Email Address (Optional)" />
               </div>
               <div className="space-y-4">
                 <h3 className="text-lg font-semibold text-blue-600 mb-2 flex items-center gap-2"><span className="text-2xl">📞</span> Contact Info</h3>
                 <label className="block text-sm font-semibold text-gray-700">Primary Mobile</label>
-                <input type="tel" name="primaryMobile" value={formData.primaryMobile} onChange={handleInputChange} placeholder="Primary Mobile Number" className="w-full p-3 border rounded-xl focus:ring-2 focus:ring-blue-300 focus:border-blue-400 transition-all duration-200 bg-white/80" required />
+                <input type="tel" name="primaryMobile" value={formData.primaryMobile} onChange={handleInputChange} placeholder="Primary Mobile Number" className="input-with-cursor w-full p-3 border rounded-xl focus:ring-2 focus:ring-blue-300 focus:border-blue-400 transition-all duration-200 bg-white/80" required />
                 <label className="block text-sm font-semibold text-gray-700">Secondary Mobile</label>
-                <input type="tel" name="secondaryMobile" value={formData.secondaryMobile} onChange={handleInputChange} placeholder="Secondary Mobile Number" className="w-full p-3 border rounded-xl focus:ring-2 focus:ring-blue-300 focus:border-blue-400 transition-all duration-200 bg-white/80" />
+                <input type="tel" name="secondaryMobile" value={formData.secondaryMobile} onChange={handleInputChange} placeholder="Secondary Mobile Number" className="input-with-cursor w-full p-3 border rounded-xl focus:ring-2 focus:ring-blue-300 focus:border-blue-400 transition-all duration-200 bg-white/80" />
                 <label className="block text-sm font-semibold text-gray-700">Emergency Contact Number</label>
-                <input type="tel" name="emergencyContact.mobile" value={formData.emergencyContact.mobile} onChange={handleInputChange} placeholder="Emergency Contact Number" className="w-full p-3 border rounded-xl focus:ring-2 focus:ring-blue-300 focus:border-blue-400 transition-all duration-200 bg-white/80" required />
+                <input type="tel" name="emergencyContact.mobile" value={formData.emergencyContact.mobile} onChange={handleInputChange} placeholder="Emergency Contact Number" className="input-with-cursor w-full p-3 border rounded-xl focus:ring-2 focus:ring-blue-300 focus:border-blue-400 transition-all duration-200 bg-white/80" required />
                 <label className="block text-sm font-semibold text-gray-700">Relation with Emergency Contact
                   <span className="block text-xs text-gray-400">e.g., Father, Mother</span>
                 </label>
-                <input type="text" name="emergencyContact.relation" value={formData.emergencyContact.relation} onChange={handleInputChange} placeholder="Relation (e.g., Father, Mother)" className="w-full p-3 border rounded-xl focus:ring-2 focus:ring-blue-300 focus:border-blue-400 transition-all duration-200 bg-white/80" required />
+                <input type="text" name="emergencyContact.relation" value={formData.emergencyContact.relation} onChange={handleInputChange} placeholder="Relation (e.g., Father, Mother)" className="input-with-cursor w-full p-3 border rounded-xl focus:ring-2 focus:ring-blue-300 focus:border-blue-400 transition-all duration-200 bg-white/80" required />
               </div>
             </div>
             <div className="space-y-4">
               <h3 className="text-lg font-semibold text-blue-600 mb-2 flex items-center gap-2"><span className="text-2xl">🏠</span> Address</h3>
               <label className="block text-sm font-semibold text-gray-700">Present Address</label>
-              <textarea name="presentAddress" value={formData.presentAddress} onChange={handleInputChange} placeholder="Present Address" className="w-full p-3 border rounded-xl focus:ring-2 focus:ring-blue-300 focus:border-blue-400 transition-all duration-200 bg-white/80" required />
+              <textarea name="presentAddress" value={formData.presentAddress} onChange={handleInputChange} placeholder="Present Address" className="input-with-cursor w-full p-3 border rounded-xl focus:ring-2 focus:ring-blue-300 focus:border-blue-400 transition-all duration-200 bg-white/80" required />
               <label className="block text-sm font-semibold text-gray-700">Permanent Address</label>
-              <textarea name="permanentAddress" value={formData.permanentAddress} onChange={handleInputChange} placeholder="Permanent Address" className="w-full p-3 border rounded-xl focus:ring-2 focus:ring-blue-300 focus:border-blue-400 transition-all duration-200 bg-white/80" required />
+              <textarea name="permanentAddress" value={formData.permanentAddress} onChange={handleInputChange} placeholder="Permanent Address" className="input-with-cursor w-full p-3 border rounded-xl focus:ring-2 focus:ring-blue-300 focus:border-blue-400 transition-all duration-200 bg-white/80" required />
             </div>
             <div className="flex justify-end mt-8">
               <button 
@@ -886,31 +926,31 @@ const LoanForm: React.FC<LoanFormProps> = ({ apiPrefix, token, user, onSuccess }
                 <label className="block text-sm font-semibold text-gray-700">Aadhar Number
                   <span className="block text-xs text-gray-400">12-digit unique ID</span>
                 </label>
-                <input type="text" name="aadharNumber" value={formData.aadharNumber} onChange={handleInputChange} placeholder="Aadhar Number" className="w-full p-3 border rounded-xl focus:ring-2 focus:ring-blue-300 focus:border-blue-400 transition-all duration-200 bg-white/80" required />
+                <input type="text" name="aadharNumber" value={formData.aadharNumber} onChange={handleInputChange} placeholder="Aadhar Number" className="input-with-cursor w-full p-3 border rounded-xl focus:ring-2 focus:ring-blue-300 focus:border-blue-400 transition-all duration-200 bg-white/80" required />
                 <label className="block text-sm font-semibold text-gray-700">Full Name</label>
-                <input type="text" name="name" value={formData.name} onChange={handleInputChange} placeholder="Full Name" className="w-full p-3 border rounded-xl focus:ring-2 focus:ring-blue-300 focus:border-blue-400 transition-all duration-200 bg-white/80" required />
+                <input type="text" name="name" value={formData.name} onChange={handleInputChange} placeholder="Full Name" className="input-with-cursor w-full p-3 border rounded-xl focus:ring-2 focus:ring-blue-300 focus:border-blue-400 transition-all duration-200 bg-white/80" required />
                 <label className="block text-sm font-semibold text-gray-700">Email
                   <span className="block text-xs text-gray-400">Optional - We'll send an OTP for verification if provided</span>
                 </label>
-                <input type="email" name="email" value={formData.email} onChange={handleInputChange} placeholder="Email Address (Optional)" className="w-full p-3 border rounded-xl focus:ring-2 focus:ring-blue-300 focus:border-blue-400 transition-all duration-200 bg-white/80" />
+                <input type="email" name="email" value={formData.email} onChange={handleInputChange} placeholder="Email Address (Optional)" className="input-with-cursor w-full p-3 border rounded-xl focus:ring-2 focus:ring-blue-300 focus:border-blue-400 transition-all duration-200 bg-white/80" />
                 <label className="block text-sm font-semibold text-gray-700">Primary Mobile</label>
-                <input type="tel" name="primaryMobile" value={formData.primaryMobile} onChange={handleInputChange} placeholder="Primary Mobile Number" className="w-full p-3 border rounded-xl focus:ring-2 focus:ring-blue-300 focus:border-blue-400 transition-all duration-200 bg-white/80" required />
+                <input type="tel" name="primaryMobile" value={formData.primaryMobile} onChange={handleInputChange} placeholder="Primary Mobile Number" className="input-with-cursor w-full p-3 border rounded-xl focus:ring-2 focus:ring-blue-300 focus:border-blue-400 transition-all duration-200 bg-white/80" required />
                 <label className="block text-sm font-semibold text-gray-700">Secondary Mobile</label>
-                <input type="tel" name="secondaryMobile" value={formData.secondaryMobile} onChange={handleInputChange} placeholder="Secondary Mobile Number" className="w-full p-3 border rounded-xl focus:ring-2 focus:ring-blue-300 focus:border-blue-400 transition-all duration-200 bg-white/80" />
+                <input type="tel" name="secondaryMobile" value={formData.secondaryMobile} onChange={handleInputChange} placeholder="Secondary Mobile Number" className="input-with-cursor w-full p-3 border rounded-xl focus:ring-2 focus:ring-blue-300 focus:border-blue-400 transition-all duration-200 bg-white/80" />
               </div>
               <div className="space-y-4">
                 <h2 className="flex items-center gap-2 text-xl font-bold text-blue-700 mb-2"><span>📞</span> Emergency Contact</h2>
                 <label className="block text-sm font-semibold text-gray-700">Contact Number</label>
-                <input type="tel" name="emergencyContact.mobile" value={formData.emergencyContact.mobile} onChange={handleInputChange} placeholder="Emergency Contact Number" className="w-full p-3 border rounded-xl focus:ring-2 focus:ring-blue-300 focus:border-blue-400 transition-all duration-200 bg-white/80" required />
+                <input type="tel" name="emergencyContact.mobile" value={formData.emergencyContact.mobile} onChange={handleInputChange} placeholder="Emergency Contact Number" className="input-with-cursor w-full p-3 border rounded-xl focus:ring-2 focus:ring-blue-300 focus:border-blue-400 transition-all duration-200 bg-white/80" required />
                 <label className="block text-sm font-semibold text-gray-700">Relation
                   <span className="block text-xs text-gray-400">e.g., Father, Mother</span>
                 </label>
-                <input type="text" name="emergencyContact.relation" value={formData.emergencyContact.relation} onChange={handleInputChange} placeholder="Relation (e.g., Father, Mother)" className="w-full p-3 border rounded-xl focus:ring-2 focus:ring-blue-300 focus:border-blue-400 transition-all duration-200 bg-white/80" required />
+                <input type="text" name="emergencyContact.relation" value={formData.emergencyContact.relation} onChange={handleInputChange} placeholder="Relation (e.g., Father, Mother)" className="input-with-cursor w-full p-3 border rounded-xl focus:ring-2 focus:ring-blue-300 focus:border-blue-400 transition-all duration-200 bg-white/80" required />
                 <h2 className="flex items-center gap-2 text-xl font-bold text-blue-700 mt-6 mb-2"><span>🏠</span> Address</h2>
                 <label className="block text-sm font-semibold text-gray-700">Present Address</label>
-                <textarea name="presentAddress" value={formData.presentAddress} onChange={handleInputChange} placeholder="Present Address" className="w-full p-3 border rounded-xl focus:ring-2 focus:ring-blue-300 focus:border-blue-400 transition-all duration-200 bg-white/80" required />
+                <textarea name="presentAddress" value={formData.presentAddress} onChange={handleInputChange} placeholder="Present Address" className="input-with-cursor w-full p-3 border rounded-xl focus:ring-2 focus:ring-blue-300 focus:border-blue-400 transition-all duration-200 bg-white/80" required />
                 <label className="block text-sm font-semibold text-gray-700">Permanent Address</label>
-                <textarea name="permanentAddress" value={formData.permanentAddress} onChange={handleInputChange} placeholder="Permanent Address" className="w-full p-3 border rounded-xl focus:ring-2 focus:ring-blue-300 focus:border-blue-400 transition-all duration-200 bg-white/80" required />
+                <textarea name="permanentAddress" value={formData.permanentAddress} onChange={handleInputChange} placeholder="Permanent Address" className="input-with-cursor w-full p-3 border rounded-xl focus:ring-2 focus:ring-blue-300 focus:border-blue-400 transition-all duration-200 bg-white/80" required />
               </div>
             </div>
             <div className="mt-8">
@@ -920,15 +960,15 @@ const LoanForm: React.FC<LoanFormProps> = ({ apiPrefix, token, user, onSuccess }
                     <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
                       <div>
                         <label className="block text-sm font-semibold text-gray-700">Description</label>
-                        <input type="text" value={item.description} onChange={e => handleGoldItemChange(index, 'description', e.target.value)} placeholder="Gold Item Description" className="w-full p-3 border rounded-xl focus:ring-2 focus:ring-yellow-300 focus:border-yellow-400 transition-all duration-200 bg-white/80" required />
+                        <input type="text" value={item.description} onChange={e => handleGoldItemChange(index, 'description', e.target.value)} placeholder="Gold Item Description" className="input-with-cursor w-full p-3 border rounded-xl focus:ring-2 focus:ring-yellow-300 focus:border-yellow-400 transition-all duration-200 bg-white/80" required />
                       </div>
                       <div>
                         <label className="block text-sm font-semibold text-gray-700">Gross Weight (g)</label>
-                        <input type="number" value={item.grossWeight} onChange={e => handleGoldItemChange(index, 'grossWeight', e.target.value)} placeholder="Gross Weight" className="w-full p-3 border rounded-xl focus:ring-2 focus:ring-yellow-300 focus:border-yellow-400 transition-all duration-200 bg-white/80" min="0" step="0.01" required />
+                        <input type="number" value={item.grossWeight} onChange={e => handleGoldItemChange(index, 'grossWeight', e.target.value)} placeholder="Gross Weight" className="input-with-cursor w-full p-3 border rounded-xl focus:ring-2 focus:ring-yellow-300 focus:border-yellow-400 transition-all duration-200 bg-white/80" min="0" step="0.01" required />
                       </div>
                       <div>
                         <label className="block text-sm font-semibold text-gray-700">Net Weight (g)</label>
-                        <input type="number" value={item.netWeight} onChange={e => handleGoldItemChange(index, 'netWeight', e.target.value)} placeholder="Net Weight" className="w-full p-3 border rounded-xl focus:ring-2 focus:ring-yellow-300 focus:border-yellow-400 transition-all duration-200 bg-white/80" min="0" step="0.01" required />
+                        <input type="number" value={item.netWeight} onChange={e => handleGoldItemChange(index, 'netWeight', e.target.value)} placeholder="Net Weight" className="input-with-cursor w-full p-3 border rounded-xl focus:ring-2 focus:ring-yellow-300 focus:border-yellow-400 transition-all duration-200 bg-white/80" min="0" step="0.01" required />
                       </div>
                     </div>
                     
@@ -982,7 +1022,7 @@ const LoanForm: React.FC<LoanFormProps> = ({ apiPrefix, token, user, onSuccess }
               <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
                 <div>
                   <label className="block text-sm font-semibold text-gray-700">Interest Rate (%)</label>
-              <select name="interestRate" value={formData.interestRate} onChange={handleInputChange} className="w-full p-3 border rounded-xl focus:ring-2 focus:ring-yellow-300 focus:border-yellow-400 transition-all duration-200 bg-white/80" required>
+              <select name="interestRate" value={formData.interestRate} onChange={handleInputChange} className="input-with-cursor w-full p-3 border rounded-xl focus:ring-2 focus:ring-yellow-300 focus:border-yellow-400 transition-all duration-200 bg-white/80" required>
                 <option value="">Select Interest Rate</option>
                 <option value="18">18% per annum</option>
                 <option value="24">24% per annum</option>
@@ -992,7 +1032,7 @@ const LoanForm: React.FC<LoanFormProps> = ({ apiPrefix, token, user, onSuccess }
                 </div>
                 <div>
                   <label className="block text-sm font-semibold text-gray-700">Loan Amount (₹)</label>
-                  <input type="number" name="loanAmount" value={formData.loanAmount} onChange={handleInputChange} placeholder="Loan Amount" className="w-full p-3 border rounded-xl focus:ring-2 focus:ring-yellow-300 focus:border-yellow-400 transition-all duration-200 bg-white/80" min="100" step="1" required />
+                  <input type="number" name="loanAmount" value={formData.loanAmount} onChange={handleInputChange} placeholder="Loan Amount" className="input-with-cursor w-full p-3 border rounded-xl focus:ring-2 focus:ring-yellow-300 focus:border-yellow-400 transition-all duration-200 bg-white/80" min="100" step="1" required />
                   {formData.loanAmount && Number(formData.loanAmount) > 0 && (
                     <div className="mt-2 p-2 bg-blue-50 border border-blue-200 rounded-lg">
                       <p className="text-sm text-blue-800 font-medium">
@@ -1003,7 +1043,7 @@ const LoanForm: React.FC<LoanFormProps> = ({ apiPrefix, token, user, onSuccess }
                 </div>
                 <div>
                   <label className="block text-sm font-semibold text-gray-700">Duration (months)</label>
-                  <select name="duration" value={formData.duration} onChange={handleInputChange} className="w-full p-3 border rounded-xl focus:ring-2 focus:ring-yellow-300 focus:border-yellow-400 transition-all duration-200 bg-white/80" required>
+                  <select name="duration" value={formData.duration} onChange={handleInputChange} className="input-with-cursor w-full p-3 border rounded-xl focus:ring-2 focus:ring-yellow-300 focus:border-yellow-400 transition-all duration-200 bg-white/80" required>
                     <option value="">Select Duration</option>
                     <option value="3">3 months</option>
                     <option value="6">6 months</option>
@@ -1012,7 +1052,7 @@ const LoanForm: React.FC<LoanFormProps> = ({ apiPrefix, token, user, onSuccess }
                 </div>
                 <div>
                   <label className="block text-sm font-semibold text-gray-700">Monthly Payment (₹)</label>
-                  <input type="number" name="monthlyPayment" value={formData.monthlyPayment} onChange={handleInputChange} placeholder="Monthly Payment" className="w-full p-3 border rounded-xl focus:ring-2 focus:ring-yellow-300 focus:border-yellow-400 transition-all duration-200 bg-white/80" min="0" step="1" required />
+                  <input type="number" name="monthlyPayment" value={formData.monthlyPayment} onChange={handleInputChange} placeholder="Monthly Payment" className="input-with-cursor w-full p-3 border rounded-xl focus:ring-2 focus:ring-yellow-300 focus:border-yellow-400 transition-all duration-200 bg-white/80" min="0" step="1" required />
                   {formData.loanAmount && formData.interestRate && formData.duration && Number(formData.loanAmount) > 0 && Number(formData.interestRate) > 0 && Number(formData.duration) > 0 && (
                     <div className="mt-2 p-2 bg-green-50 border border-green-200 rounded-lg">
                       <div className="text-sm text-green-800">
@@ -1030,7 +1070,7 @@ const LoanForm: React.FC<LoanFormProps> = ({ apiPrefix, token, user, onSuccess }
                 </div>
                 <div>
                   <label className="block text-sm font-semibold text-gray-700">Total Amount to be Paid (₹)</label>
-                  <input type="number" name="totalAmount" value={formData.totalAmount} onChange={handleInputChange} placeholder="Total Amount" className="w-full p-3 border rounded-xl focus:ring-2 focus:ring-yellow-300 focus:border-yellow-400 transition-all duration-200 bg-white/80" min="0" step="1" required />
+                  <input type="number" name="totalAmount" value={formData.totalAmount} onChange={handleInputChange} placeholder="Total Amount" className="input-with-cursor w-full p-3 border rounded-xl focus:ring-2 focus:ring-yellow-300 focus:border-yellow-400 transition-all duration-200 bg-white/80" min="0" step="1" required />
                 </div>
               </div>
               

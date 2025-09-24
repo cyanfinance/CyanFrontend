@@ -393,8 +393,9 @@ const LoanPrintout: React.FC<LoanPrintoutProps> = ({ loanData, token, onClose })
                   `;
                 }).join('')}
                 <tr style="background: #f8f9fa; font-weight: bold;">
-                  <td style="border: 1px solid #ccc; padding: 3px; font-size: 8px; text-align: center;" colspan="3">TOTAL WEIGHT</td>
+                  <td style="border: 1px solid #ccc; padding: 3px; font-size: 8px; text-align: center;" colspan="2">TOTAL WEIGHT</td>
                   <td style="border: 1px solid #ccc; padding: 3px; font-size: 8px; text-align: center; font-weight: bold;">${loanData.goldItems.reduce((sum, item) => sum + (parseFloat(String(item.grossWeight)) || 0), 0).toFixed(2)} g</td>
+                  <td style="border: 1px solid #ccc; padding: 3px; font-size: 8px; text-align: center; font-weight: bold;">${loanData.goldItems.reduce((sum, item) => sum + (parseFloat(String(item.netWeight)) || 0), 0).toFixed(2)} g</td>
                   </tr>
               </tbody>
             </table>
@@ -527,8 +528,9 @@ const LoanPrintout: React.FC<LoanPrintoutProps> = ({ loanData, token, onClose })
                       `;
                     }).join('')}
                     <tr style="background: #f8f9fa; font-weight: bold;">
-                      <td style="border: 1px solid #ccc; padding: 3px; font-size: 8px; text-align: center;" colspan="3">TOTAL WEIGHT</td>
+                      <td style="border: 1px solid #ccc; padding: 3px; font-size: 8px; text-align: center;" colspan="2">TOTAL WEIGHT</td>
                       <td style="border: 1px solid #ccc; padding: 3px; font-size: 8px; text-align: center; font-weight: bold;">${loanData.goldItems.reduce((sum, item) => sum + (parseFloat(String(item.grossWeight)) || 0), 0).toFixed(2)} g</td>
+                      <td style="border: 1px solid #ccc; padding: 3px; font-size: 8px; text-align: center; font-weight: bold;">${loanData.goldItems.reduce((sum, item) => sum + (parseFloat(String(item.netWeight)) || 0), 0).toFixed(2)} g</td>
                     </tr>
                   </tbody>
                 </table>
@@ -848,11 +850,14 @@ const LoanPrintout: React.FC<LoanPrintoutProps> = ({ loanData, token, onClose })
                       </tr>
                     ))}
                     <tr className="bg-gray-100 font-bold">
-                      <td className="border border-gray-300 px-4 py-3 text-center" colSpan={3}>
+                      <td className="border border-gray-300 px-4 py-3 text-center" colSpan={2}>
                         TOTAL WEIGHT
                       </td>
                       <td className="border border-gray-300 px-4 py-3 text-center font-bold">
                         {loanData.goldItems.reduce((sum, item) => sum + (parseFloat(String(item.grossWeight)) || 0), 0).toFixed(2)} g
+                      </td>
+                      <td className="border border-gray-300 px-4 py-3 text-center font-bold">
+                        {loanData.goldItems.reduce((sum, item) => sum + (parseFloat(String(item.netWeight)) || 0), 0).toFixed(2)} g
                       </td>
                     </tr>
                   </tbody>

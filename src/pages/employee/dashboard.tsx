@@ -8,6 +8,34 @@ import Navbar from '../../components/Navbar';
 import { useNavigate } from 'react-router-dom';
 import UpgradeHistoryModal from '../../components/UpgradeHistoryModal';
 
+// Custom styles for input cursor icon
+const inputCursorStyles = `
+  .input-with-cursor {
+    position: relative;
+    cursor: text !important;
+  }
+  .input-with-cursor:hover::after {
+    content: '✏️';
+    position: absolute;
+    right: 12px;
+    top: 50%;
+    transform: translateY(-50%);
+    font-size: 18px;
+    pointer-events: none;
+    z-index: 1000;
+    opacity: 1;
+    transition: opacity 0.2s ease-in;
+    background: white;
+    padding: 2px 4px;
+    border-radius: 3px;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.2);
+  }
+  .input-with-cursor:not(:hover)::after {
+    opacity: 0;
+    transition: opacity 0.2s ease-out;
+  }
+`;
+
 interface GoldItem {
   description: string;
   grossWeight: number;
@@ -178,7 +206,7 @@ const RepaymentModal: React.FC<RepaymentModalProps> = ({ loan: _loan, onClose, o
               type="date"
               value={repaymentDate}
               onChange={e => setRepaymentDate(e.target.value)}
-              className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-yellow-500 focus:ring-yellow-500"
+              className="input-with-cursor mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-yellow-500 focus:ring-yellow-500"
               required
             />
             <p className="text-xs text-gray-500 mt-1">
@@ -236,7 +264,7 @@ const RepaymentModal: React.FC<RepaymentModalProps> = ({ loan: _loan, onClose, o
                 setAmount(Number(e.target.value));
                 setUserHasManuallySetAmount(true);
               }}
-              className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-yellow-500 focus:ring-yellow-500"
+              className="input-with-cursor mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-yellow-500 focus:ring-yellow-500"
               required
               min={calc?.minimumTotalDue || 0}
               max={calc?.totalDue || _loan.totalPayment || 0}
@@ -271,7 +299,7 @@ const RepaymentModal: React.FC<RepaymentModalProps> = ({ loan: _loan, onClose, o
             <select
               value={paymentMethod}
               onChange={(e) => setPaymentMethod(e.target.value)}
-              className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-yellow-500 focus:ring-yellow-500"
+              className="input-with-cursor mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-yellow-500 focus:ring-yellow-500"
               required
             >
               <option value="handcash">Hand Cash</option>
@@ -283,7 +311,7 @@ const RepaymentModal: React.FC<RepaymentModalProps> = ({ loan: _loan, onClose, o
             <select
               value={paymentType}
               onChange={(e) => setPaymentType(e.target.value)}
-              className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-yellow-500 focus:ring-yellow-500"
+              className="input-with-cursor mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-yellow-500 focus:ring-yellow-500"
               required
             >
               <option value="total">Total Amount (Interest + Principal)</option>
@@ -316,7 +344,7 @@ const RepaymentModal: React.FC<RepaymentModalProps> = ({ loan: _loan, onClose, o
                 type="text"
                 value={transactionId}
                 onChange={(e) => setTransactionId(e.target.value)}
-                className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-yellow-500 focus:ring-yellow-500"
+                className="input-with-cursor mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-yellow-500 focus:ring-yellow-500"
                 placeholder="Enter transaction ID"
                 required={paymentMethod === 'online'}
               />
@@ -348,6 +376,16 @@ const RepaymentModal: React.FC<RepaymentModalProps> = ({ loan: _loan, onClose, o
 };
 
 const EmployeeDashboard = () => {
+  // Add custom styles for input cursor icon
+  useEffect(() => {
+    const style = document.createElement('style');
+    style.textContent = inputCursorStyles;
+    document.head.appendChild(style);
+    return () => {
+      document.head.removeChild(style);
+    };
+  }, []);
+
   const [showLoanForm, setShowLoanForm] = useState(false);
   const [loans, setLoans] = useState<Loan[]>([]);
   const [loading, setLoading] = useState(true);
