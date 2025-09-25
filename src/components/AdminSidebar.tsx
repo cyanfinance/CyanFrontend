@@ -11,7 +11,8 @@ import {
   Clock,
   Mail,
   Package,
-  Gavel
+  Gavel,
+  Settings
 } from 'lucide-react';
 // Import logo from assets directory
 import cyanlogo1 from '../assets/cyanlogo1.png';
@@ -69,11 +70,18 @@ const AdminSidebar: React.FC<AdminSidebarProps> = ({ isOpen, toggleSidebar }) =>
       name: 'Auction Management',
       icon: <Gavel className="w-5 h-5" />
     },
-    ...(userRole === 'admin' ? [{
-      path: '/admin/employees',
-      name: 'Employees',
-      icon: <UserPlus className="w-5 h-5" />
-    }] : [])
+    ...(userRole === 'admin' ? [
+      {
+        path: '/admin/employees',
+        name: 'Employees',
+        icon: <UserPlus className="w-5 h-5" />
+      },
+      {
+        path: '/admin/cron-jobs',
+        name: 'Cron Jobs',
+        icon: <Settings className="w-5 h-5" />
+      }
+    ] : [])
   ];
 
   const publicLinks = [
