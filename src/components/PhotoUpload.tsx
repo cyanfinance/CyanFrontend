@@ -1,4 +1,4 @@
-import React, { useState, useRef, useCallback } from 'react';
+import React, { useState, useRef, useCallback, useEffect } from 'react';
 import { Camera, Upload, X, Image as ImageIcon, Trash2, Eye } from 'lucide-react';
 
 interface Photo {
@@ -30,6 +30,7 @@ const PhotoUpload: React.FC<PhotoUploadProps> = ({
   const [photos, setPhotos] = useState<Photo[]>([]);
   const [uploading, setUploading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [autoUploadTriggered, setAutoUploadTriggered] = useState(false);
   const [showPreview, setShowPreview] = useState<string | null>(null);
   
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -37,8 +38,24 @@ const PhotoUpload: React.FC<PhotoUploadProps> = ({
 
   const API_URL = import.meta.env.VITE_API_URL || '';
 
+  // Reset auto-upload trigger when loanId changes
+  useEffect(() => {
+    setAutoUploadTriggered(false);
+  }, [loanId]);
+
+  // Auto-upload photos when they're added and loanId is valid
+  useEffect(() => {
+    if (loanId && loanId !== 'temp' && photos.length > 0 && !autoUploadTriggered) {
+      const hasUnuploadedPhotos = photos.some(photo => !photo.uploaded);
+      if (hasUnuploadedPhotos) {
+        setAutoUploadTriggered(true);
+        uploadPhotos();
+      }
+    }
+  }, [photos, loanId, autoUploadTriggered]);
+
   // Handle file selection
-  const handleFileSelect = useCallback((files: FileList | null) => {
+  const handleFileSelect = useCallback(async (files: FileList | null) => {
     if (!files) return;
 
     const newPhotos: Photo[] = [];
@@ -64,6 +81,7 @@ const PhotoUpload: React.FC<PhotoUploadProps> = ({
     setPhotos(updatedPhotos);
     onPhotosChange?.(updatedPhotos);
     setError(null);
+
   }, [photos, maxPhotos, onPhotosChange]);
 
   // Handle file input change
@@ -191,7 +209,7 @@ const PhotoUpload: React.FC<PhotoUploadProps> = ({
           <button
             type="button"
             onClick={uploadPhotos}
-            disabled={uploading || photos.every(p => p.uploaded || p.readyForUpload)}
+            disabled={uploading || autoUploadTriggered || photos.every(p => p.uploaded || p.readyForUpload)}
             className="flex items-center gap-2 px-4 py-2 bg-purple-500 hover:bg-purple-600 disabled:bg-gray-400 text-white rounded-lg transition-colors"
           >
             {uploading ? (
@@ -203,6 +221,11 @@ const PhotoUpload: React.FC<PhotoUploadProps> = ({
               <>
                 <Upload size={16} />
                 Prepare {photos.filter(p => !p.readyForUpload).length} Photos
+              </>
+            ) : autoUploadTriggered ? (
+              <>
+                <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>
+                Auto-uploading...
               </>
             ) : (
               <>

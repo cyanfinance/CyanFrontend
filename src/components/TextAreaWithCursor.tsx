@@ -4,13 +4,17 @@ interface TextAreaWithCursorProps extends React.TextareaHTMLAttributes<HTMLTextA
   className?: string;
 }
 
-const TextAreaWithCursor: React.FC<TextAreaWithCursorProps> = ({ className = '', ...props }) => {
+const TextAreaWithCursor: React.FC<TextAreaWithCursorProps> = ({ className = '', value, ...props }) => {
   const [isHovered, setIsHovered] = useState(false);
+
+  // Ensure value is never null or undefined
+  const safeValue = value ?? '';
 
   return (
     <div className="relative">
       <textarea
         {...props}
+        value={safeValue}
         className={`${className} w-full p-3 border rounded-xl focus:ring-2 focus:ring-blue-300 focus:border-blue-400 transition-all duration-200 bg-white/80`}
         onMouseEnter={() => setIsHovered(true)}
         onMouseLeave={() => setIsHovered(false)}

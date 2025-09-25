@@ -59,6 +59,7 @@ interface LoanFormData {
   totalAmount: string | number;
   monthlyPayment: string | number;
   duration: string | number;
+  customLoanDate: string;
 }
 
 interface CustomerDetails {
@@ -108,6 +109,7 @@ const LoanForm: React.FC<LoanFormProps> = ({ apiPrefix, token, user, onSuccess }
     totalAmount: '',
     monthlyPayment: '',
     duration: '',
+    customLoanDate: '',
   });
   const [customerDetails, setCustomerDetails] = useState<CustomerDetails | null>(null);
   const [checkingAadhar, setCheckingAadhar] = useState(false);
@@ -118,6 +120,7 @@ const LoanForm: React.FC<LoanFormProps> = ({ apiPrefix, token, user, onSuccess }
   const [customerVerified, setCustomerVerified] = useState(false);
   const [customerId, setCustomerId] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const [autoAdvancing, setAutoAdvancing] = useState(false);
   const [otpValidation, setOtpValidation] = useState<{
     isValidating: boolean;
     isValid: boolean | null;
@@ -350,6 +353,7 @@ const LoanForm: React.FC<LoanFormProps> = ({ apiPrefix, token, user, onSuccess }
       totalAmount: '',
       monthlyPayment: '',
       duration: '',
+      customLoanDate: '',
     });
     setCustomerDetails(null);
     setLoanStep(1);
@@ -362,6 +366,7 @@ const LoanForm: React.FC<LoanFormProps> = ({ apiPrefix, token, user, onSuccess }
     setAllItemsTogetherPhoto([]);
     setShowPrintout(false);
     setCreatedLoanData(null);
+    setAutoAdvancing(false);
     setOtpValidation({
       isValidating: false,
       isValid: null,
@@ -385,7 +390,9 @@ const LoanForm: React.FC<LoanFormProps> = ({ apiPrefix, token, user, onSuccess }
         }
       });
       const data = await response.json();
+      console.log('🔍 Customer check response:', data);
       if (data.exists) {
+        console.log('👤 Customer details found:', data.customerDetails);
         setCustomerDetails(data.customerDetails);
         setFormData(prev => ({
           ...prev,
@@ -399,8 +406,18 @@ const LoanForm: React.FC<LoanFormProps> = ({ apiPrefix, token, user, onSuccess }
           emergencyContact: {
             mobile: data.customerDetails.emergencyContact?.mobile || '',
             relation: data.customerDetails.emergencyContact?.relation || ''
-          }
+          },
+          customLoanDate: prev.customLoanDate // Preserve existing customLoanDate
         }));
+        
+        // Auto-advance to OTP verification step for existing customers
+        setAutoAdvancing(true);
+        setTimeout(async () => {
+          setLoanStep(2);
+          // Auto-send OTP for existing customers with the customer details
+          await sendOtpForExistingCustomer(data.customerDetails);
+          setAutoAdvancing(false);
+        }, 1500); // Small delay to show the auto-filled data and message
       } else {
         setCustomerDetails(null);
       }
@@ -408,6 +425,99 @@ const LoanForm: React.FC<LoanFormProps> = ({ apiPrefix, token, user, onSuccess }
       setError(err instanceof Error ? err.message : 'Failed to check Aadhar number');
     } finally {
       setCheckingAadhar(false);
+    }
+  };
+
+  // Send OTP for existing customers
+  const sendOtpForExistingCustomer = async (customerDetails?: any) => {
+    try {
+      setError(null);
+      
+      // Use customer details from parameter if available, otherwise fall back to formData
+      const customerData = customerDetails || {
+        aadharNumber: formData.aadharNumber,
+        name: formData.name,
+        email: formData.email,
+        primaryMobile: formData.primaryMobile,
+        secondaryMobile: formData.secondaryMobile,
+        presentAddress: formData.presentAddress,
+        permanentAddress: formData.permanentAddress,
+        emergencyContact: formData.emergencyContact
+      };
+      
+      console.log('🔄 Sending OTP for existing customer:', customerData.primaryMobile);
+      console.log('📋 Customer data:', customerData);
+      console.log('🔍 Aadhar number check:', customerData.aadharNumber);
+      
+      // For SMS OTP verification, we need either email or phone number
+      if ((!customerData.email || !customerData.email.trim()) && (!customerData.primaryMobile || !customerData.primaryMobile.trim())) {
+        setError('No customer contact information found. Please go back and try again.');
+        return;
+      }
+
+      // Ensure we have a valid mobile number for SMS OTP
+      if (!customerData.primaryMobile || !customerData.primaryMobile.trim()) {
+        setError('Primary mobile number is required for SMS OTP verification.');
+        return;
+      }
+
+      setOtpValidation({
+        isValidating: true,
+        isValid: null,
+        message: 'Sending OTP...'
+      });
+
+      const response = await fetch(`${API_URL}/${apiPrefix}/customers`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'x-auth-token': token
+        },
+        body: JSON.stringify({
+          aadharNumber: customerData.aadharNumber,
+          name: customerData.name,
+          email: customerData.email,
+          primaryMobile: customerData.primaryMobile,
+          secondaryMobile: customerData.secondaryMobile,
+          presentAddress: customerData.presentAddress,
+          permanentAddress: customerData.permanentAddress,
+          emergencyContact: customerData.emergencyContact,
+          purpose: 'loan_creation'
+        })
+      });
+
+      const data = await response.json();
+      if (!response.ok) {
+        if (data.errors && Array.isArray(data.errors)) {
+          const errorMessage = data.errors.map((error: any) => error.msg).join('\n');
+          throw new Error(errorMessage);
+        } else {
+          throw new Error(data.message || 'Failed to send OTP');
+        }
+      }
+
+        setOtpValidation({
+          isValidating: false,
+          isValid: null,
+          message: `OTP sent successfully to ${customerData.primaryMobile}`
+        });
+
+      console.log('✅ OTP sent successfully to existing customer:', customerData.primaryMobile);
+
+      // Auto-verify OTP if it's a test environment or if we have the OTP
+      if (data.otp) {
+        console.log('🔑 Auto-verifying OTP:', data.otp);
+        setTimeout(() => {
+          verifyOtpAutomatically(data.otp);
+        }, 1000);
+      }
+    } catch (err) {
+      setOtpValidation({
+        isValidating: false,
+        isValid: false,
+        message: err instanceof Error ? err.message : 'Failed to send OTP'
+      });
+      setError(err instanceof Error ? err.message : 'Failed to send OTP');
     }
   };
 
@@ -633,6 +743,7 @@ const LoanForm: React.FC<LoanFormProps> = ({ apiPrefix, token, user, onSuccess }
         term,
         monthlyPayment,
         totalPayment,
+        customLoanDate: formData.customLoanDate || null, // Add custom loan date
         createdBy: user.id
       };
       const response = await fetch(`${API_URL}/${apiPrefix}/loans`, {
@@ -717,16 +828,7 @@ const LoanForm: React.FC<LoanFormProps> = ({ apiPrefix, token, user, onSuccess }
             totalAmount: totalAmount.toString()
           }));
         }
-      } else {
-        // Only clear if we don't have valid values
-        if (!formData.loanAmount || !formData.interestRate || !formData.duration) {
-          setFormData(prev => ({
-            ...prev,
-            monthlyPayment: '',
-            totalAmount: ''
-          }));
-        }
-      }
+      } 
     };
     recalc();
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -797,12 +899,30 @@ const LoanForm: React.FC<LoanFormProps> = ({ apiPrefix, token, user, onSuccess }
               <label className="block text-sm font-semibold text-gray-700">Permanent Address</label>
               <textarea name="permanentAddress" value={formData.permanentAddress} onChange={handleInputChange} placeholder="Permanent Address" className="input-with-cursor w-full p-3 border rounded-xl focus:ring-2 focus:ring-blue-300 focus:border-blue-400 transition-all duration-200 bg-white/80" required />
             </div>
+            
+            {/* Auto-advance message for existing customers */}
+            {autoAdvancing && (
+              <div className="bg-blue-50 border border-blue-200 rounded-xl p-4 mb-6">
+                <div className="flex items-center gap-3">
+                  <div className="w-8 h-8 bg-blue-100 rounded-lg flex items-center justify-center">
+                    <svg className="animate-spin h-5 w-5 text-blue-600" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                      <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                      <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                    </svg>
+                  </div>
+                  <div>
+                    <h4 className="text-sm font-semibold text-blue-800">Existing Customer Found!</h4>
+                    <p className="text-xs text-blue-600">Auto-advancing to OTP verification...</p>
+                  </div>
+                </div>
+              </div>
+            )}
             <div className="flex justify-end mt-8">
               <button 
                 type="submit" 
-                disabled={checkingAadhar}
+                disabled={checkingAadhar || autoAdvancing}
                 className={`px-10 py-4 rounded-2xl text-lg font-bold shadow-xl flex items-center gap-2 transition-all duration-200 ${
-                  checkingAadhar 
+                  (checkingAadhar || autoAdvancing)
                     ? 'bg-gray-400 cursor-not-allowed' 
                     : 'bg-gradient-to-r from-cyan-400 to-blue-600 hover:from-cyan-500 hover:to-blue-700'
                 } text-white`}
@@ -814,6 +934,14 @@ const LoanForm: React.FC<LoanFormProps> = ({ apiPrefix, token, user, onSuccess }
                       <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
                     </svg>
                     Creating Customer...
+                  </>
+                ) : autoAdvancing ? (
+                  <>
+                    <svg className="animate-spin h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                      <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                      <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                    </svg>
+                    Auto-advancing...
                   </>
                 ) : (
                   <>
@@ -920,37 +1048,18 @@ const LoanForm: React.FC<LoanFormProps> = ({ apiPrefix, token, user, onSuccess }
         {/* Step 3: Loan details */}
         {loanStep === 3 && customerVerified && (
           <form onSubmit={handleSubmit} className="space-y-8 animate-fade-in">
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-10">
-              <div className="space-y-4">
-                <h2 className="flex items-center gap-2 text-xl font-bold text-blue-700 mb-2"><span>👤</span> Customer Details</h2>
-                <label className="block text-sm font-semibold text-gray-700">Aadhar Number
-                  <span className="block text-xs text-gray-400">12-digit unique ID</span>
-                </label>
-                <input type="text" name="aadharNumber" value={formData.aadharNumber} onChange={handleInputChange} placeholder="Aadhar Number" className="input-with-cursor w-full p-3 border rounded-xl focus:ring-2 focus:ring-blue-300 focus:border-blue-400 transition-all duration-200 bg-white/80" required />
-                <label className="block text-sm font-semibold text-gray-700">Full Name</label>
-                <input type="text" name="name" value={formData.name} onChange={handleInputChange} placeholder="Full Name" className="input-with-cursor w-full p-3 border rounded-xl focus:ring-2 focus:ring-blue-300 focus:border-blue-400 transition-all duration-200 bg-white/80" required />
-                <label className="block text-sm font-semibold text-gray-700">Email
-                  <span className="block text-xs text-gray-400">Optional - We'll send an OTP for verification if provided</span>
-                </label>
-                <input type="email" name="email" value={formData.email} onChange={handleInputChange} placeholder="Email Address (Optional)" className="input-with-cursor w-full p-3 border rounded-xl focus:ring-2 focus:ring-blue-300 focus:border-blue-400 transition-all duration-200 bg-white/80" />
-                <label className="block text-sm font-semibold text-gray-700">Primary Mobile</label>
-                <input type="tel" name="primaryMobile" value={formData.primaryMobile} onChange={handleInputChange} placeholder="Primary Mobile Number" className="input-with-cursor w-full p-3 border rounded-xl focus:ring-2 focus:ring-blue-300 focus:border-blue-400 transition-all duration-200 bg-white/80" required />
-                <label className="block text-sm font-semibold text-gray-700">Secondary Mobile</label>
-                <input type="tel" name="secondaryMobile" value={formData.secondaryMobile} onChange={handleInputChange} placeholder="Secondary Mobile Number" className="input-with-cursor w-full p-3 border rounded-xl focus:ring-2 focus:ring-blue-300 focus:border-blue-400 transition-all duration-200 bg-white/80" />
-              </div>
-              <div className="space-y-4">
-                <h2 className="flex items-center gap-2 text-xl font-bold text-blue-700 mb-2"><span>📞</span> Emergency Contact</h2>
-                <label className="block text-sm font-semibold text-gray-700">Contact Number</label>
-                <input type="tel" name="emergencyContact.mobile" value={formData.emergencyContact.mobile} onChange={handleInputChange} placeholder="Emergency Contact Number" className="input-with-cursor w-full p-3 border rounded-xl focus:ring-2 focus:ring-blue-300 focus:border-blue-400 transition-all duration-200 bg-white/80" required />
-                <label className="block text-sm font-semibold text-gray-700">Relation
-                  <span className="block text-xs text-gray-400">e.g., Father, Mother</span>
-                </label>
-                <input type="text" name="emergencyContact.relation" value={formData.emergencyContact.relation} onChange={handleInputChange} placeholder="Relation (e.g., Father, Mother)" className="input-with-cursor w-full p-3 border rounded-xl focus:ring-2 focus:ring-blue-300 focus:border-blue-400 transition-all duration-200 bg-white/80" required />
-                <h2 className="flex items-center gap-2 text-xl font-bold text-blue-700 mt-6 mb-2"><span>🏠</span> Address</h2>
-                <label className="block text-sm font-semibold text-gray-700">Present Address</label>
-                <textarea name="presentAddress" value={formData.presentAddress} onChange={handleInputChange} placeholder="Present Address" className="input-with-cursor w-full p-3 border rounded-xl focus:ring-2 focus:ring-blue-300 focus:border-blue-400 transition-all duration-200 bg-white/80" required />
-                <label className="block text-sm font-semibold text-gray-700">Permanent Address</label>
-                <textarea name="permanentAddress" value={formData.permanentAddress} onChange={handleInputChange} placeholder="Permanent Address" className="input-with-cursor w-full p-3 border rounded-xl focus:ring-2 focus:ring-blue-300 focus:border-blue-400 transition-all duration-200 bg-white/80" required />
+            {/* Customer verification confirmation */}
+            <div className="bg-green-50 border border-green-200 rounded-xl p-6 mb-8">
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 bg-green-100 rounded-lg flex items-center justify-center">
+                  <span className="text-green-600 text-xl">✅</span>
+                </div>
+                <div>
+                  <h3 className="text-lg font-semibold text-green-800">Customer Verified</h3>
+                  <p className="text-sm text-green-600">
+                    {formData.name} ({formData.aadharNumber}) - {formData.primaryMobile}
+                  </p>
+                </div>
               </div>
             </div>
             <div className="mt-8">
@@ -1024,6 +1133,7 @@ const LoanForm: React.FC<LoanFormProps> = ({ apiPrefix, token, user, onSuccess }
                   <label className="block text-sm font-semibold text-gray-700">Interest Rate (%)</label>
               <select name="interestRate" value={formData.interestRate} onChange={handleInputChange} className="input-with-cursor w-full p-3 border rounded-xl focus:ring-2 focus:ring-yellow-300 focus:border-yellow-400 transition-all duration-200 bg-white/80" required>
                 <option value="">Select Interest Rate</option>
+                <option value="12">12% per annum</option>
                 <option value="18">18% per annum</option>
                 <option value="24">24% per annum</option>
                 <option value="30">30% per annum</option>
@@ -1050,23 +1160,36 @@ const LoanForm: React.FC<LoanFormProps> = ({ apiPrefix, token, user, onSuccess }
                     <option value="12">12 months</option>
                   </select>
                 </div>
+              </div>
+              <div className="mt-6">
+                <h3 className="flex items-center gap-2 text-lg font-bold text-blue-700 mb-4">
+                  <span>📅</span> Loan Date
+                </h3>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                  <div>
+                    <label className="block text-sm font-semibold text-gray-700">Custom Loan Date</label>
+                    <input 
+                      type="date" 
+                      name="customLoanDate" 
+                      value={formData.customLoanDate} 
+                      onChange={handleInputChange} 
+                      className=" w-full p-3 border rounded-xl focus:ring-2 focus:ring-blue-300 focus:border-blue-400 transition-all duration-200 bg-white/80" 
+                    />
+                    <p className="text-xs text-gray-500 mt-1">Leave empty to use today's date</p>
+                  </div>
+                  <div className="flex items-center">
+                    <div className="p-4 bg-blue-50 border border-blue-200 rounded-lg">
+                      <p className="text-sm text-blue-800">
+                        <strong>Selected Date:</strong> {formData.customLoanDate ? new Date(formData.customLoanDate).toLocaleDateString('en-IN') : 'Today (' + new Date().toLocaleDateString('en-IN') + ')'}
+                      </p>
+                    </div>
+                  </div>
+                </div>
+              </div>
+              <div className="space-y-4 mt-8">
                 <div>
                   <label className="block text-sm font-semibold text-gray-700">Monthly Payment (₹)</label>
                   <input type="number" name="monthlyPayment" value={formData.monthlyPayment} onChange={handleInputChange} placeholder="Monthly Payment" className="input-with-cursor w-full p-3 border rounded-xl focus:ring-2 focus:ring-yellow-300 focus:border-yellow-400 transition-all duration-200 bg-white/80" min="0" step="1" required />
-                  {formData.loanAmount && formData.interestRate && formData.duration && Number(formData.loanAmount) > 0 && Number(formData.interestRate) > 0 && Number(formData.duration) > 0 && (
-                    <div className="mt-2 p-2 bg-green-50 border border-green-200 rounded-lg">
-                      <div className="text-sm text-green-800">
-                        <div className="flex justify-between">
-                          <span>Monthly Interest:</span>
-                          <span className="font-semibold">₹{Math.round((Number(formData.loanAmount) * Number(formData.interestRate)) / (12 * 100)).toLocaleString()}</span>
-                        </div>
-                        <div className="flex justify-between">
-                          <span>Monthly Principal:</span>
-                          <span className="font-semibold">₹{Math.round((Number(formData.loanAmount) / Number(formData.duration))).toLocaleString()}</span>
-                        </div>
-                      </div>
-                    </div>
-                  )}
                 </div>
                 <div>
                   <label className="block text-sm font-semibold text-gray-700">Total Amount to be Paid (₹)</label>

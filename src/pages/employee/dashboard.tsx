@@ -198,7 +198,7 @@ const RepaymentModal: React.FC<RepaymentModalProps> = ({ loan: _loan, onClose, o
   return (
     <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-[60]">
       <div className="bg-white p-6 rounded-lg w-96 shadow-2xl">
-        <h2 className="text-xl font-semibold mb-4 mt-16">Repay Loan</h2>
+        <h2 className="text-xl font-semibold mb-4 mt-0">Repay Loan</h2>
         <form onSubmit={handleSubmit}>
           <div className="mb-4">
             <label className="block text-sm font-medium text-gray-700">Repayment Date</label>

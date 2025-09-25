@@ -7,14 +7,23 @@ import Navbar from '../../components/Navbar';
 
 const EmployeesPage = () => {
   const [sidebarOpen, setSidebarOpen] = useState(false);
-  const [addDialogOpen, setAddDialogOpen] = useState(false);
+  const [addEmployeeDialogOpen, setAddEmployeeDialogOpen] = useState(false);
+  const [addAdminDialogOpen, setAddAdminDialogOpen] = useState(false);
   const [editDialogOpen, setEditDialogOpen] = useState(false);
-  const [form, setForm] = useState({
+  const [employeeForm, setEmployeeForm] = useState({
     email: '',
     name: '',
     mobile: '',
     alternateMobile: '',
     role: 'employee',
+    aadharNumber: ''
+  });
+  const [adminForm, setAdminForm] = useState({
+    email: '',
+    name: '',
+    mobile: '',
+    alternateMobile: '',
+    role: 'admin',
     aadharNumber: ''
   });
   const [editForm, setEditForm] = useState({
@@ -52,7 +61,7 @@ const EmployeesPage = () => {
     }
   };
 
-  const handleRegister = async () => {
+  const handleRegisterEmployee = async () => {
     setRegistering(true);
     try {
       const response = await fetch(`${API_URL}/admin/employees`, {
@@ -62,22 +71,53 @@ const EmployeesPage = () => {
           'x-auth-token': token || ''
         },
         body: JSON.stringify({
-          email: form.email,
-          name: form.name,
-          mobile: form.mobile,
-          alternateMobile: form.alternateMobile,
-          role: form.role,
-          aadharNumber: form.aadharNumber
+          email: employeeForm.email,
+          name: employeeForm.name,
+          mobile: employeeForm.mobile,
+          alternateMobile: employeeForm.alternateMobile,
+          role: 'employee',
+          aadharNumber: employeeForm.aadharNumber
         })
       });
       const data = await response.json();
       if (!response.ok) throw new Error(data.message || 'Failed to register employee');
       alert('Employee registered and email sent!');
-      setAddDialogOpen(false);
-      setForm({ email: '', name: '', mobile: '', alternateMobile: '', role: 'employee', aadharNumber: '' });
+      setAddEmployeeDialogOpen(false);
+      setEmployeeForm({ email: '', name: '', mobile: '', alternateMobile: '', role: 'employee', aadharNumber: '' });
       fetchEmployees();
     } catch (err) {
       alert(err instanceof Error ? err.message : 'Failed to register employee');
+    } finally {
+      setRegistering(false);
+    }
+  };
+
+  const handleRegisterAdmin = async () => {
+    setRegistering(true);
+    try {
+      const response = await fetch(`${API_URL}/admin/employees`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'x-auth-token': token || ''
+        },
+        body: JSON.stringify({
+          email: adminForm.email,
+          name: adminForm.name,
+          mobile: adminForm.mobile,
+          alternateMobile: adminForm.alternateMobile,
+          role: 'admin',
+          aadharNumber: adminForm.aadharNumber
+        })
+      });
+      const data = await response.json();
+      if (!response.ok) throw new Error(data.message || 'Failed to register admin');
+      alert('Admin registered and email sent!');
+      setAddAdminDialogOpen(false);
+      setAdminForm({ email: '', name: '', mobile: '', alternateMobile: '', role: 'admin', aadharNumber: '' });
+      fetchEmployees();
+    } catch (err) {
+      alert(err instanceof Error ? err.message : 'Failed to register admin');
     } finally {
       setRegistering(false);
     }
@@ -150,12 +190,26 @@ const EmployeesPage = () => {
             <div className="max-w-4xl mx-auto mt-8 bg-white rounded-xl shadow-lg p-6">
               <div className="flex justify-between items-center mb-4">
                 <h2 className="text-2xl font-bold text-yellow-800">Employees Management</h2>
-                <button
-                  className="bg-gradient-to-r from-yellow-400 to-yellow-600 text-white px-4 py-2 rounded-lg font-semibold flex items-center gap-2 shadow hover:from-yellow-500 hover:to-yellow-700"
-                  onClick={() => setAddDialogOpen(true)}
-                >
-                  <span className="text-lg">➕</span> Add Employee
-                </button>
+                <div className="flex gap-3">
+                  <button
+                    className="bg-gradient-to-r from-yellow-400 to-yellow-600 text-white px-4 py-2 rounded-lg font-semibold flex items-center gap-2 shadow hover:from-yellow-500 hover:to-yellow-700 transition-all duration-200"
+                    onClick={() => setAddEmployeeDialogOpen(true)}
+                  >
+                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
+                    </svg>
+                    Add Employee
+                  </button>
+                  <button
+                    className="bg-gradient-to-r from-purple-500 to-purple-700 text-white px-4 py-2 rounded-lg font-semibold flex items-center gap-2 shadow hover:from-purple-600 hover:to-purple-800 transition-all duration-200"
+                    onClick={() => setAddAdminDialogOpen(true)}
+                  >
+                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
+                    </svg>
+                    Add Admin
+                  </button>
+                </div>
               </div>
               {loading ? (
                 <div className="text-center py-8">
@@ -225,7 +279,7 @@ const EmployeesPage = () => {
       </div>
 
       {/* Add Employee Dialog */}
-      <Dialog open={addDialogOpen} onClose={() => setAddDialogOpen(false)} maxWidth="sm" fullWidth
+      <Dialog open={addEmployeeDialogOpen} onClose={() => setAddEmployeeDialogOpen(false)} maxWidth="sm" fullWidth
         PaperProps={{
           style: {
             background: 'rgba(255,255,255,0.85)',
@@ -237,7 +291,7 @@ const EmployeesPage = () => {
         }}
       >
         <DialogTitle style={{
-          background: 'linear-gradient(90deg, #0ea5e9 0%, #38bdf8 100%)',
+          background: 'linear-gradient(90deg, #F59E0B 0%, #FCD34D 100%)',
           color: 'white',
           fontWeight: 700,
           fontSize: 24,
@@ -245,7 +299,7 @@ const EmployeesPage = () => {
           borderTopLeftRadius: 18,
           borderTopRightRadius: 18
         }}>Add New Employee</DialogTitle>
-        <DialogContent style={{ background: 'rgba(236, 245, 255, 0.7)', padding: '24px 18px 8px 18px' }}>
+        <DialogContent style={{ background: 'rgba(254, 252, 232, 0.7)', padding: '24px 18px 8px 18px' }}>
           <div
             className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-2"
             style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: 16 }}
@@ -253,8 +307,8 @@ const EmployeesPage = () => {
             <TextField
               fullWidth
               label="Name"
-              value={form.name}
-              onChange={e => setForm({ ...form, name: e.target.value })}
+              value={employeeForm.name}
+              onChange={e => setEmployeeForm({ ...employeeForm, name: e.target.value })}
               margin="normal"
               required
               InputProps={{
@@ -272,8 +326,8 @@ const EmployeesPage = () => {
               fullWidth
               label="Email"
               type="email"
-              value={form.email}
-              onChange={e => setForm({ ...form, email: e.target.value })}
+              value={employeeForm.email}
+              onChange={e => setEmployeeForm({ ...employeeForm, email: e.target.value })}
               margin="normal"
               required
               InputProps={{
@@ -289,8 +343,8 @@ const EmployeesPage = () => {
             <TextField
               fullWidth
               label="Aadhar Number"
-              value={form.aadharNumber}
-              onChange={e => setForm({ ...form, aadharNumber: e.target.value })}
+              value={employeeForm.aadharNumber}
+              onChange={e => setEmployeeForm({ ...employeeForm, aadharNumber: e.target.value })}
               margin="normal"
               required
               inputProps={{ maxLength: 12, style: { letterSpacing: '0.12em', fontSize: 15 } }}
@@ -307,8 +361,8 @@ const EmployeesPage = () => {
             <TextField
               fullWidth
               label="Mobile"
-              value={form.mobile}
-              onChange={e => setForm({ ...form, mobile: e.target.value })}
+              value={employeeForm.mobile}
+              onChange={e => setEmployeeForm({ ...employeeForm, mobile: e.target.value })}
               margin="normal"
               required
               inputProps={{ maxLength: 10, style: { fontSize: 15 } }}
@@ -325,9 +379,132 @@ const EmployeesPage = () => {
             <TextField
               fullWidth
               label="Alternate Mobile"
-              value={form.alternateMobile}
-              onChange={e => setForm({ ...form, alternateMobile: e.target.value })}
+              value={employeeForm.alternateMobile}
+              onChange={e => setEmployeeForm({ ...employeeForm, alternateMobile: e.target.value })}
               margin="normal"
+              inputProps={{ maxLength: 10, style: { fontSize: 15 } }}
+              InputProps={{
+                style: {
+                  borderRadius: 10,
+                  background: 'rgba(255,255,255,0.95)',
+                  fontSize: 15,
+                  padding: '7px 12px',
+                  height: 38
+                }
+              }}
+            />
+            <div className="flex items-center justify-center">
+              <div className="bg-yellow-100 text-yellow-800 px-4 py-2 rounded-lg font-semibold">
+                Role: Employee
+              </div>
+            </div>
+          </div>
+        </DialogContent>
+        <DialogActions style={{ background: 'rgba(254, 252, 232, 0.7)', borderBottomLeftRadius: 18, borderBottomRightRadius: 18, padding: '14px 18px' }}>
+          <Button onClick={() => setAddEmployeeDialogOpen(false)} style={{ color: '#64748b', fontWeight: 600, borderRadius: 8, fontSize: 15, padding: '7px 18px' }}>Cancel</Button>
+          <Button onClick={handleRegisterEmployee} variant="contained" style={{
+            background: 'linear-gradient(90deg, #F59E0B 0%, #FCD34D 100%)',
+            color: 'white',
+            fontWeight: 700,
+            borderRadius: 8,
+            fontSize: 16,
+            padding: '8px 26px',
+            boxShadow: '0 2px 8px 0 rgba(245,158,11,0.15)',
+            textTransform: 'none',
+            letterSpacing: 1
+          }} disabled={registering}>
+            {registering ? 'Registering...' : 'Add Employee'}
+          </Button>
+        </DialogActions>
+      </Dialog>
+
+      {/* Add Admin Dialog */}
+      <Dialog open={addAdminDialogOpen} onClose={() => setAddAdminDialogOpen(false)} maxWidth="sm" fullWidth
+        PaperProps={{
+          style: {
+            background: 'rgba(255,255,255,0.85)',
+            boxShadow: '0 8px 32px 0 rgba(31, 38, 135, 0.37)',
+            backdropFilter: 'blur(8px)',
+            borderRadius: 18,
+            border: '1px solid rgba(255,255,255,0.18)'
+          }
+        }}
+      >
+        <DialogTitle style={{
+          background: 'linear-gradient(90deg, #8B5CF6 0%, #A78BFA 100%)',
+          color: 'white',
+          fontWeight: 700,
+          fontSize: 24,
+          letterSpacing: 1,
+          borderTopLeftRadius: 18,
+          borderTopRightRadius: 18
+        }}>Add New Admin</DialogTitle>
+        <DialogContent style={{ background: 'rgba(245, 243, 255, 0.7)', padding: '24px 18px 8px 18px' }}>
+          <div
+            className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-2"
+            style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: 16 }}
+          >
+            <TextField
+              fullWidth
+              label="Name"
+              value={adminForm.name}
+              onChange={e => setAdminForm({ ...adminForm, name: e.target.value })}
+              margin="normal"
+              required
+              InputProps={{
+                style: {
+                  borderRadius: 10,
+                  background: 'rgba(255,255,255,0.95)',
+                  fontSize: 15,
+                  padding: '7px 12px',
+                  height: 38
+                }
+              }}
+              FormHelperTextProps={{ style: { marginLeft: 0 } }}
+            />
+            <TextField
+              fullWidth
+              label="Email"
+              type="email"
+              value={adminForm.email}
+              onChange={e => setAdminForm({ ...adminForm, email: e.target.value })}
+              margin="normal"
+              required
+              InputProps={{
+                style: {
+                  borderRadius: 10,
+                  background: 'rgba(255,255,255,0.95)',
+                  fontSize: 15,
+                  padding: '7px 12px',
+                  height: 38
+                }
+              }}
+            />
+            <TextField
+              fullWidth
+              label="Aadhar Number"
+              value={adminForm.aadharNumber}
+              onChange={e => setAdminForm({ ...adminForm, aadharNumber: e.target.value })}
+              margin="normal"
+              required
+              inputProps={{ maxLength: 12, style: { letterSpacing: '0.12em', fontSize: 15 } }}
+              InputProps={{
+                style: {
+                  borderRadius: 10,
+                  background: 'rgba(255,255,255,0.95)',
+                  fontSize: 15,
+                  padding: '7px 12px',
+                  height: 38
+                }
+              }}
+            />
+            <TextField
+              fullWidth
+              label="Mobile"
+              value={adminForm.mobile}
+              onChange={e => setAdminForm({ ...adminForm, mobile: e.target.value })}
+              margin="normal"
+              required
               inputProps={{ maxLength: 10, style: { fontSize: 15 } }}
               InputProps={{
                 style: {
@@ -341,12 +518,11 @@ const EmployeesPage = () => {
             />
             <TextField
               fullWidth
-              select
-              label="Role"
-              value={form.role}
-              onChange={e => setForm({ ...form, role: e.target.value })}
+              label="Alternate Mobile"
+              value={adminForm.alternateMobile}
+              onChange={e => setAdminForm({ ...adminForm, alternateMobile: e.target.value })}
               margin="normal"
-              required
+              inputProps={{ maxLength: 10, style: { fontSize: 15 } }}
               InputProps={{
                 style: {
                   borderRadius: 10,
@@ -356,26 +532,28 @@ const EmployeesPage = () => {
                   height: 38
                 }
               }}
-            >
-              <MenuItem value="employee">Employee</MenuItem>
-              <MenuItem value="admin">Admin</MenuItem>
-            </TextField>
+            />
+            <div className="flex items-center justify-center">
+              <div className="bg-purple-100 text-purple-800 px-4 py-2 rounded-lg font-semibold">
+                Role: Admin
+              </div>
+            </div>
           </div>
         </DialogContent>
-        <DialogActions style={{ background: 'rgba(236, 245, 255, 0.7)', borderBottomLeftRadius: 18, borderBottomRightRadius: 18, padding: '14px 18px' }}>
-          <Button onClick={() => setAddDialogOpen(false)} style={{ color: '#64748b', fontWeight: 600, borderRadius: 8, fontSize: 15, padding: '7px 18px' }}>Cancel</Button>
-          <Button onClick={handleRegister} variant="contained" style={{
-            background: 'linear-gradient(90deg, #0ea5e9 0%, #38bdf8 100%)',
+        <DialogActions style={{ background: 'rgba(245, 243, 255, 0.7)', borderBottomLeftRadius: 18, borderBottomRightRadius: 18, padding: '14px 18px' }}>
+          <Button onClick={() => setAddAdminDialogOpen(false)} style={{ color: '#64748b', fontWeight: 600, borderRadius: 8, fontSize: 15, padding: '7px 18px' }}>Cancel</Button>
+          <Button onClick={handleRegisterAdmin} variant="contained" style={{
+            background: 'linear-gradient(90deg, #8B5CF6 0%, #A78BFA 100%)',
             color: 'white',
             fontWeight: 700,
             borderRadius: 8,
             fontSize: 16,
             padding: '8px 26px',
-            boxShadow: '0 2px 8px 0 rgba(14,165,233,0.15)',
+            boxShadow: '0 2px 8px 0 rgba(139,92,246,0.15)',
             textTransform: 'none',
             letterSpacing: 1
           }} disabled={registering}>
-            {registering ? 'Registering...' : 'Add Employee'}
+            {registering ? 'Registering...' : 'Add Admin'}
           </Button>
         </DialogActions>
       </Dialog>
