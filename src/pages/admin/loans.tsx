@@ -1001,12 +1001,12 @@ const LoansPage = () => {
                                 boxShadow: '0 4px 15px rgba(110, 231, 183, 0.3)'
                               }}
                               onMouseEnter={(e) => {
-                                e.target.style.background = 'linear-gradient(135deg, #5BD4A8 0%, #2BC48A 50%, #0D9B6B 100%)';
-                                e.target.style.boxShadow = '0 6px 20px rgba(110, 231, 183, 0.4)';
+                                (e.target as HTMLButtonElement).style.background = 'linear-gradient(135deg, #5BD4A8 0%, #2BC48A 50%, #0D9B6B 100%)';
+                                (e.target as HTMLButtonElement).style.boxShadow = '0 6px 20px rgba(110, 231, 183, 0.4)';
                               }}
                               onMouseLeave={(e) => {
-                                e.target.style.background = 'linear-gradient(135deg, #6EE7B7 0%, #34D399 50%, #10B981 100%)';
-                                e.target.style.boxShadow = '0 4px 15px rgba(110, 231, 183, 0.3)';
+                                (e.target as HTMLButtonElement).style.background = 'linear-gradient(135deg, #6EE7B7 0%, #34D399 50%, #10B981 100%)';
+                                (e.target as HTMLButtonElement).style.boxShadow = '0 4px 15px rgba(110, 231, 183, 0.3)';
                               }}
                             >
                               <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -1022,12 +1022,12 @@ const LoansPage = () => {
                                 boxShadow: '0 4px 15px rgba(249, 168, 212, 0.3)'
                               }}
                               onMouseEnter={(e) => {
-                                e.target.style.background = 'linear-gradient(135deg, #F472B6 0%, #EC4899 50%, #DB2777 100%)';
-                                e.target.style.boxShadow = '0 6px 20px rgba(249, 168, 212, 0.4)';
+                                (e.target as HTMLButtonElement).style.background = 'linear-gradient(135deg, #F472B6 0%, #EC4899 50%, #DB2777 100%)';
+                                (e.target as HTMLButtonElement).style.boxShadow = '0 6px 20px rgba(249, 168, 212, 0.4)';
                               }}
                               onMouseLeave={(e) => {
-                                e.target.style.background = 'linear-gradient(135deg, #F9A8D4 0%, #F472B6 50%, #EC4899 100%)';
-                                e.target.style.boxShadow = '0 4px 15px rgba(249, 168, 212, 0.3)';
+                                (e.target as HTMLButtonElement).style.background = 'linear-gradient(135deg, #F9A8D4 0%, #F472B6 50%, #EC4899 100%)';
+                                (e.target as HTMLButtonElement).style.boxShadow = '0 4px 15px rgba(249, 168, 212, 0.3)';
                               }}
                             >
                               <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -1077,12 +1077,12 @@ const LoansPage = () => {
                                 boxShadow: '0 4px 15px rgba(96, 165, 250, 0.3)'
                               }}
                               onMouseEnter={(e) => {
-                                e.target.style.background = 'linear-gradient(135deg, #3B82F6 0%, #1D4ED8 50%, #1E40AF 100%)';
-                                e.target.style.boxShadow = '0 6px 20px rgba(96, 165, 250, 0.4)';
+                                (e.target as HTMLButtonElement).style.background = 'linear-gradient(135deg, #3B82F6 0%, #1D4ED8 50%, #1E40AF 100%)';
+                                (e.target as HTMLButtonElement).style.boxShadow = '0 6px 20px rgba(96, 165, 250, 0.4)';
                               }}
                               onMouseLeave={(e) => {
-                                e.target.style.background = 'linear-gradient(135deg, #60A5FA 0%, #3B82F6 50%, #1D4ED8 100%)';
-                                e.target.style.boxShadow = '0 4px 15px rgba(96, 165, 250, 0.3)';
+                                (e.target as HTMLButtonElement).style.background = 'linear-gradient(135deg, #60A5FA 0%, #3B82F6 50%, #1D4ED8 100%)';
+                                (e.target as HTMLButtonElement).style.boxShadow = '0 4px 15px rgba(96, 165, 250, 0.3)';
                               }}
                             >
                               <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -1102,12 +1102,12 @@ const LoansPage = () => {
                                   boxShadow: '0 4px 15px rgba(248, 113, 113, 0.3)'
                                 }}
                                 onMouseEnter={(e) => {
-                                  e.target.style.background = 'linear-gradient(135deg, #EF4444 0%, #DC2626 50%, #B91C1C 100%)';
-                                  e.target.style.boxShadow = '0 6px 20px rgba(248, 113, 113, 0.4)';
+                                  (e.target as HTMLButtonElement).style.background = 'linear-gradient(135deg, #EF4444 0%, #DC2626 50%, #B91C1C 100%)';
+                                  (e.target as HTMLButtonElement).style.boxShadow = '0 6px 20px rgba(248, 113, 113, 0.4)';
                                 }}
                                 onMouseLeave={(e) => {
-                                  e.target.style.background = 'linear-gradient(135deg, #F87171 0%, #EF4444 50%, #DC2626 100%)';
-                                  e.target.style.boxShadow = '0 4px 15px rgba(248, 113, 113, 0.3)';
+                                  (e.target as HTMLButtonElement).style.background = 'linear-gradient(135deg, #F87171 0%, #EF4444 50%, #DC2626 100%)';
+                                  (e.target as HTMLButtonElement).style.boxShadow = '0 4px 15px rgba(248, 113, 113, 0.3)';
                                 }}
                               >
                                 <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
