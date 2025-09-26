@@ -9,7 +9,6 @@ import {
   Menu,
   X,
   Clock,
-  Mail,
   Package,
   Gavel,
   Settings
@@ -62,13 +61,6 @@ const AdminSidebar: React.FC<AdminSidebarProps> = ({ isOpen, toggleSidebar }) =>
       icon: <Clock className="w-5 h-5" />,
       hoverGradient: 'linear-gradient(135deg, #F59E0B 0%, #D97706 50%, #B45309 100%)',
       hoverShadow: '0 8px 25px rgba(245, 158, 11, 0.3)'
-    },
-    {
-      path: '/admin/payment-reminders',
-      name: 'Payment Reminders',
-      icon: <Mail className="w-5 h-5" />,
-      hoverGradient: 'linear-gradient(135deg, #EC4899 0%, #DB2777 50%, #BE185D 100%)',
-      hoverShadow: '0 8px 25px rgba(236, 72, 153, 0.3)'
     },
     // {
     //   path: '/admin/gold-returns',

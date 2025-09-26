@@ -8,7 +8,8 @@ import {
   RefreshCw,
   IndianRupee,
   Phone,
-  User
+  User,
+  MessageSquare
 } from 'lucide-react';
 import api from '../../utils/api';
 import AdminSidebar from '../../components/AdminSidebar';
@@ -43,6 +44,9 @@ const PaymentReminders: React.FC = () => {
   const [reminderType, setReminderType] = useState<'upcoming' | 'overdue' | 'all'>('all');
   const [daysFilter, setDaysFilter] = useState(7);
   const [error, setError] = useState<string | null>(null);
+  const [sendingIndividualSMS, setSendingIndividualSMS] = useState<string | null>(null);
+  const [smsConfig, setSmsConfig] = useState<any>(null);
+  const [showSmsConfig, setShowSmsConfig] = useState(false);
 
 
 
@@ -145,6 +149,148 @@ const PaymentReminders: React.FC = () => {
     }
   };
 
+  const sendIndividualSMSReminder = async (payment: PaymentReminder) => {
+    try {
+      setSendingIndividualSMS(payment.loanId);
+      
+      const response = await fetch(`${API_URL}/notifications/send-individual-sms-reminder`, {
+        method: 'POST',
+        headers: {
+          'x-auth-token': token || '',
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({
+          loanId: payment.loanId,
+          customerMobile: payment.customerMobile,
+          customerName: payment.customerName,
+          amount: payment.amount,
+          dueDate: payment.dueDate,
+          daysUntilDue: payment.daysUntilDue,
+          daysOverdue: payment.daysOverdue
+        })
+      });
+      
+      if (!response.ok) {
+        const errorText = await response.text();
+        throw new Error(`HTTP error! status: ${response.status} - ${errorText}`);
+      }
+      
+      const data = await response.json();
+      
+      if (data.success) {
+        alert(`SMS reminder sent successfully to ${payment.customerName}!`);
+      } else {
+        alert(`Failed to send SMS reminder: ${data.message}`);
+      }
+      
+    } catch (error: any) {
+      console.error('Error sending individual SMS reminder:', error);
+      alert(error.message || 'Failed to send SMS reminder');
+    } finally {
+      setSendingIndividualSMS(null);
+    }
+  };
+
+  const fetchSmsConfig = async () => {
+    try {
+      const response = await fetch(`${API_URL}/notifications/sms-config`, {
+        headers: {
+          'x-auth-token': token || '',
+          'Content-Type': 'application/json'
+        }
+      });
+      
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`);
+      }
+      
+      const data = await response.json();
+      setSmsConfig(data.data);
+      setShowSmsConfig(true);
+    } catch (error: any) {
+      console.error('Error fetching SMS config:', error);
+      alert('Failed to fetch SMS configuration');
+    }
+  };
+
+  const testSms = async () => {
+    const phoneNumber = prompt('Enter phone number to test SMS (with country code, e.g., +919876543210):');
+    if (!phoneNumber) return;
+    
+    try {
+      const response = await fetch(`${API_URL}/notifications/test-sms`, {
+        method: 'POST',
+        headers: {
+          'x-auth-token': token || '',
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({ phoneNumber })
+      });
+      
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`);
+      }
+      
+      const data = await response.json();
+      alert(`Test SMS result: ${data.success ? 'Success' : 'Failed'}\nMessage: ${data.message}`);
+    } catch (error: any) {
+      console.error('Error testing SMS:', error);
+      alert('Failed to test SMS');
+    }
+  };
+
+  const testPaymentReminderSms = async () => {
+    const phoneNumber = prompt('Enter phone number to test Payment Reminder SMS (with country code, e.g., +919876543210):');
+    if (!phoneNumber) return;
+    
+    try {
+      const response = await fetch(`${API_URL}/notifications/test-payment-reminder-sms`, {
+        method: 'POST',
+        headers: {
+          'x-auth-token': token || '',
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({ phoneNumber })
+      });
+      
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`);
+      }
+      
+      const data = await response.json();
+      alert(`Test Payment Reminder SMS result: ${data.success ? 'Success' : 'Failed'}\nMessage: ${data.message}`);
+    } catch (error: any) {
+      console.error('Error testing payment reminder SMS:', error);
+      alert('Failed to test payment reminder SMS');
+    }
+  };
+
+  const testSimplePaymentSms = async () => {
+    const phoneNumber = prompt('Enter phone number to test Simple Payment SMS (with country code, e.g., +919876543210):');
+    if (!phoneNumber) return;
+    
+    try {
+      const response = await fetch(`${API_URL}/notifications/test-simple-payment-sms`, {
+        method: 'POST',
+        headers: {
+          'x-auth-token': token || '',
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({ phoneNumber })
+      });
+      
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`);
+      }
+      
+      const data = await response.json();
+      alert(`Test Simple Payment SMS result: ${data.success ? 'Success' : 'Failed'}\nMessage: ${data.message}`);
+    } catch (error: any) {
+      console.error('Error testing simple payment SMS:', error);
+      alert('Failed to test simple payment SMS');
+    }
+  };
+
 
 
 
@@ -218,7 +364,7 @@ const PaymentReminders: React.FC = () => {
               </h1>
             </div>
             <div className="w-24 h-1 bg-gradient-to-r from-blue-500 to-purple-500 mx-auto rounded-full mb-4"></div>
-            <p className="text-gray-600 text-lg">Manage and send payment reminder emails to customers</p>
+            <p className="text-gray-600 text-lg">Manage and send payment reminder emails and SMS to customers</p>
           </div>
           
           <div className="relative z-10">
@@ -289,7 +435,39 @@ const PaymentReminders: React.FC = () => {
                     ) : (
                       <Mail className="w-4 h-4" />
                     )}
-                    {sendingReminders ? 'Sending...' : 'Send Reminders'}
+                    {sendingReminders ? 'Sending...' : 'Send Email Reminders'}
+                  </button>
+                  
+                  <button
+                    onClick={fetchSmsConfig}
+                    className="bg-purple-600 text-white px-4 py-2 rounded-md hover:bg-purple-700 flex items-center gap-2"
+                  >
+                    <MessageSquare className="w-4 h-4" />
+                    SMS Config
+                  </button>
+                  
+                  <button
+                    onClick={testSms}
+                    className="bg-orange-600 text-white px-4 py-2 rounded-md hover:bg-orange-700 flex items-center gap-2"
+                  >
+                    <Phone className="w-4 h-4" />
+                    Test SMS
+                  </button>
+                  
+                  <button
+                    onClick={testPaymentReminderSms}
+                    className="bg-red-600 text-white px-4 py-2 rounded-md hover:bg-red-700 flex items-center gap-2"
+                  >
+                    <MessageSquare className="w-4 h-4" />
+                    Test Payment SMS
+                  </button>
+                  
+                  <button
+                    onClick={testSimplePaymentSms}
+                    className="bg-pink-600 text-white px-4 py-2 rounded-md hover:bg-pink-700 flex items-center gap-2"
+                  >
+                    <Phone className="w-4 h-4" />
+                    Test Simple SMS
                   </button>
                 </div>
               </div>
@@ -375,6 +553,27 @@ const PaymentReminders: React.FC = () => {
                             <div>Paid: {formatCurrency(payment.totalPaid)}</div>
                             <div>Balance: {formatCurrency(payment.remainingBalance)}</div>
                           </div>
+                          
+                          {/* Individual SMS Reminder Button */}
+                          <div className="pt-3 border-t border-gray-200">
+                            <button
+                              onClick={() => sendIndividualSMSReminder(payment)}
+                              disabled={sendingIndividualSMS === payment.loanId}
+                              className="w-full bg-blue-600 text-white px-3 py-2 rounded-md hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2 text-xs font-medium transition-colors duration-200"
+                            >
+                              {sendingIndividualSMS === payment.loanId ? (
+                                <>
+                                  <RefreshCw className="w-3 h-3 animate-spin" />
+                                  Sending...
+                                </>
+                              ) : (
+                                <>
+                                  <MessageSquare className="w-3 h-3" />
+                                  Send SMS Reminder
+                                </>
+                              )}
+                            </button>
+                          </div>
                         </div>
                       </div>
                     ))}
@@ -385,6 +584,57 @@ const PaymentReminders: React.FC = () => {
           </div>
         </main>
       </div>
+      
+      {/* SMS Configuration Modal */}
+      {showSmsConfig && smsConfig && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
+          <div className="bg-white rounded-xl p-6 max-w-4xl w-full max-h-[80vh] overflow-y-auto">
+            <div className="flex justify-between items-center mb-4">
+              <h3 className="text-xl font-bold text-gray-800">SMS Service Configuration</h3>
+              <button
+                onClick={() => setShowSmsConfig(false)}
+                className="text-gray-500 hover:text-gray-700"
+              >
+                ✕
+              </button>
+            </div>
+            
+            <div className="space-y-4">
+              <div className="grid grid-cols-2 gap-4">
+                <div className="bg-gray-50 p-4 rounded-lg">
+                  <h4 className="font-semibold text-gray-700 mb-2">Basic Configuration</h4>
+                  <div className="space-y-2 text-sm">
+                    <div><strong>Provider:</strong> {smsConfig.provider}</div>
+                    <div><strong>Node Environment:</strong> {smsConfig.nodeEnv}</div>
+                    <div><strong>Has API Key:</strong> {smsConfig.hasApiKey ? '✅' : '❌'}</div>
+                    <div><strong>Has Fast2SMS API Key:</strong> {smsConfig.hasFast2smsApiKey ? '✅' : '❌'}</div>
+                    <div><strong>Sender ID:</strong> {smsConfig.senderId || 'Not set'}</div>
+                  </div>
+                </div>
+                
+                <div className="bg-gray-50 p-4 rounded-lg">
+                  <h4 className="font-semibold text-gray-700 mb-2">Template Configuration</h4>
+                  <div className="space-y-2 text-sm">
+                    {Object.entries(smsConfig.templateValidation).map(([purpose, config]: [string, any]) => (
+                      <div key={purpose}>
+                        <strong>{purpose}:</strong> {config.configured ? '✅' : '❌'} 
+                        {config.templateId && ` (${config.templateId})`}
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              </div>
+              
+              <div className="bg-gray-50 p-4 rounded-lg">
+                <h4 className="font-semibold text-gray-700 mb-2">All Templates</h4>
+                <pre className="text-xs bg-white p-3 rounded border overflow-x-auto">
+                  {JSON.stringify(smsConfig.templates, null, 2)}
+                </pre>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };

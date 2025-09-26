@@ -261,7 +261,7 @@ const PaymentHistoryModal: React.FC<PaymentHistoryModalProps> = ({ loan, onClose
                 </div>
                 <div>
                   <p className="text-red-600 text-xs font-medium">Remaining</p>
-                  <p className="text-red-900 font-bold text-sm">{formatCurrency(loan.status === 'closed' && loan.remainingBalance === 0 ? 0 : (loan.totalPayment || 0) - (loan.totalPaid || 0))}</p>
+                  <p className="text-red-900 font-bold text-sm">{formatCurrency(Math.max(0, (loan.totalPayment || loan.amount) - (loan.totalPaid || 0)))}</p>
                 </div>
               </div>
             </div>
@@ -524,6 +524,8 @@ const LoansPage = () => {
   const [renewalInterestRate, setRenewalInterestRate] = useState<number>(0);
   const [renewalTerm, setRenewalTerm] = useState<number>(6);
   const [renewalLoading, setRenewalLoading] = useState(false);
+  const [loanCalculations, setLoanCalculations] = useState<{[key: string]: any}>({});
+  
   useEffect(() => {
     fetchLoans();
   }, []);
@@ -547,12 +549,45 @@ const LoansPage = () => {
       }
       setLoans(data.data);
       setError(null);
+      
+      // Fetch dynamic calculations for each loan
+      await fetchLoanCalculations(data.data);
     } catch (err) {
       console.error('Error fetching loans:', err);
       setError(err instanceof Error ? err.message : 'Failed to fetch loans');
     } finally {
       setLoading(false);
     }
+  };
+
+  const fetchLoanCalculations = async (loansData: Loan[]) => {
+    if (!token) return;
+    
+    const calculations: {[key: string]: any} = {};
+    const today = new Date().toISOString().slice(0, 10);
+    
+    // Fetch calculations for all active loans in parallel
+    const promises = loansData
+      .filter(loan => loan.status === 'active')
+      .map(async (loan) => {
+        try {
+          const calc = await fetchEarlyRepaymentDetails({
+            loanId: loan._id,
+            repaymentDate: today,
+            token: token
+          });
+          calculations[loan._id] = calc;
+        } catch (error) {
+          console.error(`Error fetching calculation for loan ${loan._id}:`, error);
+          // Use fallback calculation
+          calculations[loan._id] = {
+            totalDue: loan.totalPayment || loan.amount
+          };
+        }
+      });
+    
+    await Promise.all(promises);
+    setLoanCalculations(calculations);
   };
 
   const handleEditClick = async (loan: Loan) => {
@@ -975,7 +1010,7 @@ const LoansPage = () => {
                             <div className="text-xs mt-1">
                               <span className="text-green-700">Paid: {formatCurrency(loan.totalPaid || 0)}</span>
                               <span className="mx-1">|</span>
-                              <span className="text-red-600 font-bold">To Pay: {formatCurrency(loan.remainingBalance || 0)}</span>
+                              <span className="text-red-600 font-bold">To Pay: {formatCurrency(Math.max(0, (loanCalculations[loan._id]?.totalDue || loan.totalPayment || loan.amount) - (loan.totalPaid || 0)))}</span>
                             </div>
                           </td>
                           <td className="px-3 py-3 whitespace-nowrap">
