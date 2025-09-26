@@ -995,19 +995,7 @@ const LoansPage = () => {
                           <td className={`px-2 py-3 whitespace-nowrap flex flex-col gap-1 items-start sticky right-0 z-10 ${idx % 2 === 0 ? 'bg-white/80' : 'bg-blue-50/60'}`}>
                             <button
                               onClick={() => handleEditClick(loan)}
-                              className="text-black px-2 py-1 rounded-lg font-medium flex items-center gap-1 shadow-lg hover:shadow-xl group-hover:scale-105 transition-all duration-200 text-xs"
-                              style={{ 
-                                background: 'linear-gradient(135deg, #6EE7B7 0%, #34D399 50%, #10B981 100%)',
-                                boxShadow: '0 4px 15px rgba(110, 231, 183, 0.3)'
-                              }}
-                              onMouseEnter={(e) => {
-                                (e.target as HTMLButtonElement).style.background = 'linear-gradient(135deg, #5BD4A8 0%, #2BC48A 50%, #0D9B6B 100%)';
-                                (e.target as HTMLButtonElement).style.boxShadow = '0 6px 20px rgba(110, 231, 183, 0.4)';
-                              }}
-                              onMouseLeave={(e) => {
-                                (e.target as HTMLButtonElement).style.background = 'linear-gradient(135deg, #6EE7B7 0%, #34D399 50%, #10B981 100%)';
-                                (e.target as HTMLButtonElement).style.boxShadow = '0 4px 15px rgba(110, 231, 183, 0.3)';
-                              }}
+                              className="text-green-700 px-2 py-1 rounded-lg font-medium flex items-center gap-1 shadow-sm hover:shadow-md group-hover:scale-105 transition-all duration-200 text-xs bg-green-100 hover:bg-green-200"
                             >
                               <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
@@ -1016,19 +1004,7 @@ const LoansPage = () => {
                             </button>
                             <button
                               onClick={() => handlePrintAgreement(loan)}
-                              className="text-white px-2 py-1 rounded-lg font-medium flex items-center gap-1 shadow-lg hover:shadow-xl group-hover:scale-105 transition-all duration-200 text-xs"
-                              style={{ 
-                                background: 'linear-gradient(135deg, #F9A8D4 0%, #F472B6 50%, #EC4899 100%)',
-                                boxShadow: '0 4px 15px rgba(249, 168, 212, 0.3)'
-                              }}
-                              onMouseEnter={(e) => {
-                                (e.target as HTMLButtonElement).style.background = 'linear-gradient(135deg, #F472B6 0%, #EC4899 50%, #DB2777 100%)';
-                                (e.target as HTMLButtonElement).style.boxShadow = '0 6px 20px rgba(249, 168, 212, 0.4)';
-                              }}
-                              onMouseLeave={(e) => {
-                                (e.target as HTMLButtonElement).style.background = 'linear-gradient(135deg, #F9A8D4 0%, #F472B6 50%, #EC4899 100%)';
-                                (e.target as HTMLButtonElement).style.boxShadow = '0 4px 15px rgba(249, 168, 212, 0.3)';
-                              }}
+                              className="text-pink-700 px-2 py-1 rounded-lg font-medium flex items-center gap-1 shadow-sm hover:shadow-md group-hover:scale-105 transition-all duration-200 text-xs bg-pink-100 hover:bg-pink-200"
                             >
                               <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
@@ -1049,10 +1025,7 @@ const LoansPage = () => {
                                   setRepayLoan(loan);
                                   setShowRepaymentModal(true);
                                 }}
-                                className="text-black px-2 py-1 rounded-lg font-medium flex items-center gap-1 shadow group-hover:scale-105 transition text-xs"
-                                style={{ backgroundColor: '#FFEB00' }}
-                                onMouseEnter={(e) => (e.target as HTMLButtonElement).style.backgroundColor = '#FFD700'}
-                                onMouseLeave={(e) => (e.target as HTMLButtonElement).style.backgroundColor = '#FFEB00'}
+                                className="text-yellow-700 px-2 py-1 rounded-lg font-medium flex items-center gap-1 shadow-sm hover:shadow-md group-hover:scale-105 transition-all duration-200 text-xs bg-yellow-100 hover:bg-yellow-200"
                               >
                                 <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H6a3 3 0 00-3 3v8a3 3 0 003 3z" />
@@ -1071,19 +1044,7 @@ const LoansPage = () => {
                                 });
                                 setShowPaymentHistoryModal(true);
                               }}
-                              className="text-white px-2 py-1 rounded-lg font-medium flex items-center gap-1 shadow-lg hover:shadow-xl group-hover:scale-105 transition-all duration-200 text-xs"
-                              style={{ 
-                                background: 'linear-gradient(135deg, #60A5FA 0%, #3B82F6 50%, #1D4ED8 100%)',
-                                boxShadow: '0 4px 15px rgba(96, 165, 250, 0.3)'
-                              }}
-                              onMouseEnter={(e) => {
-                                (e.target as HTMLButtonElement).style.background = 'linear-gradient(135deg, #3B82F6 0%, #1D4ED8 50%, #1E40AF 100%)';
-                                (e.target as HTMLButtonElement).style.boxShadow = '0 6px 20px rgba(96, 165, 250, 0.4)';
-                              }}
-                              onMouseLeave={(e) => {
-                                (e.target as HTMLButtonElement).style.background = 'linear-gradient(135deg, #60A5FA 0%, #3B82F6 50%, #1D4ED8 100%)';
-                                (e.target as HTMLButtonElement).style.boxShadow = '0 4px 15px rgba(96, 165, 250, 0.3)';
-                              }}
+                              className="text-blue-700 px-2 py-1 rounded-lg font-medium flex items-center gap-1 shadow-sm hover:shadow-md group-hover:scale-105 transition-all duration-200 text-xs bg-blue-100 hover:bg-blue-200"
                             >
                               <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
@@ -1096,19 +1057,7 @@ const LoansPage = () => {
                                   setDeleteLoan(loan);
                                   setShowDeleteDialog(true);
                                 }}
-                                className="text-white px-2 py-1 rounded-lg font-medium flex items-center gap-1 shadow-lg hover:shadow-xl group-hover:scale-105 transition-all duration-200 text-xs"
-                                style={{ 
-                                  background: 'linear-gradient(135deg, #F87171 0%, #EF4444 50%, #DC2626 100%)',
-                                  boxShadow: '0 4px 15px rgba(248, 113, 113, 0.3)'
-                                }}
-                                onMouseEnter={(e) => {
-                                  (e.target as HTMLButtonElement).style.background = 'linear-gradient(135deg, #EF4444 0%, #DC2626 50%, #B91C1C 100%)';
-                                  (e.target as HTMLButtonElement).style.boxShadow = '0 6px 20px rgba(248, 113, 113, 0.4)';
-                                }}
-                                onMouseLeave={(e) => {
-                                  (e.target as HTMLButtonElement).style.background = 'linear-gradient(135deg, #F87171 0%, #EF4444 50%, #DC2626 100%)';
-                                  (e.target as HTMLButtonElement).style.boxShadow = '0 4px 15px rgba(248, 113, 113, 0.3)';
-                                }}
+                                className="text-red-700 px-2 py-1 rounded-lg font-medium flex items-center gap-1 shadow-sm hover:shadow-md group-hover:scale-105 transition-all duration-200 text-xs bg-red-100 hover:bg-red-200"
                               >
                                 <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />

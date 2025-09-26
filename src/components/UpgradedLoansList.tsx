@@ -25,7 +25,7 @@ import {
   Eye,
   AlertTriangle,
   Clock,
-  DollarSign,
+  IndianRupee ,
   Calendar,
   Phone,
   Mail
@@ -263,7 +263,7 @@ const UpgradedLoansList: React.FC<UpgradedLoansListProps> = ({ refreshTrigger })
                               {loan.loanId}
                             </Typography>
                             <Box display="flex" alignItems="center" gap={1} mt={0.5}>
-                              <DollarSign size={12} className="text-green-600" />
+                              <IndianRupee  size={12} className="text-green-600" />
                               <Typography variant="caption" color="text.secondary">
                                 {formatCurrency(loan.amount)}
                               </Typography>

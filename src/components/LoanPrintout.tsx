@@ -39,6 +39,7 @@ interface LoanPrintoutProps {
       name: string;
       email: string;
     };
+    currentUpgradeLevel?: number;
   };
   token: string;
   onClose: () => void;
@@ -123,12 +124,49 @@ const LoanPrintout: React.FC<LoanPrintoutProps> = ({ loanData, token, onClose })
     });
   };
 
-  const calculateAuctionDate = (disbursementDate: string) => {
-    // Calculate auction date: disbursement date + 3 months (first upgrade) + 3 months (second upgrade) + 3 months (third upgrade) + 3 months (final grace period)
-    // Total: 12 months from disbursement date
+  const calculateAuctionDate = (disbursementDate: string, loanTerm: number, currentInterestRate: number) => {
+    // Calculate auction date based on upgrade system considering current interest rate:
+    // Upgrade progression: 12% → 18% → 24% → 30% → 36%
+    // Each upgrade gives 3 months additional time
+    // Auction happens 1 month after reaching 36%
+    
     const disbursement = new Date(disbursementDate);
     const auctionDate = new Date(disbursement);
-    auctionDate.setMonth(auctionDate.getMonth() + 12); // 12 months total
+    
+    // Calculate total time based on current interest rate
+    let totalMonths = loanTerm; // Original loan term
+    
+    // Determine remaining upgrades based on current interest rate
+    let remainingUpgrades = 0;
+    
+    if (currentInterestRate === 12) {
+      // 12% → 18% → 24% → 30% → 36% (4 upgrades remaining)
+      remainingUpgrades = 4;
+    } else if (currentInterestRate === 18) {
+      // 18% → 24% → 30% → 36% (3 upgrades remaining)
+      remainingUpgrades = 3;
+    } else if (currentInterestRate === 24) {
+      // 24% → 30% → 36% (2 upgrades remaining)
+      remainingUpgrades = 2;
+    } else if (currentInterestRate === 30) {
+      // 30% → 36% (1 upgrade remaining)
+      remainingUpgrades = 1;
+    } else if (currentInterestRate === 36) {
+      // Already at maximum rate, no more upgrades
+      remainingUpgrades = 0;
+    } else {
+      // For any other rate, assume it's a custom rate and no upgrades
+      remainingUpgrades = 0;
+    }
+    
+    // Add upgrade periods (3 months each)
+    const upgradePeriod = 3; // months per upgrade
+    totalMonths += (remainingUpgrades * upgradePeriod);
+    
+    // Add final grace period (1 month after reaching 36%)
+    totalMonths += 1;
+    
+    auctionDate.setMonth(auctionDate.getMonth() + totalMonths);
     
     return auctionDate.toLocaleDateString('en-IN', {
       year: 'numeric',
@@ -316,6 +354,9 @@ const LoanPrintout: React.FC<LoanPrintoutProps> = ({ loanData, token, onClose })
             h3 { font-size: 8px; }
             p { margin: 0.5px 0; font-size: 8px; }
             .border { border: 1px solid #ccc; padding: 8px; margin: 5px 0; }
+            .flex-container { display: flex; gap: 10px; align-items: flex-start; }
+            .flex-table { flex: 1; }
+            .flex-image { flex: 0 0 auto; margin-top: 0; display: flex; flex-direction: column; align-items: center; }
             @media print { 
               body { margin: 0; }
               .duplicate-section { page-break-inside: avoid; }
@@ -334,18 +375,25 @@ const LoanPrintout: React.FC<LoanPrintoutProps> = ({ loanData, token, onClose })
             <!-- First Copy -->
             <div class="duplicate-section">
           <div class="header">
-            <div style="display: flex; align-items: center; margin-bottom: 8px;">
-              <div style="flex: 0 0 auto; margin-right: 10px;">
+            <div style="position: relative; margin-bottom: 8px;">
+              <!-- Logo and Address - Left Aligned -->
+              <div style="position: absolute; left: 0; top: 0;">
                 ${logoBase64 ? `<img src="${logoBase64}" alt="Cyan Finance Logo" style="max-width: 100%; height: auto; max-height: 40px;" />` : '<div style="font-size: 16px; font-weight: bold; color: #003366;">CYAN FINANCE</div>'}
+                <div style="font-size: 8px; margin-top: 4px; line-height: 1.4;">
+                  <div style="margin-bottom: 2px;"><strong>Cyan Finance</strong></div>
+                  <div style="margin-bottom: 2px;">BK Towers, Akkayyapalem, Visakhapatnam, Andhra Pradesh - 530016</div>
+                  <div><strong>Phone:</strong> +91-9700049444 | <strong>Email:</strong> support@cyanfinance.in</div>
+                </div>
               </div>
-              <div style="flex: 1; text-align: center;">
+              <!-- Title - Centered -->
+              <div style="text-align: center; width: 100%;">
                 <h2>GOLD LOAN AGREEMENT</h2>
               </div>
             </div>
-            <p><strong>Loan ID:</strong> ${loanData.loanId}</p>
+            <p style="text-align: center;"><strong>Loan ID:</strong> ${loanData.loanId}</p>
           </div>
 
-            <div class="section" style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px;">
+            <div class="section" style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px; margin-top: 70px;">
               <div>
                 <h3>Customer Information</h3>
                 <p><strong>Name:</strong> ${loanData.name}</p>
@@ -355,79 +403,75 @@ const LoanPrintout: React.FC<LoanPrintoutProps> = ({ loanData, token, onClose })
                 <p><strong>Emergency Contact:</strong> ${loanData.emergencyContact.mobile} (${loanData.emergencyContact.relation})</p>
               </div>
               <div>
-                <h3>Office Address</h3>
-                <p><strong>Cyan Finance</strong></p>
-                <p>BK Towers, Akkayyapalem</p>
-                <p>Visakhapatnam, Andhra Pradesh - 530016</p>
-                <p><strong>Phone:</strong> +91-9700049444</p>
-                <p><strong>Email:</strong> support@cyanfinance.in</p>
+                <h3>Address Information</h3>
+                <p><strong>Present Address:</strong> ${loanData.presentAddress}</p>
+                <p><strong>Permanent Address:</strong> ${loanData.permanentAddress}</p>
               </div>
             </div>
 
-            <div class="section">
-              <h3>Address Information</h3>
-                <p><strong>Present Address:</strong> ${loanData.presentAddress}</p>
-                <p><strong>Permanent Address:</strong> ${loanData.permanentAddress}</p>
-          </div>
-
           <div class="section">
             <h3>Gold Items Pledged</h3>
+            <div class="flex-container">
+              <!-- Table Section -->
+              <div class="flex-table">
                 <table style="width: 100%; border-collapse: collapse; margin-top: 4px;">
-              <thead>
-                    <tr style="background: #f0f0f0;">
-                      <th style="border: 1px solid #ccc; padding: 3px; text-align: left; font-size: 8px; font-weight: bold;">Item</th>
-                      <th style="border: 1px solid #ccc; padding: 3px; text-align: left; font-size: 8px; font-weight: bold;">Description</th>
-                      <th style="border: 1px solid #ccc; padding: 3px; text-align: center; font-size: 8px; font-weight: bold;">Gross Weight</th>
-                      <th style="border: 1px solid #ccc; padding: 3px; text-align: center; font-size: 8px; font-weight: bold;">Net Weight</th>
-                </tr>
-              </thead>
-              <tbody>
-                ${loanData.goldItems.map((item, index) => {
-                  return `
-                    <tr>
-                          <td style="border: 1px solid #ccc; padding: 3px; font-size: 8px; text-align: center; font-weight: bold;">${index + 1}</td>
-                          <td style="border: 1px solid #ccc; padding: 3px; font-size: 8px; font-weight: bold;">${item.description}</td>
-                          <td style="border: 1px solid #ccc; padding: 3px; font-size: 8px; text-align: center; font-weight: bold;">${item.grossWeight} g</td>
-                          <td style="border: 1px solid #ccc; padding: 3px; font-size: 8px; text-align: center; font-weight: bold;">${item.netWeight} g</td>
+                  <thead>
+                        <tr style="background: #f0f0f0;">
+                          <th style="border: 1px solid #ccc; padding: 2px; text-align: left; font-size: 8px; font-weight: bold;">Item</th>
+                          <th style="border: 1px solid #ccc; padding: 2px; text-align: left; font-size: 8px; font-weight: bold;">Description</th>
+                          <th style="border: 1px solid #ccc; padding: 2px; text-align: center; font-size: 8px; font-weight: bold;">Gross Weight</th>
+                          <th style="border: 1px solid #ccc; padding: 2px; text-align: center; font-size: 8px; font-weight: bold;">Net Weight</th>
                     </tr>
-                  `;
-                }).join('')}
-                <tr style="background: #f8f9fa; font-weight: bold;">
-                  <td style="border: 1px solid #ccc; padding: 3px; font-size: 8px; text-align: center;" colspan="2">TOTAL WEIGHT</td>
-                  <td style="border: 1px solid #ccc; padding: 3px; font-size: 8px; text-align: center; font-weight: bold;">${loanData.goldItems.reduce((sum, item) => sum + (parseFloat(String(item.grossWeight)) || 0), 0).toFixed(2)} g</td>
-                  <td style="border: 1px solid #ccc; padding: 3px; font-size: 8px; text-align: center; font-weight: bold;">${loanData.goldItems.reduce((sum, item) => sum + (parseFloat(String(item.netWeight)) || 0), 0).toFixed(2)} g</td>
-                  </tr>
-              </tbody>
-            </table>
-            
-            <!-- Photos Section -->
-            <div style="margin-top: 8px;">
-              <h4 style="font-size: 9px; font-weight: bold; margin-bottom: 4px; color: #1e40af;">All Items Photo</h4>
-              <div style="display: flex; justify-content: center;">
-                ${(() => {
-                  const allItemsPhotos = photos[-1] || photos['-1'] || [];
-                  if (allItemsPhotos.length > 0) {
-                    const firstPhoto = allItemsPhotos[0];
-                    const base64Key = `-1_${firstPhoto._id}`;
-                    const base64Data = base64Images[base64Key] || '';
-                    const imageUrl = base64Data || `http://localhost:5001/api/loans/${loanData._id}/photos/${firstPhoto._id}/image`;
-                    
-                    return `
-                      <div style="text-align: center; border: 2px solid #dc2626; padding: 4px; border-radius: 4px; background: #fef2f2;">
-                        <img src="${imageUrl}" style="width: 100px; height: 100px; object-fit: cover; border-radius: 3px; display: block;" onerror="this.style.display='none'; this.nextElementSibling.style.display='flex';" />
-                        <div style="width: 100px; height: 100px; border: 1px solid #ccc; display: none; align-items: center; justify-content: center; color: #666; font-size: 8px; border-radius: 3px;">No Photo</div>
-                        <div style="font-size: 7px; color: #dc2626; margin-top: 2px; font-weight: bold;">All Items</div>
-                      </div>
-                    `;
-                  } else {
-                    return `
-                      <div style="text-align: center; border: 2px solid #dc2626; padding: 4px; border-radius: 4px; background: #fef2f2;">
-                        <div style="width: 100px; height: 100px; border: 1px solid #ccc; display: flex; align-items: center; justify-content: center; color: #666; font-size: 8px; border-radius: 3px;">No Photo Available</div>
-                        <div style="font-size: 7px; color: #dc2626; margin-top: 2px; font-weight: bold;">All Items</div>
-                      </div>
-                    `;
-                  }
-                })()}
+                  </thead>
+                  <tbody>
+                    ${loanData.goldItems.map((item, index) => {
+                      return `
+                        <tr>
+                              <td style="border: 1px solid #ccc; padding: 2px; font-size: 8px; text-align: center; font-weight: bold;">${index + 1}</td>
+                              <td style="border: 1px solid #ccc; padding: 2px; font-size: 8px; font-weight: bold;">${item.description}</td>
+                              <td style="border: 1px solid #ccc; padding: 2px; font-size: 8px; text-align: center; font-weight: bold;">${item.grossWeight} g</td>
+                              <td style="border: 1px solid #ccc; padding: 2px; font-size: 8px; text-align: center; font-weight: bold;">${item.netWeight} g</td>
+                        </tr>
+                      `;
+                    }).join('')}
+                    <tr style="background: #f8f9fa; font-weight: bold;">
+                      <td style="border: 1px solid #ccc; padding: 2px; font-size: 8px; text-align: center;" colspan="2">TOTAL WEIGHT</td>
+                      <td style="border: 1px solid #ccc; padding: 2px; font-size: 8px; text-align: center; font-weight: bold;">${loanData.goldItems.reduce((sum, item) => sum + (parseFloat(String(item.grossWeight)) || 0), 0).toFixed(2)} g</td>
+                      <td style="border: 1px solid #ccc; padding: 2px; font-size: 8px; text-align: center; font-weight: bold;">${loanData.goldItems.reduce((sum, item) => sum + (parseFloat(String(item.netWeight)) || 0), 0).toFixed(2)} g</td>
+                      </tr>
+                  </tbody>
+                </table>
+              </div>
+              
+              <!-- Photos Section -->
+              <div class="flex-image">
+                <h4 style="font-size: 9px; font-weight: bold; margin: 0 0 4px 0; color: #1e40af; text-align: center;">All Items Photo</h4>
+                <div style="display: flex; justify-content: center;">
+                  ${(() => {
+                    const allItemsPhotos = photos[-1] || photos['-1'] || [];
+                    if (allItemsPhotos.length > 0) {
+                      const firstPhoto = allItemsPhotos[0];
+                      const base64Key = `-1_${firstPhoto._id}`;
+                      const base64Data = base64Images[base64Key] || '';
+                      const imageUrl = base64Data || `http://localhost:5001/api/loans/${loanData._id}/photos/${firstPhoto._id}/image`;
+                      
+                      return `
+                        <div style="text-align: center; border: 2px solid #dc2626; padding: 4px; border-radius: 4px; background: #fef2f2;">
+                          <img src="${imageUrl}" style="width: 100px; height: 100px; object-fit: cover; border-radius: 3px; display: block;" onerror="this.style.display='none'; this.nextElementSibling.style.display='flex';" />
+                          <div style="width: 100px; height: 100px; border: 1px solid #ccc; display: none; align-items: center; justify-content: center; color: #666; font-size: 8px; border-radius: 3px;">No Photo</div>
+                          <div style="font-size: 7px; color: #dc2626; margin-top: 2px; font-weight: bold;">All Items</div>
+                        </div>
+                      `;
+                    } else {
+                      return `
+                        <div style="text-align: center; border: 2px solid #dc2626; padding: 4px; border-radius: 4px; background: #fef2f2;">
+                          <div style="width: 100px; height: 100px; border: 1px solid #ccc; display: flex; align-items: center; justify-content: center; color: #666; font-size: 8px; border-radius: 3px;">No Photo Available</div>
+                          <div style="font-size: 7px; color: #dc2626; margin-top: 2px; font-weight: bold;">All Items</div>
+                        </div>
+                      `;
+                    }
+                  })()}
+                </div>
               </div>
             </div>
           </div>
@@ -442,7 +486,7 @@ const LoanPrintout: React.FC<LoanPrintoutProps> = ({ loanData, token, onClose })
                 <div class="section">
                   <h3>Auction Information</h3>
                   <p><strong>Loan Disbursement Date:</strong> ${formatDate(loanData.createdAt)}</p>
-                  <p><strong>Final Auction Date:</strong> <span style="color: #dc2626; font-weight: bold;">${calculateAuctionDate(loanData.createdAt)}</span></p>
+                  <p><strong>Final Auction Date:</strong> <span style="color: #dc2626; font-weight: bold;">${calculateAuctionDate(loanData.createdAt, loanData.term, loanData.interestRate)}</span></p>
                 </div>
               </div>
 
@@ -469,18 +513,25 @@ const LoanPrintout: React.FC<LoanPrintoutProps> = ({ loanData, token, onClose })
             <!-- Second Copy -->
             <div class="duplicate-section">
               <div class="header">
-                <div style="display: flex; align-items: center; margin-bottom: 8px;">
-                  <div style="flex: 0 0 auto; margin-right: 10px;">
-                    ${logoBase64 ? `<img src="${logoBase64}" alt="Cyan Finance Logo" style="max-width: 100%; height: auto; max-height: 40px;" />` : '<div style="font-size: 16px; font-weight: bold; color: #003366;">CYAN FINANCE</div>'}
+                <div style="position: relative; margin-bottom: 8px;">
+                  <!-- Logo and Address - Left Aligned -->
+                  <div style="position: absolute; left: 0; top: 0;">
+                    ${logoBase64 ? `<img src="${logoBase64}" alt="Cyan Finance Logo" style="max-width: 100%; height: auto; max-height: 40px; align-items: left;" />` : '<div style="font-size: 16px; font-weight: bold; color: #003366;">CYAN FINANCE</div>'}
+                    <div style="font-size: 8px; margin-top: 4px; line-height: 1.4;">
+                      <div style="margin-bottom: 2px;"><strong>Cyan Finance</strong></div>
+                      <div style="margin-bottom: 2px;">BK Towers, Akkayyapalem, Visakhapatnam, Andhra Pradesh - 530016</div>
+                      <div><strong>Phone:</strong> +91-9700049444 | <strong>Email:</strong> support@cyanfinance.in</div>
+                    </div>
                   </div>
-                  <div style="flex: 1; text-align: center;">
+                  <!-- Title - Centered -->
+                  <div style="text-align: center; width: 100%;">
                     <h2>GOLD LOAN AGREEMENT</h2>
                   </div>
                 </div>
-                <p><strong>Loan ID:</strong> ${loanData.loanId}</p>
+                <p style="text-align: center;"><strong>Loan ID:</strong> ${loanData.loanId}</p>
               </div>
 
-              <div class="section" style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px;">
+              <div class="section" style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px; margin-top: 70px;">
                 <div>
                   <h3>Customer Information</h3>
                   <p><strong>Name:</strong> ${loanData.name}</p>
@@ -490,79 +541,75 @@ const LoanPrintout: React.FC<LoanPrintoutProps> = ({ loanData, token, onClose })
                   <p><strong>Emergency Contact:</strong> ${loanData.emergencyContact.mobile} (${loanData.emergencyContact.relation})</p>
                 </div>
                 <div>
-                  <h3>Office Address</h3>
-                  <p><strong>Cyan Finance</strong></p>
-                  <p>BK Towers, Akkayyapalem</p>
-                  <p>Visakhapatnam, Andhra Pradesh - 530016</p>
-                  <p><strong>Phone:</strong> +91-9700049444</p>
-                  <p><strong>Email:</strong> support@cyanfinance.in</p>
+                  <h3>Address Information</h3>
+                  <p><strong>Present Address:</strong> ${loanData.presentAddress}</p>
+                  <p><strong>Permanent Address:</strong> ${loanData.permanentAddress}</p>
                 </div>
               </div>
 
               <div class="section">
-                <h3>Address Information</h3>
-                <p><strong>Present Address:</strong> ${loanData.presentAddress}</p>
-                <p><strong>Permanent Address:</strong> ${loanData.permanentAddress}</p>
-              </div>
-
-              <div class="section">
                 <h3>Gold Items Pledged</h3>
-                <table style="width: 100%; border-collapse: collapse; margin-top: 4px;">
-                  <thead>
-                    <tr style="background: #f0f0f0;">
-                      <th style="border: 1px solid #ccc; padding: 3px; text-align: left; font-size: 8px; font-weight: bold;">Item</th>
-                      <th style="border: 1px solid #ccc; padding: 3px; text-align: left; font-size: 8px; font-weight: bold;">Description</th>
-                      <th style="border: 1px solid #ccc; padding: 3px; text-align: center; font-size: 8px; font-weight: bold;">Gross Weight</th>
-                      <th style="border: 1px solid #ccc; padding: 3px; text-align: center; font-size: 8px; font-weight: bold;">Net Weight</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    ${loanData.goldItems.map((item, index) => {
-                      return `
-                        <tr>
-                              <td style="border: 1px solid #ccc; padding: 3px; font-size: 8px; text-align: center; font-weight: bold;">${index + 1}</td>
-                              <td style="border: 1px solid #ccc; padding: 3px; font-size: 8px; font-weight: bold;">${item.description}</td>
-                              <td style="border: 1px solid #ccc; padding: 3px; font-size: 8px; text-align: center; font-weight: bold;">${item.grossWeight} g</td>
-                              <td style="border: 1px solid #ccc; padding: 3px; font-size: 8px; text-align: center; font-weight: bold;">${item.netWeight} g</td>
+                <div class="flex-container">
+                  <!-- Table Section -->
+                  <div class="flex-table">
+                    <table style="width: 100%; border-collapse: collapse; margin-top: 6px;">
+                      <thead>
+                        <tr style="background: #f0f0f0;">
+                          <th style="border: 1px solid #ccc; padding: 2px; text-align: left; font-size: 8px; font-weight: bold;">Item</th>
+                          <th style="border: 1px solid #ccc; padding: 2px; text-align: left; font-size: 8px; font-weight: bold;">Description</th>
+                          <th style="border: 1px solid #ccc; padding: 2px; text-align: center; font-size: 8px; font-weight: bold;">Gross Weight</th>
+                          <th style="border: 1px solid #ccc; padding: 2px; text-align: center; font-size: 8px; font-weight: bold;">Net Weight</th>
                         </tr>
-                      `;
-                    }).join('')}
-                    <tr style="background: #f8f9fa; font-weight: bold;">
-                      <td style="border: 1px solid #ccc; padding: 3px; font-size: 8px; text-align: center;" colspan="2">TOTAL WEIGHT</td>
-                      <td style="border: 1px solid #ccc; padding: 3px; font-size: 8px; text-align: center; font-weight: bold;">${loanData.goldItems.reduce((sum, item) => sum + (parseFloat(String(item.grossWeight)) || 0), 0).toFixed(2)} g</td>
-                      <td style="border: 1px solid #ccc; padding: 3px; font-size: 8px; text-align: center; font-weight: bold;">${loanData.goldItems.reduce((sum, item) => sum + (parseFloat(String(item.netWeight)) || 0), 0).toFixed(2)} g</td>
-                    </tr>
-                  </tbody>
-                </table>
-                
-                <!-- Photos Section -->
-                <div style="margin-top: 8px;">
-                  <h4 style="font-size: 9px; font-weight: bold; margin-bottom: 4px; color: #1e40af;">All Items Photo</h4>
-                  <div style="display: flex; justify-content: center;">
-                    ${(() => {
-                      const allItemsPhotos = photos[-1] || photos['-1'] || [];
-                      if (allItemsPhotos.length > 0) {
-                        const firstPhoto = allItemsPhotos[0];
-                        const base64Key = `-1_${firstPhoto._id}`;
-                        const base64Data = base64Images[base64Key] || '';
-                        const imageUrl = base64Data || `http://localhost:5001/api/loans/${loanData._id}/photos/${firstPhoto._id}/image`;
-                        
-                        return `
-                          <div style="text-align: center; border: 2px solid #dc2626; padding: 4px; border-radius: 4px; background: #fef2f2;">
-                            <img src="${imageUrl}" style="width: 100px; height: 100px; object-fit: cover; border-radius: 3px; display: block;" onerror="this.style.display='none'; this.nextElementSibling.style.display='flex';" />
-                            <div style="width: 100px; height: 100px; border: 1px solid #ccc; display: none; align-items: center; justify-content: center; color: #666; font-size: 8px; border-radius: 3px;">No Photo</div>
-                            <div style="font-size: 7px; color: #dc2626; margin-top: 2px; font-weight: bold;">All Items</div>
-                          </div>
-                        `;
-                      } else {
-                        return `
-                          <div style="text-align: center; border: 2px solid #dc2626; padding: 4px; border-radius: 4px; background: #fef2f2;">
-                            <div style="width: 100px; height: 100px; border: 1px solid #ccc; display: flex; align-items: center; justify-content: center; color: #666; font-size: 8px; border-radius: 3px;">No Photo Available</div>
-                            <div style="font-size: 7px; color: #dc2626; margin-top: 2px; font-weight: bold;">All Items</div>
-                          </div>
-                        `;
-                      }
-                    })()}
+                      </thead>
+                      <tbody>
+                        ${loanData.goldItems.map((item, index) => {
+                          return `
+                            <tr>
+                                  <td style="border: 1px solid #ccc; padding: 2px; font-size: 8px; text-align: center; font-weight: bold;">${index + 1}</td>
+                                  <td style="border: 1px solid #ccc; padding: 2px; font-size: 8px; font-weight: bold;">${item.description}</td>
+                                  <td style="border: 1px solid #ccc; padding: 2px; font-size: 8px; text-align: center; font-weight: bold;">${item.grossWeight} g</td>
+                                  <td style="border: 1px solid #ccc; padding: 2px; font-size: 8px; text-align: center; font-weight: bold;">${item.netWeight} g</td>
+                            </tr>
+                          `;
+                        }).join('')}
+                        <tr style="background: #f8f9fa; font-weight: bold;">
+                          <td style="border: 1px solid #ccc; padding: 2px; font-size: 8px; text-align: center;" colspan="2">TOTAL WEIGHT</td>
+                          <td style="border: 1px solid #ccc; padding: 2px; font-size: 8px; text-align: center; font-weight: bold;">${loanData.goldItems.reduce((sum, item) => sum + (parseFloat(String(item.grossWeight)) || 0), 0).toFixed(2)} g</td>
+                          <td style="border: 1px solid #ccc; padding: 2px; font-size: 8px; text-align: center; font-weight: bold;">${loanData.goldItems.reduce((sum, item) => sum + (parseFloat(String(item.netWeight)) || 0), 0).toFixed(2)} g</td>
+                        </tr>
+                      </tbody>
+                    </table>
+                  </div>
+                  
+                  <!-- Photos Section -->
+                  <div class="flex-image">
+                    <h4 style="font-size: 9px; font-weight: bold; margin: 0 0 4px 0; color: #1e40af; text-align: center;">All Items Photo</h4>
+                    <div style="display: flex; justify-content: center;">
+                      ${(() => {
+                        const allItemsPhotos = photos[-1] || photos['-1'] || [];
+                        if (allItemsPhotos.length > 0) {
+                          const firstPhoto = allItemsPhotos[0];
+                          const base64Key = `-1_${firstPhoto._id}`;
+                          const base64Data = base64Images[base64Key] || '';
+                          const imageUrl = base64Data || `http://localhost:5001/api/loans/${loanData._id}/photos/${firstPhoto._id}/image`;
+                          
+                          return `
+                            <div style="text-align: center; border: 2px solid #dc2626; padding: 4px; border-radius: 4px; background: #fef2f2;">
+                              <img src="${imageUrl}" style="width: 100px; height: 100px; object-fit: cover; border-radius: 3px; display: block;" onerror="this.style.display='none'; this.nextElementSibling.style.display='flex';" />
+                              <div style="width: 100px; height: 100px; border: 1px solid #ccc; display: none; align-items: center; justify-content: center; color: #666; font-size: 8px; border-radius: 3px;">No Photo</div>
+                              <div style="font-size: 7px; color: #dc2626; margin-top: 2px; font-weight: bold;">All Items</div>
+                            </div>
+                          `;
+                        } else {
+                          return `
+                            <div style="text-align: center; border: 2px solid #dc2626; padding: 4px; border-radius: 4px; background: #fef2f2;">
+                              <div style="width: 100px; height: 100px; border: 1px solid #ccc; display: flex; align-items: center; justify-content: center; color: #666; font-size: 8px; border-radius: 3px;">No Photo Available</div>
+                              <div style="font-size: 7px; color: #dc2626; margin-top: 2px; font-weight: bold;">All Items</div>
+                            </div>
+                          `;
+                        }
+                      })()}
+                    </div>
                   </div>
                 </div>
               </div>
@@ -577,7 +624,7 @@ const LoanPrintout: React.FC<LoanPrintoutProps> = ({ loanData, token, onClose })
             <div class="section">
               <h3>Auction Information</h3>
               <p><strong>Loan Disbursement Date:</strong> ${formatDate(loanData.createdAt)}</p>
-              <p><strong>Final Auction Date:</strong> <span style="color: #dc2626; font-weight: bold;">${calculateAuctionDate(loanData.createdAt)}</span></p>
+              <p><strong>Final Auction Date:</strong> <span style="color: #dc2626; font-weight: bold;">${calculateAuctionDate(loanData.createdAt, loanData.term, loanData.interestRate)}</span></p>
             </div>
           </div>
 
@@ -800,10 +847,8 @@ const LoanPrintout: React.FC<LoanPrintoutProps> = ({ loanData, token, onClose })
                 <h3 className="text-lg font-semibold mb-4 text-blue-800">Office Address</h3>
                 <div className="space-y-2 text-sm">
                   <div><strong>Cyan Finance</strong></div>
-                  <div>BK Towers, Akkayyapalem</div>
-                  <div>Visakhapatnam, Andhra Pradesh - 530016</div>
-                  <div><strong>Phone:</strong> +91-9700049444</div>
-                  <div><strong>Email:</strong> support@cyanfinance.in</div>
+                  <div>BK Towers, Akkayyapalem, Visakhapatnam, Andhra Pradesh - 530016</div>
+                  <div><strong>Phone:</strong> +91-9700049444 | <strong>Email:</strong> support@cyanfinance.in</div>
                 </div>
               </div>
             </div>
@@ -925,7 +970,7 @@ const LoanPrintout: React.FC<LoanPrintoutProps> = ({ loanData, token, onClose })
                 <h3 className="text-lg font-semibold mb-4 text-blue-800">Auction Information</h3>
                 <div className="space-y-2 text-sm">
                   <div><strong>Loan Disbursement Date:</strong> {formatDate(loanData.createdAt)}</div>
-                  <div><strong>Final Auction Date:</strong> <span className="text-red-600 font-bold">{calculateAuctionDate(loanData.createdAt)}</span></div>
+                  <div><strong>Final Auction Date:</strong> <span className="text-red-600 font-bold">{calculateAuctionDate(loanData.createdAt, loanData.term, loanData.interestRate)}</span></div>
                   {/* <div className="text-red-600 font-bold text-xs">⚠️ Gold items will be auctioned if loan is not paid before the final auction date.</div> */}
                 </div>
               </div>

@@ -8,7 +8,7 @@ import { calculateDailyInterest, fetchEarlyRepaymentDetails } from '../../utils/
 import axios from 'axios';
 import Navbar from '../../components/Navbar';
 import UpgradedLoansList from '../../components/UpgradedLoansList';
-import { Bell, AlertCircle, DollarSign, Calendar, Clock } from 'lucide-react';
+import { Bell, AlertCircle, IndianRupee , Calendar, Clock } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 
 // Custom styles for input cursor icon
@@ -1216,7 +1216,7 @@ const AdminDashboard = () => {
                       </div>
                       <div className="flex items-center justify-between">
                         <div className="flex items-center space-x-2">
-                          <DollarSign className="w-4 h-4 text-green-600" />
+                          <IndianRupee  className="w-4 h-4 text-green-600" />
                           <span className="text-sm font-bold text-gray-700">
                             {formatCurrency(payment.amount)}
                           </span>

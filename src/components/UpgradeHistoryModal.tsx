@@ -20,7 +20,7 @@ import {
 import {
   TrendingUp,
   Calendar,
-  DollarSign,
+  IndianRupee ,
   Clock,
   AlertTriangle,
   CheckCircle,
@@ -254,7 +254,7 @@ const UpgradeHistoryModal: React.FC<UpgradeHistoryModalProps> = ({
                 <Box display="grid" gridTemplateColumns="repeat(auto-fit, minmax(200px, 1fr))" gap={2}>
                   <Box>
                     <Box display="flex" alignItems="center" gap={1} mb={1}>
-                      <DollarSign size={16} className="text-green-600" />
+                      <IndianRupee  size={16} className="text-green-600" />
                       <Typography variant="body2" color="text.secondary">
                         Original Rate
                       </Typography>

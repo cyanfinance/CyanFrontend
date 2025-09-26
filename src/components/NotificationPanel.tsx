@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Bell, X, Check, Trash2, AlertCircle, DollarSign, CreditCard, CheckCircle } from 'lucide-react';
+import { Bell, X, Check, Trash2, AlertCircle, IndianRupee, CreditCard, CheckCircle } from 'lucide-react';
 import { API_URL } from '../config';
 
 interface Notification {
@@ -148,7 +148,7 @@ const NotificationPanel: React.FC<NotificationPanelProps> = ({ isOpen, onClose, 
       case 'new_loan':
         return <CreditCard className="w-5 h-5 text-blue-500" />;
       case 'new_repayment':
-        return <DollarSign className="w-5 h-5 text-green-500" />;
+        return <IndianRupee  className="w-5 h-5 text-green-500" />;
       case 'loan_closed':
         return <CheckCircle className="w-5 h-5 text-purple-500" />;
       case 'payment_due':
