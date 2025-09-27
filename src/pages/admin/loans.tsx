@@ -1197,259 +1197,260 @@ const LoansPage = () => {
 
               <DialogContent className="p-0 flex-1 overflow-y-auto">
                 {selectedLoan && (
-                  <div className="p-6 space-y-6">
-                    {/* Loan Information Card */}
-                    <div className="bg-white rounded-2xl shadow-lg border border-gray-100 p-6">
-                      <div className="flex items-center gap-2 mb-4">
-                        <div className="w-8 h-8 bg-blue-100 rounded-lg flex items-center justify-center">
-                          <span className="text-blue-600 text-lg">💰</span>
+                  <div className="p-4 space-y-4">
+                    {/* Combined Information Card */}
+                    <div className="bg-white rounded-xl shadow-lg border border-gray-100 p-4">
+                      <div className="flex items-center gap-2 mb-3">
+                        <div className="w-6 h-6 bg-blue-100 rounded-lg flex items-center justify-center">
+                          <span className="text-blue-600 text-sm">💰</span>
                         </div>
-                        <h3 className="text-lg font-semibold text-gray-800">Loan Information</h3>
+                        <h3 className="text-base font-semibold text-gray-800">Loan & Bank Information</h3>
                       </div>
                       
-                      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-                        <div className="space-y-4">
-                          <div>
-                            <label className="block text-sm font-medium text-gray-700 mb-2">Loan Amount</label>
-                            <div className="relative">
-                              <input
-                                type="text"
-                                value={`₹${selectedLoan.amount?.toLocaleString() || 0}`}
-                                readOnly
-                                className="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl text-gray-600 font-medium"
-                              />
-                              <div className="absolute inset-y-0 right-0 flex items-center pr-3">
-                                <span className="text-gray-400 text-sm">Read Only</span>
-                              </div>
+                      {/* 3x3 Grid Layout */}
+                      <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+                        {/* Row 1 */}
+                        <div>
+                          <label className="block text-xs font-medium text-gray-700 mb-1">Loan Amount</label>
+                          <div className="relative">
+                            <input
+                              type="text"
+                              value={`₹${selectedLoan.amount?.toLocaleString() || 0}`}
+                              readOnly
+                              className="w-full px-3 py-2 bg-gray-50 border border-gray-200 rounded-lg text-gray-600 font-medium text-sm"
+                            />
+                            <div className="absolute inset-y-0 right-0 flex items-center pr-2">
+                              <span className="text-gray-400 text-xs">Read Only</span>
                             </div>
                           </div>
-                          
-                      {user?.role !== 'employee' && (
-                            <div>
-                              <label className="block text-sm font-medium text-gray-700 mb-2">Deposited Bank</label>
-                              <input
-                                type="text"
-                                value={selectedLoan.depositedBank || ''}
-                            onChange={(e) => setSelectedLoan({ ...selectedLoan, depositedBank: e.target.value })}
-                                placeholder="Enter bank name"
-                                className="w-full px-4 py-3 border border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200"
-                              />
-                            </div>
-                          )}
                         </div>
                         
-                        <div className="space-y-4">
-                          <div>
-                            <label className="block text-sm font-medium text-gray-700 mb-2">Loan ID</label>
-                            <div className="relative">
-                              <input
-                                type="text"
-                                value={selectedLoan.loanId || ''}
-                                readOnly
-                                className="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl text-gray-600 font-mono"
-                              />
-                            </div>
-                          </div>
-                          
-                          {user?.role !== 'employee' && (
-                            <div>
-                              <label className="block text-sm font-medium text-gray-700 mb-2">Renewal Date</label>
-                              <input
-                            type="date"
-                            value={selectedLoan.renewalDate ? selectedLoan.renewalDate.split('T')[0] : ''}
-                            onChange={(e) => setSelectedLoan({ ...selectedLoan, renewalDate: e.target.value })}
-                                className="w-full px-4 py-3 border border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200"
+                        <div>
+                          <label className="block text-xs font-medium text-gray-700 mb-1">Loan ID</label>
+                          <input
+                            type="text"
+                            value={selectedLoan.loanId || ''}
+                            readOnly
+                            className="w-full px-3 py-2 bg-gray-50 border border-gray-200 rounded-lg text-gray-600 font-mono text-sm"
                           />
                         </div>
-                      )}
-                    </div>
+                        
+                        <div>
+                          <label className="block text-xs font-medium text-gray-700 mb-1">Loan Date</label>
+                          <input
+                            type="text"
+                            value={selectedLoan.createdAt ? new Date(selectedLoan.createdAt).toLocaleDateString('en-IN', {
+                              day: '2-digit',
+                              month: '2-digit',
+                              year: 'numeric'
+                            }) : ''}
+                            readOnly
+                            className="w-full px-3 py-2 bg-gray-50 border border-gray-200 rounded-lg text-gray-600 font-medium text-sm"
+                          />
+                        </div>
+                        
+                        {/* Row 2 */}
+                        {user?.role !== 'employee' && (
+                          <div>
+                            <label className="block text-xs font-medium text-gray-700 mb-1">Deposited Bank</label>
+                            <input
+                              type="text"
+                              value={selectedLoan.depositedBank || ''}
+                              onChange={(e) => setSelectedLoan({ ...selectedLoan, depositedBank: e.target.value })}
+                              placeholder="Enter bank name"
+                              className="w-full px-3 py-2 border border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200 text-sm"
+                            />
+                          </div>
+                        )}
+                        
+                        {user?.role !== 'employee' && (
+                          <div>
+                            <label className="block text-xs font-medium text-gray-700 mb-1">Renewal Date</label>
+                            <input
+                              type="date"
+                              value={selectedLoan.renewalDate ? selectedLoan.renewalDate.split('T')[0] : ''}
+                              onChange={(e) => setSelectedLoan({ ...selectedLoan, renewalDate: e.target.value })}
+                              className="w-full px-3 py-2 border border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200 text-sm"
+                            />
+                          </div>
+                        )}
+                        
+                        {user?.role !== 'employee' && (
+                          <div>
+                            <label className="block text-xs font-medium text-gray-700 mb-1">Bank Mobile Number</label>
+                            <input
+                              type="tel"
+                              value={selectedLoan.bankMobileNumber || ''}
+                              onChange={(e) => setSelectedLoan({ ...selectedLoan, bankMobileNumber: e.target.value })}
+                              placeholder="Enter bank mobile number"
+                              className="w-full px-3 py-2 border border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200 text-sm"
+                            />
+                          </div>
+                        )}
+                        
+                        {/* Row 3 */}
+                        {user?.role !== 'employee' && (
+                          <div>
+                            <label className="block text-xs font-medium text-gray-700 mb-1">Bank Loan Amount</label>
+                            <div className="relative">
+                              <span className="absolute left-2 top-1/2 transform -translate-y-1/2 text-gray-500 text-sm">₹</span>
+                              <input
+                                type="number"
+                                value={selectedLoan.bankLoanAmount || ''}
+                                onChange={(e) => setSelectedLoan({ ...selectedLoan, bankLoanAmount: parseFloat(e.target.value) || 0 })}
+                                placeholder="Enter amount given by bank"
+                                className="w-full pl-6 pr-3 py-2 border border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200 text-sm"
+                              />
+                            </div>
+                          </div>
+                        )}
                       </div>
                       
-                      {/* Bank Information Section */}
+                      {/* Amount Difference - Compact */}
                       {user?.role !== 'employee' && (
-                        <div className="mt-6 pt-6 border-t border-gray-200">
-                          <div className="flex items-center gap-2 mb-4">
-                            <div className="w-8 h-8 bg-green-100 rounded-lg flex items-center justify-center">
-                              <span className="text-green-600 text-lg">🏦</span>
-                            </div>
-                            <h3 className="text-lg font-semibold text-gray-800">Bank Information</h3>
+                        <div className="mt-3 p-3 bg-blue-50 rounded-lg border border-blue-200">
+                          <div className="flex items-center gap-2 mb-2">
+                            <span className="text-blue-600 text-sm">📊</span>
+                            <h4 className="text-sm font-semibold text-blue-800">Amount Difference</h4>
                           </div>
-                          
-                          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-                            <div>
-                              <label className="block text-sm font-medium text-gray-700 mb-2">Bank Mobile Number</label>
-                              <input
-                                type="tel"
-                                value={selectedLoan.bankMobileNumber || ''}
-                                onChange={(e) => setSelectedLoan({ ...selectedLoan, bankMobileNumber: e.target.value })}
-                                placeholder="Enter bank mobile number"
-                                className="w-full px-4 py-3 border border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200"
-                              />
+                          <div className="grid grid-cols-3 gap-2 text-xs">
+                            <div className="text-center">
+                              <div className="text-gray-600">Customer</div>
+                              <div className="font-semibold text-gray-800">₹{selectedLoan.amount?.toLocaleString() || 0}</div>
                             </div>
+                            <div className="text-center">
+                              <div className="text-gray-600">Bank</div>
+                              <div className="font-semibold text-gray-800">₹{(selectedLoan.bankLoanAmount || 0).toLocaleString()}</div>
+                            </div>
+                            <div className="text-center">
+                              <div className="text-gray-600">Cyan Finance Amount</div>
+                              <div className={`font-bold ${(selectedLoan.amount || 0) - (selectedLoan.bankLoanAmount || 0) >= 0 ? 'text-green-600' : 'text-red-600'}`}>
+                                ₹{((selectedLoan.amount || 0) - (selectedLoan.bankLoanAmount || 0)).toLocaleString()}
+                              </div>
+                            </div>
+                          </div>
+                        </div>
+                      )}
+                      
+                      {/* Bank Receipt Upload - Compact */}
+                      {user?.role !== 'employee' && (
+                        <div className="mt-3">
+                          <div className="flex items-center gap-2 mb-2">
+                            <div className="w-6 h-6 bg-purple-100 rounded-lg flex items-center justify-center">
+                              <span className="text-purple-600 text-sm">📄</span>
+                            </div>
+                            <h4 className="text-sm font-semibold text-gray-800">Bank Receipt</h4>
+                          </div>
+                          <div className="bg-gray-50 rounded-lg p-3 border border-gray-200">
+                            <p className="text-xs text-gray-600 mb-2">Upload bank receipt image for future reference</p>
+                            <PhotoUpload
+                              loanId={selectedLoan._id || 'temp'}
+                              goldItemIndex={-2} // Special index for bank receipt
+                              token={token}
+                              onPhotosChange={handleBankReceiptPhotosChange}
+                              maxPhotos={1}
+                              className="w-full"
+                            />
                             
-                            <div>
-                              <label className="block text-sm font-medium text-gray-700 mb-2">Bank Loan Amount</label>
-                              <div className="relative">
-                                <span className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-500">₹</span>
-                                <input
-                                  type="number"
-                                  value={selectedLoan.bankLoanAmount || ''}
-                                  onChange={(e) => setSelectedLoan({ ...selectedLoan, bankLoanAmount: parseFloat(e.target.value) || 0 })}
-                                  placeholder="Enter amount given by bank"
-                                  className="w-full pl-8 pr-4 py-3 border border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200"
-                                />
-                              </div>
-                            </div>
-                          </div>
-                          
-                          {/* Bank Receipt Image Upload */}
-                          <div className="mt-6">
-                            <div className="flex items-center gap-2 mb-4">
-                              <div className="w-8 h-8 bg-purple-100 rounded-lg flex items-center justify-center">
-                                <span className="text-purple-600 text-lg">📄</span>
-                              </div>
-                              <h4 className="text-lg font-semibold text-gray-800">Bank Receipt</h4>
-                            </div>
-                            <div className="bg-gray-50 rounded-xl p-4 border border-gray-200">
-                              <p className="text-sm text-gray-600 mb-4">Upload bank receipt image for future reference</p>
-                              <PhotoUpload
-                                loanId={selectedLoan._id || 'temp'}
-                                goldItemIndex={-2} // Special index for bank receipt
-                                token={token}
-                                onPhotosChange={handleBankReceiptPhotosChange}
-                                maxPhotos={1}
-                                className="w-full"
-                              />
-                              
-                              {/* Display existing bank receipt photos */}
-                              {bankReceiptPhotos.length > 0 && (
-                                <div className="mt-4">
-                                  <h5 className="text-sm font-medium text-gray-700 mb-2">Current Bank Receipt:</h5>
-                                  <div className="grid grid-cols-1 gap-2">
-                                    {bankReceiptPhotos.map((photo, index) => (
-                                      <div key={photo._id || index} className="relative group">
-                                        <img
-                                          src={`${API_URL}/loans/${selectedLoan._id}/photos/${photo._id}/thumbnail`}
-                                          alt="Bank Receipt"
-                                          className="w-full h-32 object-cover rounded-lg border border-gray-200 cursor-pointer hover:opacity-80 transition-opacity"
-                                          onClick={() => window.open(`${API_URL}/loans/${selectedLoan._id}/photos/${photo._id}/image`, '_blank')}
-                                        />
-                                        <div className="absolute top-2 right-2 bg-black/50 text-white text-xs px-2 py-1 rounded opacity-0 group-hover:opacity-100 transition-opacity">
-                                          Click to view full size
-                                        </div>
+                            {/* Display existing bank receipt photos */}
+                            {bankReceiptPhotos.length > 0 && (
+                              <div className="mt-2">
+                                <h5 className="text-xs font-medium text-gray-700 mb-1">Current Bank Receipt:</h5>
+                                <div className="grid grid-cols-1 gap-1">
+                                  {bankReceiptPhotos.map((photo, index) => (
+                                    <div key={photo._id || index} className="relative group">
+                                      <img
+                                        src={`${API_URL}/loans/${selectedLoan._id}/photos/${photo._id}/thumbnail`}
+                                        alt="Bank Receipt"
+                                        className="w-full h-24 object-cover rounded-lg border border-gray-200 cursor-pointer hover:opacity-80 transition-opacity"
+                                        onClick={() => window.open(`${API_URL}/loans/${selectedLoan._id}/photos/${photo._id}/image`, '_blank')}
+                                      />
+                                      <div className="absolute top-1 right-1 bg-black/50 text-white text-xs px-1 py-0.5 rounded opacity-0 group-hover:opacity-100 transition-opacity">
+                                        Click to view
                                       </div>
-                                    ))}
-                                  </div>
-                                </div>
-                              )}
-                            </div>
-                          </div>
-                          
-                          {/* Difference Calculation */}
-                          <div className="mt-4 p-4 bg-blue-50 rounded-xl border border-blue-200">
-                            <div className="flex items-center gap-2 mb-2">
-                              <span className="text-blue-600 text-lg">📊</span>
-                              <h4 className="text-sm font-semibold text-blue-800">Amount Difference</h4>
-                            </div>
-                            <div className="grid grid-cols-1 md:grid-cols-3 gap-4 text-sm">
-                              <div className="text-center">
-                                <div className="text-gray-600">Customer Amount</div>
-                                <div className="font-semibold text-gray-800">₹{selectedLoan.amount?.toLocaleString() || 0}</div>
-                              </div>
-                              <div className="text-center">
-                                <div className="text-gray-600">Bank Amount</div>
-                                <div className="font-semibold text-gray-800">₹{(selectedLoan.bankLoanAmount || 0).toLocaleString()}</div>
-                              </div>
-                              <div className="text-center">
-                                <div className="text-gray-600">Difference</div>
-                                <div className={`font-bold ${(selectedLoan.amount || 0) - (selectedLoan.bankLoanAmount || 0) >= 0 ? 'text-green-600' : 'text-red-600'}`}>
-                                  ₹{((selectedLoan.amount || 0) - (selectedLoan.bankLoanAmount || 0)).toLocaleString()}
+                                    </div>
+                                  ))}
                                 </div>
                               </div>
-                            </div>
-                            <div className="mt-2 text-xs text-blue-600 text-center">
-                              {((selectedLoan.amount || 0) - (selectedLoan.bankLoanAmount || 0)) >= 0 
-                                ? 'Admin profit from this loan' 
-                                : 'Admin loss from this loan'}
-                            </div>
+                            )}
                           </div>
                         </div>
                       )}
                     </div>
 
-                    {/* Gold Items Card */}
-                    <div className="bg-white rounded-2xl shadow-lg border border-gray-100 p-6">
-                      <div className="flex items-center justify-between mb-6">
+                    {/* Gold Items Card - Compact */}
+                    <div className="bg-white rounded-xl shadow-lg border border-gray-100 p-4">
+                      <div className="flex items-center justify-between mb-3">
                         <div className="flex items-center gap-2">
-                          <div className="w-8 h-8 bg-amber-100 rounded-lg flex items-center justify-center">
-                            <span className="text-amber-600 text-lg">🪙</span>
+                          <div className="w-6 h-6 bg-amber-100 rounded-lg flex items-center justify-center">
+                            <span className="text-amber-600 text-sm">🪙</span>
                           </div>
-                          <h3 className="text-lg font-semibold text-gray-800">Gold Items</h3>
+                          <h3 className="text-base font-semibold text-gray-800">Gold Items</h3>
                           <span className="bg-amber-100 text-amber-700 px-2 py-1 rounded-full text-xs font-medium">
                             {selectedLoan.goldItems.length} item{selectedLoan.goldItems.length !== 1 ? 's' : ''}
                           </span>
                         </div>
                         <button
                           onClick={addGoldItem}
-                          className="bg-gradient-to-r from-amber-500 to-orange-500 hover:from-amber-600 hover:to-orange-600 text-white px-4 py-2 rounded-xl font-medium shadow-lg hover:shadow-xl transition-all duration-200 flex items-center gap-2"
+                          className="bg-gradient-to-r from-amber-500 to-orange-500 hover:from-amber-600 hover:to-orange-600 text-white px-3 py-1.5 rounded-lg font-medium shadow-sm hover:shadow-md transition-all duration-200 flex items-center gap-1 text-sm"
                         >
                           <span>+</span> Add Item
                         </button>
                       </div>
 
-                      <div className="space-y-4">
+                      <div className="space-y-3">
                       {selectedLoan.goldItems.map((item, index) => (
-                          <div key={index} className="bg-gradient-to-r from-amber-50 to-orange-50 border border-amber-200 rounded-2xl p-5 hover:shadow-md transition-all duration-200">
-                            <div className="flex items-center justify-between mb-4">
-                              <div className="flex items-center gap-3">
-                                <div className="w-8 h-8 bg-amber-500 text-white rounded-lg flex items-center justify-center font-bold text-sm">
+                          <div key={index} className="bg-gradient-to-r from-amber-50 to-orange-50 border border-amber-200 rounded-lg p-3 hover:shadow-sm transition-all duration-200">
+                            <div className="flex items-center justify-between mb-2">
+                              <div className="flex items-center gap-2">
+                                <div className="w-6 h-6 bg-amber-500 text-white rounded-lg flex items-center justify-center font-bold text-xs">
                                   {index + 1}
                                 </div>
-                                <span className="font-semibold text-gray-700">Gold Item #{index + 1}</span>
+                                <span className="font-medium text-gray-700 text-sm">Gold Item #{index + 1}</span>
                               </div>
                               <button
                               onClick={() => removeGoldItem(index)}
                               disabled={selectedLoan.goldItems.length === 1}
-                                className="text-red-500 hover:text-red-700 hover:bg-red-50 p-2 rounded-lg transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed"
+                                className="text-red-500 hover:text-red-700 hover:bg-red-50 p-1 rounded-lg transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed"
                                 title="Remove this item"
                               >
-                                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
                                 </svg>
                               </button>
                           </div>
                             
-                            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                            <div className="grid grid-cols-1 md:grid-cols-3 gap-2">
                               <div>
-                                <label className="block text-sm font-medium text-gray-700 mb-2">Description</label>
+                                <label className="block text-xs font-medium text-gray-700 mb-1">Description</label>
                                 <input
                                   type="text"
                             value={item.description}
                             onChange={(e) => handleGoldItemChange(index, 'description', e.target.value)}
                                   placeholder="e.g., Gold Chain, Ring, etc."
-                                  className="w-full px-3 py-2 border border-gray-200 rounded-lg focus:ring-2 focus:ring-amber-500 focus:border-transparent transition-all duration-200"
+                                  className="w-full px-2 py-1.5 border border-gray-200 rounded-lg focus:ring-2 focus:ring-amber-500 focus:border-transparent transition-all duration-200 text-sm"
                                 />
                               </div>
                               <div>
-                                <label className="block text-sm font-medium text-gray-700 mb-2">Gross Weight (g)</label>
+                                <label className="block text-xs font-medium text-gray-700 mb-1">Gross Weight (g)</label>
                                 <input
                               type="number"
                               value={item.grossWeight}
                               onChange={(e) => handleGoldItemChange(index, 'grossWeight', e.target.value)}
                                   placeholder="0.00"
                                   step="0.01"
-                                  className="w-full px-3 py-2 border border-gray-200 rounded-lg focus:ring-2 focus:ring-amber-500 focus:border-transparent transition-all duration-200"
+                                  className="w-full px-2 py-1.5 border border-gray-200 rounded-lg focus:ring-2 focus:ring-amber-500 focus:border-transparent transition-all duration-200 text-sm"
                                 />
                               </div>
                               <div>
-                                <label className="block text-sm font-medium text-gray-700 mb-2">Net Weight (g)</label>
+                                <label className="block text-xs font-medium text-gray-700 mb-1">Net Weight (g)</label>
                                 <input
                               type="number"
                               value={item.netWeight}
                               onChange={(e) => handleGoldItemChange(index, 'netWeight', e.target.value)}
                                   placeholder="0.00"
                                   step="0.01"
-                                  className="w-full px-3 py-2 border border-gray-200 rounded-lg focus:ring-2 focus:ring-amber-500 focus:border-transparent transition-all duration-200"
+                                  className="w-full px-2 py-1.5 border border-gray-200 rounded-lg focus:ring-2 focus:ring-amber-500 focus:border-transparent transition-all duration-200 text-sm"
                                 />
                               </div>
                           </div>
@@ -1462,7 +1463,7 @@ const LoansPage = () => {
               </DialogContent>
 
               {/* Footer */}
-              <div className="bg-gray-50 px-6 py-4 flex justify-end gap-3 border-t border-gray-200">
+              <div className="bg-gray-50 px-4 py-3 flex justify-end gap-3 border-t border-gray-200">
                 <button
                   onClick={() => {
                     setEditDialogOpen(false);

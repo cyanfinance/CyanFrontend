@@ -326,33 +326,44 @@ const LoanPrintout: React.FC<LoanPrintoutProps> = ({ loanData, token, onClose })
           <meta charset="UTF-8">
           <meta name="viewport" content="width=device-width, initial-scale=1.0">
           <meta name="robots" content="noindex, nofollow">
-          <title>Loan Agreement - ${loanData.loanId}</title>
+          <title>Loan Acknowledgement - ${loanData.loanId}</title>
           <style>
-            body { font-family: Arial, sans-serif; margin: 0; padding: 5px; background: white; }
-            .container { max-width: 100%; margin: 0 auto; }
+            body { 
+              font-family: Arial, sans-serif; 
+              margin: 0; 
+              padding: 0; 
+              background: white; 
+              box-sizing: border-box; 
+            }
+            .container { 
+              max-width: 100%; 
+              margin: 0; 
+              padding: 0; 
+              box-sizing: border-box; 
+            }
             .duplicate-section { 
               width: 48%; 
               float: left; 
               margin-right: 2%; 
               border: 2px solid #1e40af; 
-              padding: 8px; 
+              padding: 6px; 
               box-sizing: border-box;
               page-break-inside: avoid;
               position: relative;
-              min-height: 90vh;
+              min-height: 95vh;
             }
             .duplicate-section:last-child { margin-right: 0; }
             .header { text-align: center; margin-bottom: 6px; }
             .section { margin-bottom: 4px; }
             .grid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
-            .terms { background: #f9f9f9; padding: 6px; border-radius: 3px; font-size: 9px; }
+            .terms { background: #f9f9f9; padding: 8px; border-radius: 3px; font-size: 11px; }
             .signatures { display: flex; justify-content: space-between; margin-top: 10px; }
             .signature { text-align: center; }
-            h1, h2, h3 { color: #1e40af; margin: 1px 0; }
-            h1 { font-size: 12px; }
-            h2 { font-size: 10px; }
-            h3 { font-size: 8px; }
-            p { margin: 0.5px 0; font-size: 8px; }
+            h1, h2, h3 { color: #1e40af; margin: 2px 0; }
+            h1 { font-size: 16px; }
+            h2 { font-size: 14px; }
+            h3 { font-size: 12px; }
+            p { margin: 1px 0; font-size: 11px; }
             .border { border: 1px solid #ccc; padding: 8px; margin: 5px 0; }
             .flex-container { display: flex; gap: 10px; align-items: flex-start; }
             .flex-table { flex: 1; }
@@ -366,7 +377,58 @@ const LoanPrintout: React.FC<LoanPrintoutProps> = ({ loanData, token, onClose })
             }
             @page { 
               size: A4 landscape; 
-              margin: 3mm; 
+              margin: 0; 
+             }
+             
+             @media print {
+               body { 
+                 margin: 0; 
+                 padding: 0; 
+                 -webkit-print-color-adjust: exact !important; 
+                 color-adjust: exact !important; 
+                 font-size: 12px !important;
+               }
+               .container { 
+                 margin: 0; 
+                 padding: 0; 
+                 width: 100% !important; 
+                 height: 100vh !important; 
+                 box-sizing: border-box !important;
+               }
+               .duplicate-section { 
+                 margin: 0 !important; 
+                 padding: 8px !important; 
+                 page-break-inside: avoid !important; 
+                 height: 49vh !important; 
+                 overflow: hidden !important;
+                 box-sizing: border-box !important;
+               }
+               .header { 
+                 margin-bottom: 8px !important; 
+                 padding: 0 !important; 
+               }
+               .section { 
+                 margin: 4px 0 !important; 
+                 padding: 2px !important; 
+               }
+               .terms { 
+                 margin: 6px 0 !important; 
+                 padding: 4px !important; 
+               }
+               .signatures { 
+                 position: absolute !important; 
+                 bottom: 8px !important; 
+                 left: 0 !important; 
+                 right: 0 !important; 
+               }
+               table { 
+                 margin: 2px 0 !important; 
+                 border-collapse: collapse !important; 
+               }
+               .flex-container { 
+                 margin: 0 !important; 
+                 padding: 0 !important; 
+               }
              }
           </style>
         </head>
@@ -375,37 +437,40 @@ const LoanPrintout: React.FC<LoanPrintoutProps> = ({ loanData, token, onClose })
             <!-- First Copy -->
             <div class="duplicate-section">
           <div class="header">
-            <div style="position: relative; margin-bottom: 8px;">
-              <!-- Logo and Address - Left Aligned -->
-              <div style="position: absolute; left: 0; top: 0;">
+            <div style="margin-bottom: 8px;">
+              <!-- Logo - Centered -->
+              <div style="text-align: center; margin-bottom: 8px;">
                 ${logoBase64 ? `<img src="${logoBase64}" alt="Cyan Finance Logo" style="max-width: 100%; height: auto; max-height: 40px;" />` : '<div style="font-size: 16px; font-weight: bold; color: #003366;">CYAN FINANCE</div>'}
-                <div style="font-size: 8px; margin-top: 4px; line-height: 1.4;">
-                  <div style="margin-bottom: 2px;"><strong>Cyan Finance</strong></div>
-                  <div style="margin-bottom: 2px;">BK Towers, Akkayyapalem, Visakhapatnam, Andhra Pradesh - 530016</div>
-                  <div><strong>Phone:</strong> +91-9700049444 | <strong>Email:</strong> support@cyanfinance.in</div>
+              </div>
+              
+              <!-- Office Address - Single Row Below Logo -->
+              <div style="text-align: center; margin-bottom: 10px;">
+                <div style="font-size: 10px; line-height: 1.4;">
+                  <strong>Cyan Finance</strong> | BK Towers, Akkayyapalem, Visakhapatnam, Andhra Pradesh - 530016 | <strong>Phone:</strong> +91-9700049444 | <strong>Email:</strong> support@cyanfinance.in
                 </div>
               </div>
+              
               <!-- Title - Centered -->
               <div style="text-align: center; width: 100%;">
-                <h2>GOLD LOAN AGREEMENT</h2>
+                <h2>GOLD LOAN ACKNOWLEDGEMENT</h2>
               </div>
             </div>
-            <p style="text-align: center;"><strong>Loan ID:</strong> ${loanData.loanId}</p>
+            <p style="text-align: center;"><strong>Loan ID: ${loanData.loanId}</strong></p>
           </div>
 
-            <div class="section" style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px; margin-top: 70px;">
+            <div class="section" style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px; margin-top: 15px;">
               <div>
                 <h3>Customer Information</h3>
-                <p><strong>Name:</strong> ${loanData.name}</p>
-                <p><strong>Aadhar Number:</strong> ${loanData.aadharNumber}</p>
-                <p><strong>Email:</strong> ${loanData.email}</p>
-                <p><strong>Primary Mobile:</strong> ${loanData.primaryMobile}</p>
-                <p><strong>Emergency Contact:</strong> ${loanData.emergencyContact.mobile} (${loanData.emergencyContact.relation})</p>
+                <p><strong>Name: ${loanData.name}</strong></p>
+                <p><strong>Aadhar Number: ${loanData.aadharNumber}</strong></p>
+                <p><strong>Email: ${loanData.email}</strong></p>
+                <p><strong>Primary Mobile: ${loanData.primaryMobile}</strong></p>
+                <p><strong>Emergency Contact: ${loanData.emergencyContact.mobile} (${loanData.emergencyContact.relation})</strong></p>
               </div>
               <div>
                 <h3>Address Information</h3>
-                <p><strong>Present Address:</strong> ${loanData.presentAddress}</p>
-                <p><strong>Permanent Address:</strong> ${loanData.permanentAddress}</p>
+                <p><strong>Present Address: ${loanData.presentAddress}</strong></p>
+                <p><strong>Permanent Address: ${loanData.permanentAddress}</strong></p>
               </div>
             </div>
 
@@ -417,27 +482,27 @@ const LoanPrintout: React.FC<LoanPrintoutProps> = ({ loanData, token, onClose })
                 <table style="width: 100%; border-collapse: collapse; margin-top: 4px;">
                   <thead>
                         <tr style="background: #f0f0f0;">
-                          <th style="border: 1px solid #ccc; padding: 2px; text-align: left; font-size: 8px; font-weight: bold;">Item</th>
-                          <th style="border: 1px solid #ccc; padding: 2px; text-align: left; font-size: 8px; font-weight: bold;">Description</th>
-                          <th style="border: 1px solid #ccc; padding: 2px; text-align: center; font-size: 8px; font-weight: bold;">Gross Weight</th>
-                          <th style="border: 1px solid #ccc; padding: 2px; text-align: center; font-size: 8px; font-weight: bold;">Net Weight</th>
+                          <th style="border: 1px solid #ccc; padding: 6px; text-align: left; font-size: 13px; font-weight: bold;">Item</th>
+                          <th style="border: 1px solid #ccc; padding: 6px; text-align: left; font-size: 13px; font-weight: bold;">Description</th>
+                          <th style="border: 1px solid #ccc; padding: 6px; text-align: center; font-size: 13px; font-weight: bold;">Gross Weight</th>
+                          <th style="border: 1px solid #ccc; padding: 6px; text-align: center; font-size: 13px; font-weight: bold;">Net Weight</th>
                     </tr>
                   </thead>
                   <tbody>
                     ${loanData.goldItems.map((item, index) => {
                       return `
                         <tr>
-                              <td style="border: 1px solid #ccc; padding: 2px; font-size: 8px; text-align: center; font-weight: bold;">${index + 1}</td>
-                              <td style="border: 1px solid #ccc; padding: 2px; font-size: 8px; font-weight: bold;">${item.description}</td>
-                              <td style="border: 1px solid #ccc; padding: 2px; font-size: 8px; text-align: center; font-weight: bold;">${item.grossWeight} g</td>
-                              <td style="border: 1px solid #ccc; padding: 2px; font-size: 8px; text-align: center; font-weight: bold;">${item.netWeight} g</td>
+                              <td style="border: 1px solid #ccc; padding: 6px; font-size: 13px; text-align: center; font-weight: bold;">${index + 1}</td>
+                              <td style="border: 1px solid #ccc; padding: 6px; font-size: 13px; font-weight: bold;">${item.description}</td>
+                              <td style="border: 1px solid #ccc; padding: 6px; font-size: 13px; text-align: center; font-weight: bold;">${item.grossWeight} g</td>
+                              <td style="border: 1px solid #ccc; padding: 6px; font-size: 13px; text-align: center; font-weight: bold;">${item.netWeight} g</td>
                         </tr>
                       `;
                     }).join('')}
                     <tr style="background: #f8f9fa; font-weight: bold;">
-                      <td style="border: 1px solid #ccc; padding: 2px; font-size: 8px; text-align: center;" colspan="2">TOTAL WEIGHT</td>
-                      <td style="border: 1px solid #ccc; padding: 2px; font-size: 8px; text-align: center; font-weight: bold;">${loanData.goldItems.reduce((sum, item) => sum + (parseFloat(String(item.grossWeight)) || 0), 0).toFixed(2)} g</td>
-                      <td style="border: 1px solid #ccc; padding: 2px; font-size: 8px; text-align: center; font-weight: bold;">${loanData.goldItems.reduce((sum, item) => sum + (parseFloat(String(item.netWeight)) || 0), 0).toFixed(2)} g</td>
+                      <td style="border: 1px solid #ccc; padding: 6px; font-size: 13px; text-align: center; font-weight: bold;" colspan="2">TOTAL WEIGHT</td>
+                      <td style="border: 1px solid #ccc; padding: 6px; font-size: 13px; text-align: center; font-weight: bold;">${loanData.goldItems.reduce((sum, item) => sum + (parseFloat(String(item.grossWeight)) || 0), 0).toFixed(2)} g</td>
+                      <td style="border: 1px solid #ccc; padding: 6px; font-size: 13px; text-align: center; font-weight: bold;">${loanData.goldItems.reduce((sum, item) => sum + (parseFloat(String(item.netWeight)) || 0), 0).toFixed(2)} g</td>
                       </tr>
                   </tbody>
                 </table>
@@ -445,7 +510,7 @@ const LoanPrintout: React.FC<LoanPrintoutProps> = ({ loanData, token, onClose })
               
               <!-- Photos Section -->
               <div class="flex-image">
-                <h4 style="font-size: 9px; font-weight: bold; margin: 0 0 4px 0; color: #1e40af; text-align: center;">All Items Photo</h4>
+                <h4 style="font-size: 12px; font-weight: bold; margin: 0 0 4px 0; color: #1e40af; text-align: center;">All Items Photo</h4>
                 <div style="display: flex; justify-content: center;">
                   ${(() => {
                     const allItemsPhotos = photos[-1] || photos['-1'] || [];
@@ -458,15 +523,15 @@ const LoanPrintout: React.FC<LoanPrintoutProps> = ({ loanData, token, onClose })
                       return `
                         <div style="text-align: center; border: 2px solid #dc2626; padding: 4px; border-radius: 4px; background: #fef2f2;">
                           <img src="${imageUrl}" style="width: 100px; height: 100px; object-fit: cover; border-radius: 3px; display: block;" onerror="this.style.display='none'; this.nextElementSibling.style.display='flex';" />
-                          <div style="width: 100px; height: 100px; border: 1px solid #ccc; display: none; align-items: center; justify-content: center; color: #666; font-size: 8px; border-radius: 3px;">No Photo</div>
-                          <div style="font-size: 7px; color: #dc2626; margin-top: 2px; font-weight: bold;">All Items</div>
+                          <div style="width: 100px; height: 100px; border: 1px solid #ccc; display: none; align-items: center; justify-content: center; color: #666; font-size: 10px; border-radius: 3px; font-weight: bold;">No Photo</div>
+                          <div style="font-size: 9px; color: #dc2626; margin-top: 2px; font-weight: bold;">All Items</div>
                         </div>
                       `;
                     } else {
                       return `
                         <div style="text-align: center; border: 2px solid #dc2626; padding: 4px; border-radius: 4px; background: #fef2f2;">
-                          <div style="width: 100px; height: 100px; border: 1px solid #ccc; display: flex; align-items: center; justify-content: center; color: #666; font-size: 8px; border-radius: 3px;">No Photo Available</div>
-                          <div style="font-size: 7px; color: #dc2626; margin-top: 2px; font-weight: bold;">All Items</div>
+                          <div style="width: 140px; height: 140px; border: 1px solid #ccc; display: flex; align-items: center; justify-content: center; color: #666; font-size: 9px; border-radius: 3px; font-weight: bold;">No Photo Available</div>
+                          <div style="font-size: 8px; color: #dc2626; margin-top: 2px; font-weight: bold;">All Items</div>
                         </div>
                       `;
                     }
@@ -479,71 +544,77 @@ const LoanPrintout: React.FC<LoanPrintoutProps> = ({ loanData, token, onClose })
           <div class="grid">
             <div class="section">
               <h3>Loan Terms</h3>
-                  <p><strong>Loan Amount:</strong> ₹${formatCurrency(loanData.amount)}</p>
-                  <p><strong>Interest Rate:</strong> ${Number(loanData.interestRate)}% per annum</p>
-                  <p><strong>Loan Term:</strong> ${loanData.term} months</p>
+                  <p><strong>Loan Amount:</strong> <strong>₹${formatCurrency(loanData.amount)}</strong></p>
+                  <p><strong>Interest Rate:</strong> <strong>${Number(loanData.interestRate)}% per annum</strong></p>
+                  <p><strong>Loan Term:</strong> <strong>${loanData.term} months</strong></p>
                 </div>
                 <div class="section">
                   <h3>Auction Information</h3>
-                  <p><strong>Loan Disbursement Date:</strong> ${formatDate(loanData.createdAt)}</p>
+                  <p><strong>Loan Disbursement Date:</strong> <strong>${formatDate(loanData.createdAt)}</strong></p>
                   <p><strong>Final Auction Date:</strong> <span style="color: #dc2626; font-weight: bold;">${calculateAuctionDate(loanData.createdAt, loanData.term, loanData.interestRate)}</span></p>
                 </div>
               </div>
 
               <div class="terms">
                 <h3>Terms and Conditions</h3>
-                <p>1. The above mentioned ornaments are legally acquired by me. In case there are any legal consequences arise, Cyan Finance can take Civil and Criminal action against me.</p>
-                <p style="color: #dc2626; font-weight: bold; background: #fef2f2; padding: 4px; border: 1px solid #dc2626; border-radius: 3px; margin: 4px 0;">⚠️ IMPORTANT: The above gold items will be auctioned if loan is not paid before the final upgrade date.</p>
+                <p><strong>1. The above mentioned ornaments are legally acquired by me. In case there are any legal consequences arise, Cyan Finance can take Civil and Criminal action against me.</strong></p>
+                <p style="color: #dc2626; font-weight: bold; background: #fef2f2; padding: 4px; border: 1px solid #dc2626; border-radius: 3px; margin: 4px 0;"><strong> IMPORTANT: <br/>⚠️ The above gold items will be auctioned if loan is not paid before the final auction date.<br/>
+                       ⚠️ In case of loss of this acknowledgement contact branch immediately</strong></p>
               </div>
 
               <div class="signatures" style="position: absolute; bottom: 20px; left: 0; right: 0; display: flex; justify-content: space-between; padding: 0 20px;">
                 <div class="signature">
                   <div><strong>Borrower Signature</strong></div>
                   <div style="height: 30px; border-bottom: 1px solid #000; margin: 10px 0;"></div>
-                  <div>${loanData.name}</div>
+                  <div><strong>${loanData.name}</strong></div>
                 </div>
                 <div class="signature">
                   <div><strong>Lender Signature</strong></div>
                   <div style="height: 30px; border-bottom: 1px solid #000; margin: 10px 0;"></div>
-                  <div>Cyan Finance</div>
+                  <div><strong>Cyan Finance</strong></div>
                 </div>
               </div>
+              
+            
             </div>
 
             <!-- Second Copy -->
             <div class="duplicate-section">
               <div class="header">
-                <div style="position: relative; margin-bottom: 8px;">
-                  <!-- Logo and Address - Left Aligned -->
-                  <div style="position: absolute; left: 0; top: 0;">
-                    ${logoBase64 ? `<img src="${logoBase64}" alt="Cyan Finance Logo" style="max-width: 100%; height: auto; max-height: 40px; align-items: left;" />` : '<div style="font-size: 16px; font-weight: bold; color: #003366;">CYAN FINANCE</div>'}
-                    <div style="font-size: 8px; margin-top: 4px; line-height: 1.4;">
-                      <div style="margin-bottom: 2px;"><strong>Cyan Finance</strong></div>
-                      <div style="margin-bottom: 2px;">BK Towers, Akkayyapalem, Visakhapatnam, Andhra Pradesh - 530016</div>
-                      <div><strong>Phone:</strong> +91-9700049444 | <strong>Email:</strong> support@cyanfinance.in</div>
+                <div style="margin-bottom: 8px;">
+                  <!-- Logo - Centered -->
+                  <div style="text-align: center; margin-bottom: 8px;">
+                    ${logoBase64 ? `<img src="${logoBase64}" alt="Cyan Finance Logo" style="max-width: 100%; height: auto; max-height: 40px;" />` : '<div style="font-size: 16px; font-weight: bold; color: #003366;">CYAN FINANCE</div>'}
+                  </div>
+                  
+                  <!-- Office Address - Single Row Below Logo -->
+                  <div style="text-align: center; margin-bottom: 10px;">
+                    <div style="font-size: 10px; line-height: 1.4;">
+                      <strong>Cyan Finance</strong> | BK Towers, Akkayyapalem, Visakhapatnam, Andhra Pradesh - 530016 | <strong>Phone:</strong> +91-9700049444 | <strong>Email:</strong> support@cyanfinance.in
                     </div>
                   </div>
+                  
                   <!-- Title - Centered -->
                   <div style="text-align: center; width: 100%;">
-                    <h2>GOLD LOAN AGREEMENT</h2>
+                    <h2>GOLD LOAN ACKNOWLEDGEMENT</h2>
                   </div>
                 </div>
-                <p style="text-align: center;"><strong>Loan ID:</strong> ${loanData.loanId}</p>
+                <p style="text-align: center;"><strong>Loan ID: ${loanData.loanId}</strong></p>
               </div>
 
-              <div class="section" style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px; margin-top: 70px;">
+              <div class="section" style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px; margin-top: 15px;">
                 <div>
                   <h3>Customer Information</h3>
-                  <p><strong>Name:</strong> ${loanData.name}</p>
-                  <p><strong>Aadhar Number:</strong> ${loanData.aadharNumber}</p>
-                  <p><strong>Email:</strong> ${loanData.email}</p>
-                  <p><strong>Primary Mobile:</strong> ${loanData.primaryMobile}</p>
-                  <p><strong>Emergency Contact:</strong> ${loanData.emergencyContact.mobile} (${loanData.emergencyContact.relation})</p>
+                  <p><strong>Name: ${loanData.name}</strong></p>
+                  <p><strong>Aadhar Number:${loanData.aadharNumber}</strong> </p>
+                  <p><strong>Email: ${loanData.email}</strong> </p>
+                  <p><strong>Primary Mobile: ${loanData.primaryMobile}</strong></p>
+                  <p><strong>Emergency Contact: ${loanData.emergencyContact.mobile} (${loanData.emergencyContact.relation})</strong></p>
                 </div>
                 <div>
                   <h3>Address Information</h3>
-                  <p><strong>Present Address:</strong> ${loanData.presentAddress}</p>
-                  <p><strong>Permanent Address:</strong> ${loanData.permanentAddress}</p>
+                  <p><strong>Present Address: ${loanData.presentAddress}</strong></p>
+                  <p><strong>Permanent Address: ${loanData.permanentAddress}</strong></p>
                 </div>
               </div>
 
@@ -555,27 +626,27 @@ const LoanPrintout: React.FC<LoanPrintoutProps> = ({ loanData, token, onClose })
                     <table style="width: 100%; border-collapse: collapse; margin-top: 6px;">
                       <thead>
                         <tr style="background: #f0f0f0;">
-                          <th style="border: 1px solid #ccc; padding: 2px; text-align: left; font-size: 8px; font-weight: bold;">Item</th>
-                          <th style="border: 1px solid #ccc; padding: 2px; text-align: left; font-size: 8px; font-weight: bold;">Description</th>
-                          <th style="border: 1px solid #ccc; padding: 2px; text-align: center; font-size: 8px; font-weight: bold;">Gross Weight</th>
-                          <th style="border: 1px solid #ccc; padding: 2px; text-align: center; font-size: 8px; font-weight: bold;">Net Weight</th>
+                          <th style="border: 1px solid #ccc; padding: 6px; text-align: left; font-size: 13px; font-weight: bold;">Item</th>
+                          <th style="border: 1px solid #ccc; padding: 6px; text-align: left; font-size: 13px; font-weight: bold;">Description</th>
+                          <th style="border: 1px solid #ccc; padding: 6px; text-align: center; font-size: 13px; font-weight: bold;">Gross Weight</th>
+                          <th style="border: 1px solid #ccc; padding: 6px; text-align: center; font-size: 13px; font-weight: bold;">Net Weight</th>
                         </tr>
                       </thead>
                       <tbody>
                         ${loanData.goldItems.map((item, index) => {
                           return `
                             <tr>
-                                  <td style="border: 1px solid #ccc; padding: 2px; font-size: 8px; text-align: center; font-weight: bold;">${index + 1}</td>
-                                  <td style="border: 1px solid #ccc; padding: 2px; font-size: 8px; font-weight: bold;">${item.description}</td>
-                                  <td style="border: 1px solid #ccc; padding: 2px; font-size: 8px; text-align: center; font-weight: bold;">${item.grossWeight} g</td>
-                                  <td style="border: 1px solid #ccc; padding: 2px; font-size: 8px; text-align: center; font-weight: bold;">${item.netWeight} g</td>
+                                  <td style="border: 1px solid #ccc; padding: 6px; font-size: 13px; text-align: center; font-weight: bold;">${index + 1}</td>
+                                  <td style="border: 1px solid #ccc; padding: 6px; font-size: 13px; font-weight: bold;">${item.description}</td>
+                                  <td style="border: 1px solid #ccc; padding: 6px; font-size: 13px; text-align: center; font-weight: bold;">${item.grossWeight} g</td>
+                                  <td style="border: 1px solid #ccc; padding: 6px; font-size: 13px; text-align: center; font-weight: bold;">${item.netWeight} g</td>
                             </tr>
                           `;
                         }).join('')}
                         <tr style="background: #f8f9fa; font-weight: bold;">
-                          <td style="border: 1px solid #ccc; padding: 2px; font-size: 8px; text-align: center;" colspan="2">TOTAL WEIGHT</td>
-                          <td style="border: 1px solid #ccc; padding: 2px; font-size: 8px; text-align: center; font-weight: bold;">${loanData.goldItems.reduce((sum, item) => sum + (parseFloat(String(item.grossWeight)) || 0), 0).toFixed(2)} g</td>
-                          <td style="border: 1px solid #ccc; padding: 2px; font-size: 8px; text-align: center; font-weight: bold;">${loanData.goldItems.reduce((sum, item) => sum + (parseFloat(String(item.netWeight)) || 0), 0).toFixed(2)} g</td>
+                          <td style="border: 1px solid #ccc; padding: 6px; font-size: 13px; text-align: center; font-weight: bold;" colspan="2">TOTAL WEIGHT</td>
+                          <td style="border: 1px solid #ccc; padding: 6px; font-size: 13px; text-align: center; font-weight: bold;">${loanData.goldItems.reduce((sum, item) => sum + (parseFloat(String(item.grossWeight)) || 0), 0).toFixed(2)} g</td>
+                          <td style="border: 1px solid #ccc; padding: 6px; font-size: 13px; text-align: center; font-weight: bold;">${loanData.goldItems.reduce((sum, item) => sum + (parseFloat(String(item.netWeight)) || 0), 0).toFixed(2)} g</td>
                         </tr>
                       </tbody>
                     </table>
@@ -583,33 +654,33 @@ const LoanPrintout: React.FC<LoanPrintoutProps> = ({ loanData, token, onClose })
                   
                   <!-- Photos Section -->
                   <div class="flex-image">
-                    <h4 style="font-size: 9px; font-weight: bold; margin: 0 0 4px 0; color: #1e40af; text-align: center;">All Items Photo</h4>
-                    <div style="display: flex; justify-content: center;">
-                      ${(() => {
-                        const allItemsPhotos = photos[-1] || photos['-1'] || [];
-                        if (allItemsPhotos.length > 0) {
-                          const firstPhoto = allItemsPhotos[0];
-                          const base64Key = `-1_${firstPhoto._id}`;
-                          const base64Data = base64Images[base64Key] || '';
-                          const imageUrl = base64Data || `http://localhost:5001/api/loans/${loanData._id}/photos/${firstPhoto._id}/image`;
-                          
-                          return `
-                            <div style="text-align: center; border: 2px solid #dc2626; padding: 4px; border-radius: 4px; background: #fef2f2;">
-                              <img src="${imageUrl}" style="width: 100px; height: 100px; object-fit: cover; border-radius: 3px; display: block;" onerror="this.style.display='none'; this.nextElementSibling.style.display='flex';" />
-                              <div style="width: 100px; height: 100px; border: 1px solid #ccc; display: none; align-items: center; justify-content: center; color: #666; font-size: 8px; border-radius: 3px;">No Photo</div>
-                              <div style="font-size: 7px; color: #dc2626; margin-top: 2px; font-weight: bold;">All Items</div>
-                            </div>
-                          `;
-                        } else {
-                          return `
-                            <div style="text-align: center; border: 2px solid #dc2626; padding: 4px; border-radius: 4px; background: #fef2f2;">
-                              <div style="width: 100px; height: 100px; border: 1px solid #ccc; display: flex; align-items: center; justify-content: center; color: #666; font-size: 8px; border-radius: 3px;">No Photo Available</div>
-                              <div style="font-size: 7px; color: #dc2626; margin-top: 2px; font-weight: bold;">All Items</div>
-                            </div>
-                          `;
-                        }
-                      })()}
-                    </div>
+                <h4 style="font-size: 12px; font-weight: bold; margin: 0 0 4px 0; color: #1e40af; text-align: center;">All Items Photo</h4>
+                <div style="display: flex; justify-content: center;">
+                  ${(() => {
+                    const allItemsPhotos = photos[-1] || photos['-1'] || [];
+                    if (allItemsPhotos.length > 0) {
+                      const firstPhoto = allItemsPhotos[0];
+                      const base64Key = `-1_${firstPhoto._id}`;
+                      const base64Data = base64Images[base64Key] || '';
+                      const imageUrl = base64Data || `http://localhost:5001/api/loans/${loanData._id}/photos/${firstPhoto._id}/image`;
+                      
+                      return `
+                        <div style="text-align: center; border: 2px solid #dc2626; padding: 4px; border-radius: 4px; background: #fef2f2;">
+                          <img src="${imageUrl}" style="width: 100px; height: 100px; object-fit: cover; border-radius: 3px; display: block;" onerror="this.style.display='none'; this.nextElementSibling.style.display='flex';" />
+                          <div style="width: 100px; height: 100px; border: 1px solid #ccc; display: none; align-items: center; justify-content: center; color: #666; font-size: 10px; border-radius: 3px; font-weight: bold;">No Photo</div>
+                          <div style="font-size: 9px; color: #dc2626; margin-top: 2px; font-weight: bold;">All Items</div>
+                        </div>
+                      `;
+                    } else {
+                      return `
+                        <div style="text-align: center; border: 2px solid #dc2626; padding: 4px; border-radius: 4px; background: #fef2f2;">
+                          <div style="width: 140px; height: 140px; border: 1px solid #ccc; display: flex; align-items: center; justify-content: center; color: #666; font-size: 9px; border-radius: 3px; font-weight: bold;">No Photo Available</div>
+                          <div style="font-size: 8px; color: #dc2626; margin-top: 2px; font-weight: bold;">All Items</div>
+                        </div>
+                      `;
+                    }
+                  })()}
+                </div>
                   </div>
                 </div>
               </div>
@@ -617,36 +688,39 @@ const LoanPrintout: React.FC<LoanPrintoutProps> = ({ loanData, token, onClose })
               <div class="grid">
                 <div class="section">
                   <h3>Loan Terms</h3>
-                  <p><strong>Loan Amount:</strong> ₹${formatCurrency(loanData.amount)}</p>
-                  <p><strong>Interest Rate:</strong> ${Number(loanData.interestRate)}% per annum</p>
-                  <p><strong>Loan Term:</strong> ${loanData.term} months</p>
+                  <p><strong>Loan Amount:</strong> <strong>₹${formatCurrency(loanData.amount)}</strong></p>
+                  <p><strong>Interest Rate:</strong> <strong>${Number(loanData.interestRate)}% per annum</strong></p>
+                  <p><strong>Loan Term:</strong> <strong>${loanData.term} months</strong></p>
                 </div>
             <div class="section">
               <h3>Auction Information</h3>
-              <p><strong>Loan Disbursement Date:</strong> ${formatDate(loanData.createdAt)}</p>
+              <p><strong>Loan Disbursement Date:</strong> <strong>${formatDate(loanData.createdAt)}</strong></p>
               <p><strong>Final Auction Date:</strong> <span style="color: #dc2626; font-weight: bold;">${calculateAuctionDate(loanData.createdAt, loanData.term, loanData.interestRate)}</span></p>
             </div>
           </div>
 
           <div class="terms">
             <h3>Terms and Conditions</h3>
-            <p>1. The above mentioned ornaments are legally acquired by me. In case there are any legal consequences arise, Cyan Finance can take Civil and Criminal action against me.</p>
-            <p style="color: #dc2626; font-weight: bold; background: #fef2f2; padding: 4px; border: 1px solid #dc2626; border-radius: 3px; margin: 4px 0;">⚠️ IMPORTANT: The above gold items will be auctioned if loan is not paid before the final upgrade date.</p>
+            <p><strong>1. The above mentioned ornaments are legally acquired by me. In case there are any legal consequences arise, Cyan Finance can take Civil and Criminal action against me.</strong></p>
+            <p style="color: #dc2626; font-weight: bold; background: #fef2f2; padding: 4px; border: 1px solid #dc2626; border-radius: 3px; margin: 4px 0;"><strong> IMPORTANT: <br/>⚠️ The above gold items will be auctioned if loan is not paid before the final auction date.<br/>
+                      ⚠️ In case of loss of this acknowledgement contact branch immediately</strong>
+            </p>
           </div>
 
           <div class="signatures" style="position: absolute; bottom: 20px; left: 0; right: 0; display: flex; justify-content: space-between; padding: 0 20px;">
             <div class="signature">
               <div><strong>Borrower Signature</strong></div>
               <div style="height: 30px; border-bottom: 1px solid #000; margin: 10px 0;"></div>
-              <div>${loanData.name}</div>
+              <div><strong>${loanData.name}</strong></div>
             </div>
             <div class="signature">
               <div><strong>Lender Signature</strong></div>
               <div style="height: 30px; border-bottom: 1px solid #000; margin: 10px 0;"></div>
-              <div>Cyan Finance</div>
+              <div><strong>Cyan Finance</strong></div>
             </div>
-          </div>
+          </div>      
             </div>
+             
           </div>
         </body>
         <script>
@@ -756,7 +830,7 @@ const LoanPrintout: React.FC<LoanPrintoutProps> = ({ loanData, token, onClose })
     if (printWindow) {
       printWindow.onload = () => {
         // Set clean title and hide any potential URL display
-        printWindow.document.title = 'Loan Agreement';
+        printWindow.document.title = 'Loan Acknowledgement';
         
         // Add additional CSS to ensure clean printing
         const cleanPrintCSS = `
@@ -788,7 +862,7 @@ const LoanPrintout: React.FC<LoanPrintoutProps> = ({ loanData, token, onClose })
         <div className="bg-white rounded-lg shadow-xl max-w-4xl w-full max-h-[90vh] overflow-y-auto">
           {/* Header */}
           <div className="flex justify-between items-center p-6 border-b">
-            <h2 className="text-2xl font-bold text-gray-800">Loan Agreement</h2>
+            <h2 className="text-2xl font-bold text-gray-800">Loan Acknowledgement</h2>
             <div className="flex gap-2">
               <button
                 onClick={handlePrint}
@@ -819,7 +893,7 @@ const LoanPrintout: React.FC<LoanPrintoutProps> = ({ loanData, token, onClose })
               <Logo className="mr-4" size="medium" />
               <div>
             <h1 className="text-3xl font-bold text-blue-800">CYAN FINANCE</h1>
-            <p className="text-lg text-gray-600">Gold Loan Agreement</p>
+            <p className="text-lg text-gray-600">Gold Loan Acknowledgement</p>
               </div>
             </div>
             <p className="text-sm text-gray-500">Loan ID: {loanData.loanId}</p>
@@ -831,14 +905,14 @@ const LoanPrintout: React.FC<LoanPrintoutProps> = ({ loanData, token, onClose })
               <div className="bg-gray-50 p-4 rounded-lg">
                 <h3 className="text-lg font-semibold mb-4 text-blue-800">Customer Information</h3>
                 <div className="space-y-2 text-sm">
-                  <div><strong>Name:</strong> {loanData.name}</div>
-                  <div><strong>Aadhar Number:</strong> {loanData.aadharNumber}</div>
-                  <div><strong>Email:</strong> {loanData.email}</div>
-                  <div><strong>Primary Mobile:</strong> {loanData.primaryMobile}</div>
+                  <div><strong>Name: {loanData.name}</strong></div>
+                  <div><strong>Aadhar Number: {loanData.aadharNumber}</strong></div>
+                  <div><strong>Email: {loanData.email}</strong></div>
+                  <div><strong>Primary Mobile: {loanData.primaryMobile}</strong></div>
                   {loanData.secondaryMobile && (
-                    <div><strong>Secondary Mobile:</strong> {loanData.secondaryMobile}</div>
+                    <div><strong>Secondary Mobile: {loanData.secondaryMobile}</strong></div>
                   )}
-                  <div><strong>Emergency Contact:</strong> {loanData.emergencyContact.mobile} ({loanData.emergencyContact.relation})</div>
+                  <div><strong>Emergency Contact: {loanData.emergencyContact.mobile} ({loanData.emergencyContact.relation})</strong></div>
                 </div>
               </div>
 
