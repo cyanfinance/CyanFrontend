@@ -21,7 +21,7 @@ function Home() {
         </div> */}
         <div className="relative w-3/4 h-[300px] overflow-hidden">
   <img
-    src={goldimage}    
+    src="/golditems.png"
     alt="Gold Image"
     className="w-full object-cover object-top"
   />
