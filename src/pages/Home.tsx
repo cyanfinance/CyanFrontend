@@ -1,6 +1,6 @@
 import { Info, Shield, Percent } from 'lucide-react';
 import GoldCalculator from '../components/GoldCalculator';
-import goldimage from '../../public/golditems.png'
+import goldimage from '/golditems.png'
  
 function Home() {
   return (
