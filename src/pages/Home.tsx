@@ -1,12 +1,13 @@
 import { Info, Shield, Percent } from 'lucide-react';
 import GoldCalculator from '../components/GoldCalculator';
+import goldimage from '../../public/golditems.png'
  
 function Home() {
   return (
     <div>
       <div className=" bg-blue-400 h-400px overflow-hidden items-center justify-center ">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-24">
-          <div className="text-center pt-20">
+          <div className="text-center pt-1">
         <p className="text-2xl font-bold text-gray-900 sm:text-5xl md:text-5xl">
           Welcome to Cyan Finance
         </p>
@@ -20,7 +21,7 @@ function Home() {
         </div> */}
         <div className="relative w-3/4 h-[300px] overflow-hidden">
   <img
-    src="https://www.cyanfinance.in/img/handgold1.png"
+    src={goldimage}    
     alt="Gold Image"
     className="w-full object-cover object-top"
   />
