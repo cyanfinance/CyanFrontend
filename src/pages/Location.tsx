@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { MapPin, Phone, Clock } from "lucide-react";
+import SEO from '../components/SEO';
 
 function Location() {
   const branches = [
@@ -43,8 +44,30 @@ function Location() {
 
   const [selectedBranch, setSelectedBranch] = useState(branches[0]); // Default branch
 
+  const structuredData = {
+    "@context": "https://schema.org",
+    "@type": "LocalBusiness",
+    "name": "Cyan Finance",
+    "address": {
+      "@type": "PostalAddress",
+      "streetAddress": "BK Towers, Akkayyapalem",
+      "addressLocality": "Visakhapatnam",
+      "postalCode": "530016",
+      "addressCountry": "IN"
+    },
+    "telephone": "+91-9700049444",
+    "openingHours": "Mo-Sa 09:00-18:00"
+  };
+
   return (
     <div>
+      <SEO
+        title="Location - Find Our Branch | Cyan Finance Visakhapatnam"
+        description="Visit our branch at BK Towers, Akkayyapalem, Visakhapatnam. Open Mon-Sat: 9:00 AM - 6:00 PM. Contact: +91-9700049444"
+        keywords="gold loan vizag, gold loan visakhapatnam, cyan gold, cyan finance, best gold loan provider, cyan finance location, cyan finance branch, cyan finance visakhapatnam, cyan finance address, cyan finance contact, gold loan near me"
+        url="/location"
+        structuredData={structuredData}
+      />
     <div className="max-w-7xl mx-auto px-4 py-12">
       <div className="text-center mb-12">
         <h1 className="text-4xl font-bold text-gray-900 mb-4">Our Locations</h1>

@@ -1,5 +1,6 @@
 import { Shield, Clock, Calculator, CheckCircle } from 'lucide-react';
 import { Link } from 'react-router-dom';
+import SEO from '../components/SEO';
  
 export default function goldloan() {
   const features = [
@@ -49,8 +50,28 @@ export default function goldloan() {
     },
   ];
  
+  const structuredData = {
+    "@context": "https://schema.org",
+    "@type": "LoanService",
+    "name": "Gold Loan Services",
+    "description": "Get instant loans against your gold with competitive interest rates starting from 7.5% per annum. Flexible tenure from 3 months to 3 years.",
+    "provider": {
+      "@type": "FinancialService",
+      "name": "Cyan Finance"
+    },
+    "interestRate": "7.5%",
+    "loanTerm": "3 months to 3 years"
+  };
+
   return (
     <div className="bg-white">
+      <SEO
+        title="Gold Loan - Get Instant Loans Against Gold | Cyan Finance"
+        description="Get instant loans against your gold with competitive interest rates starting from 7.5% per annum. Secure storage, quick processing, flexible tenure. Apply now!"
+        keywords="gold loan, gold loan vizag, gold loan visakhapatnam, cyan gold, cyan finance, best gold loan provider, gold loan rates, gold loan calculator, instant gold loan, gold loan near me, gold loan interest rate, gold loan online"
+        url="/gold-loan"
+        structuredData={structuredData}
+      />
       {/* Hero Section */}
       <div className="relative bg-blue-100 min-h-screen items-center justify-center px-12 py-12">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-24">

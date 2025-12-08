@@ -1,5 +1,6 @@
 import { Coins, ShoppingBag, Ban as Bank, Percent, Home, Smartphone } from "lucide-react";
 import { useNavigate } from "react-router-dom";
+import SEO from "../components/SEO";
  
 function Services() {
   const navigate = useNavigate();
@@ -49,8 +50,53 @@ function Services() {
     },
   ];
  
+  const structuredData = {
+    "@context": "https://schema.org",
+    "@type": "Service",
+    "serviceType": "Financial Services",
+    "provider": {
+      "@type": "FinancialService",
+      "name": "Cyan Finance"
+    },
+    "areaServed": "India",
+    "hasOfferCatalog": {
+      "@type": "OfferCatalog",
+      "name": "Gold Loan Services",
+      "itemListElement": [
+        {
+          "@type": "Offer",
+          "itemOffered": {
+            "@type": "Service",
+            "name": "Gold Loan"
+          }
+        },
+        {
+          "@type": "Offer",
+          "itemOffered": {
+            "@type": "Service",
+            "name": "Gold Purchase"
+          }
+        },
+        {
+          "@type": "Offer",
+          "itemOffered": {
+            "@type": "Service",
+            "name": "Bank Buy Back"
+          }
+        }
+      ]
+    }
+  };
+
   return (
     <div>
+      <SEO
+        title="Our Services - Gold Loan, Gold Purchase & More | Cyan Finance"
+        description="Comprehensive financial services including gold loans, gold purchase, bank buy back, nominal interest rates, other loans, and online/offline payments. Trusted since 2011."
+        keywords="gold loan, gold loan vizag, gold loan visakhapatnam, cyan gold, cyan finance, best gold loan provider, gold loan services, gold purchase, bank buy back, gold loan rates, financial services, cyan finance services"
+        url="/services"
+        structuredData={structuredData}
+      />
     <div className="max-w-7xl mx-auto px-4 py-12 sm:px-6 lg:px-8">
       <h1 className="text-4xl font-bold text-center text-gray-900 mb-12">Our Services</h1>
  

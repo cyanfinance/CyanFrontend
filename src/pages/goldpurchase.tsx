@@ -1,5 +1,6 @@
 import { Star, ShieldCheck, Truck, RefreshCw } from 'lucide-react';
 import { Link } from 'react-router-dom';
+import SEO from '../components/SEO';
 
 export default function GoldPurchase() {
   const products = [
@@ -54,6 +55,12 @@ export default function GoldPurchase() {
 
   return (
     <div className="bg-white">
+      <SEO
+        title="Gold Purchase - Buy Gold at Best Rates | Cyan Finance"
+        description="Purchase gold at competitive market rates with no extra charges. We offer 24K gold coins and bars with transparent pricing and secure transactions."
+        keywords="gold loan, gold loan vizag, gold loan visakhapatnam, cyan gold, cyan finance, best gold loan provider, gold purchase, buy gold, gold coins, gold bars, gold rates, cyan finance gold purchase"
+        url="/gold-purchase"
+      />
       {/* Hero Section */}
       <div className="relative bg-blue-100 min-h-screen items-center justify-center px-12 py-12">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-24">

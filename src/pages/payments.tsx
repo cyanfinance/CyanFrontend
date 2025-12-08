@@ -1,9 +1,16 @@
 import { Link } from 'react-router-dom';
 import { FaArrowRight } from 'react-icons/fa';
+import SEO from '../components/SEO';
 
 const Payments = () => {
   return (
     <div className="min-h-screen bg-gray-50 py-12">
+      <SEO
+        title="Payment Options - Online & Offline Payment Methods | Cyan Finance"
+        description="Make payments online or offline through our mobile app, online banking, UPI, credit/debit cards, or visit our branch. Multiple convenient payment options available."
+        keywords="gold loan, gold loan vizag, gold loan visakhapatnam, cyan gold, cyan finance, best gold loan provider, payment options, online payment, offline payment, cyan finance payments, mobile app payment"
+        url="/payments"
+      />
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="text-center">
           <h1 className="text-3xl font-bold text-gray-900 sm:text-4xl">

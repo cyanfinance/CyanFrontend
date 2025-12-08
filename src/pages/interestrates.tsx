@@ -1,5 +1,6 @@
 import { Link } from 'react-router-dom';
 import { FaArrowRight } from 'react-icons/fa';
+import SEO from '../components/SEO';
 
 const InterestRates = () => {
   const rates = [
@@ -21,6 +22,12 @@ const InterestRates = () => {
 
   return (
     <div className="min-h-screen bg-gray-50 py-12">
+      <SEO
+        title="Interest Rates - Transparent Gold Loan Rates | Cyan Finance"
+        description="View our transparent and competitive interest rates for gold loans, gold purchase, and bank buy back services. No hidden charges, best market rates."
+        keywords="gold loan, gold loan vizag, gold loan visakhapatnam, cyan gold, cyan finance, best gold loan provider, gold loan interest rates, interest rates, gold loan rates, cyan finance rates, loan rates"
+        url="/interest-rates"
+      />
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         {/* Header */}
         <div className="text-center mb-12">
