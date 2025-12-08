@@ -19,6 +19,7 @@ export const calculateDailyInterest = (
   const totalDays = months * 30; // Approximate days (30 days per month)
   const totalInterest = principal * dailyRate * totalDays;
   const monthlyPayment = (principal + totalInterest) / months;
+  const monthlyInterest = totalInterest / months;
   const totalAmount = principal + totalInterest;
 
   return {
@@ -27,6 +28,7 @@ export const calculateDailyInterest = (
     dailyInterest: principal * dailyRate,
     totalInterest,
     monthlyPayment: Math.round(monthlyPayment),
+    monthlyInterest: Math.round(monthlyInterest),
     totalAmount: Math.round(totalAmount)
   };
 };

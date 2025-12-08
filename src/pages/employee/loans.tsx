@@ -160,7 +160,7 @@ const RepaymentModal: React.FC<RepaymentModalProps> = ({ loan: _loan, onClose, o
               max={calc?.totalDue || _loan.totalPayment || 0}
             />
             {calc && (
-              <div className="mt-2 flex gap-2">
+              <div className="mt-2 flex gap-2 flex-wrap">
                 <button
                   type="button"
                   onClick={() => {
@@ -180,6 +180,29 @@ const RepaymentModal: React.FC<RepaymentModalProps> = ({ loan: _loan, onClose, o
                   className="px-3 py-1 text-xs bg-green-500 text-white rounded hover:bg-green-600"
                 >
                   Set Full Balance (₹{Math.round(calc.totalDue || 0).toLocaleString()})
+                </button>
+                {calc.interest && (
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setAmount(Math.round(calc.interest || 0));
+                      setUserHasManuallySetAmount(true);
+                    }}
+                    className="px-3 py-1 text-xs bg-yellow-500 text-white rounded hover:bg-yellow-600"
+                  >
+                    Set Interest Only (₹{Math.round(calc.interest || 0).toLocaleString()})
+                  </button>
+                )}
+                <button
+                  type="button"
+                  onClick={() => {
+                    const remainingPrincipal = _loan.amount - (_loan.totalPaid || 0);
+                    setAmount(Math.max(remainingPrincipal, 0));
+                    setUserHasManuallySetAmount(true);
+                  }}
+                  className="px-3 py-1 text-xs bg-purple-500 text-white rounded hover:bg-purple-600"
+                >
+                  Set Principal Only (₹{Math.max(_loan.amount - (_loan.totalPaid || 0), 0).toLocaleString()})
                 </button>
               </div>
             )}

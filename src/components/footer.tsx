@@ -5,19 +5,65 @@ import axios from 'axios';
 import { API_URL } from '../config';
 
 const Footer = () => {
-  const [goldRate, setGoldRate] = useState(7000);
-  const [lastUpdated, setLastUpdated] = useState<Date | null>(null);
+  // Load from localStorage if available, otherwise default to 7000
+  const getStoredGoldRate = () => {
+    try {
+      const stored = localStorage.getItem('goldRate');
+      if (stored) {
+        const parsed = JSON.parse(stored);
+        return parsed.rate || 7000;
+      }
+    } catch (e) {
+      console.error('Error reading gold rate from localStorage:', e);
+    }
+    return 7000;
+  };
+
+  const getStoredLastUpdated = () => {
+    try {
+      const stored = localStorage.getItem('goldRate');
+      if (stored) {
+        const parsed = JSON.parse(stored);
+        return parsed.lastUpdated ? new Date(parsed.lastUpdated) : null;
+      }
+    } catch (e) {
+      console.error('Error reading lastUpdated from localStorage:', e);
+    }
+    return null;
+  };
+
+  const [goldRate, setGoldRate] = useState(getStoredGoldRate());
+  const [lastUpdated, setLastUpdated] = useState<Date | null>(getStoredLastUpdated());
 
   useEffect(() => {
     const fetchGoldRate = async () => {
       try {
         const response = await axios.get(`${API_URL}/settings/gold-rate`);
         if (response.data.rate) {
-          setGoldRate(response.data.rate);
-          setLastUpdated(new Date());
+          const rate = response.data.rate;
+          const updated = response.data.lastUpdated ? new Date(response.data.lastUpdated) : new Date();
+          
+          setGoldRate(rate);
+          setLastUpdated(updated);
+          
+          // Store in localStorage for persistence
+          try {
+            localStorage.setItem('goldRate', JSON.stringify({
+              rate,
+              lastUpdated: updated.toISOString()
+            }));
+            // Dispatch custom event to notify other components (like calculator)
+            window.dispatchEvent(new CustomEvent('goldRateUpdated', { 
+              detail: { rate, lastUpdated: updated.toISOString() } 
+            }));
+          } catch (e) {
+            console.error('Error saving gold rate to localStorage:', e);
+          }
         }
       } catch (error) {
         console.error('Error fetching gold rate:', error);
+        // Keep the last known rate from localStorage if API fails
+        // This way it won't reset to 7000 when backend is down
       }
     };
     fetchGoldRate();

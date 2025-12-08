@@ -340,31 +340,29 @@ const RepaymentModal: React.FC<RepaymentModalProps> = ({ loan: _loan, onClose, o
                 >
                   Set Full Balance (₹{Math.max(Math.round(calc?.totalDue || _loan.totalPayment || 0) - (_loan.totalPaid || 0), 0).toLocaleString()})
                 </button>
-                {paymentType === 'interest' && calc?.interest && (
+                {calc?.interest && (
                   <button
                     type="button"
                     onClick={() => {
-                      setAmount(calc.interest);
+                      setAmount(Math.round(calc.interest || 0));
                       setUserHasManuallySetAmount(true);
                     }}
                     className="px-3 py-1 text-xs bg-yellow-100 text-yellow-700 rounded hover:bg-yellow-200 border border-yellow-300"
                   >
-                    Set Interest Only (₹{calc.interest?.toLocaleString()})
+                    Set Interest Only (₹{Math.round(calc.interest || 0).toLocaleString()})
                   </button>
                 )}
-                {paymentType === 'principal' && (
-                  <button
-                    type="button"
-                    onClick={() => {
-                      const remainingPrincipal = _loan.amount - (_loan.totalPaid || 0);
-                      setAmount(Math.max(remainingPrincipal, 0));
-                      setUserHasManuallySetAmount(true);
-                    }}
-                    className="px-3 py-1 text-xs bg-purple-100 text-purple-700 rounded hover:bg-purple-200 border border-purple-300"
-                  >
-                    Set Principal Only (₹{Math.max(_loan.amount - (_loan.totalPaid || 0), 0).toLocaleString()})
-                  </button>
-                )}
+                <button
+                  type="button"
+                  onClick={() => {
+                    const remainingPrincipal = _loan.amount - (_loan.totalPaid || 0);
+                    setAmount(Math.max(remainingPrincipal, 0));
+                    setUserHasManuallySetAmount(true);
+                  }}
+                  className="px-3 py-1 text-xs bg-purple-100 text-purple-700 rounded hover:bg-purple-200 border border-purple-300"
+                >
+                  Set Principal Only (₹{Math.max(_loan.amount - (_loan.totalPaid || 0), 0).toLocaleString()})
+                </button>
               </div>
               <input
                 type="number"
@@ -664,7 +662,7 @@ const AdminDashboard = () => {
       if (!res.ok) throw new Error(data.message || 'Calculation failed');
       // Use the monthly payment from the new calculation method
       return {
-        monthlyPayment: data.monthlyPayment,
+        monthlyPayment: data.monthlyInterest,
         totalAmount: data.totalAmount
       };
     }
@@ -746,7 +744,7 @@ const AdminDashboard = () => {
           if (!res.ok) throw new Error(data.message || 'Calculation failed');
           setFormData(prev => ({
             ...prev,
-            monthlyPayment: data.monthlyPayment,
+            monthlyPayment: data.monthlyInterest,
             totalAmount: data.totalAmount
           }));
         } catch {
@@ -754,11 +752,11 @@ const AdminDashboard = () => {
           const timeInYears = months / 12;
           const totalInterest = (principal * yearlyRate * timeInYears) / 100;
           const totalAmount = principal + totalInterest;
-          const monthlyPayment = totalAmount / months;
+          const monthlyInterest = totalInterest / months;
           
           setFormData(prev => ({
             ...prev,
-            monthlyPayment: Math.round(monthlyPayment),
+            monthlyPayment: Math.round(monthlyInterest),
             totalAmount: Math.round(totalAmount)
           }));
         }
@@ -817,7 +815,8 @@ const AdminDashboard = () => {
           secondaryMobile: formData.secondaryMobile,
           presentAddress: formData.presentAddress,
           permanentAddress: formData.permanentAddress,
-          emergencyContact: formData.emergencyContact
+          emergencyContact: formData.emergencyContact,
+          purpose: 'loan_creation'
         })
       });
       const data = await response.json();
@@ -942,7 +941,7 @@ const AdminDashboard = () => {
       const amount = Number(formData.loanAmount);
       const term = Number(formData.duration);
       const interestRate = Number(formData.interestRate);
-      const monthlyPayment = Number(formData.monthlyPayment);
+      const monthlyInterest = Number(formData.monthlyPayment);
       const totalPayment = Number(formData.totalAmount);
 
       // Validate numeric values
@@ -955,8 +954,8 @@ const AdminDashboard = () => {
       if (isNaN(interestRate) || interestRate < 0) {
         throw new Error('Interest rate cannot be negative');
       }
-      if (isNaN(monthlyPayment) || monthlyPayment <= 0) {
-        throw new Error('Invalid monthly payment amount');
+      if (isNaN(monthlyInterest) || monthlyInterest <= 0) {
+        throw new Error('Invalid monthly interest amount');
       }
       if (isNaN(totalPayment) || totalPayment <= 0) {
         throw new Error('Invalid total payment amount');
@@ -978,7 +977,7 @@ const AdminDashboard = () => {
         interestRate,
         amount,
         term,
-        monthlyPayment,
+        monthlyPayment: monthlyInterest,
         totalPayment,
         // Add createdBy field
         createdBy: user.id
@@ -1111,13 +1110,33 @@ const AdminDashboard = () => {
     try {
       setLoading(true);
       // console.log('Token being used:', token);
-      await axios.post(`${API_URL}/settings/update-gold-rate`, 
+      const response = await axios.post(`${API_URL}/settings/update-gold-rate`, 
         { rate: parseFloat(goldRate) },
         { headers: { 'x-auth-token': token } }
       );
       setMessage('Gold rate updated successfully!');
+      
       // Fetch the updated rate
       await fetchGoldRate();
+      
+      // Update localStorage and dispatch event to notify other components
+      const updatedRate = response.data.rate || parseFloat(goldRate);
+      try {
+        localStorage.setItem('goldRate', JSON.stringify({
+          rate: updatedRate,
+          lastUpdated: response.data.lastUpdated || new Date().toISOString()
+        }));
+        // Dispatch custom event to notify footer and calculator
+        window.dispatchEvent(new CustomEvent('goldRateUpdated', { 
+          detail: { 
+            rate: updatedRate, 
+            lastUpdated: response.data.lastUpdated || new Date().toISOString() 
+          } 
+        }));
+      } catch (e) {
+        console.error('Error saving gold rate to localStorage:', e);
+      }
+      
       setTimeout(() => setMessage(''), 3000);
     } catch (error: any) {
       console.error('Error updating gold rate:', error);
@@ -1633,20 +1652,12 @@ const AdminDashboard = () => {
                             <input type="number" name="duration" value={formData.duration} onChange={handleInputChange} placeholder="Loan Duration" className="w-full p-3 border rounded-lg focus:ring-2 focus:ring-yellow-300 focus:border-yellow-400 transition" min="1" step="1" required autoComplete="off" />
                           </div>
                           <div>
-                            <label className="block text-sm font-semibold text-gray-700">Monthly Payment (₹)</label>
-                            <input type="number" name="monthlyPayment" value={formData.monthlyPayment} onChange={handleInputChange} placeholder="Monthly Payment" className="w-full p-3 border rounded-lg focus:ring-2 focus:ring-yellow-300 focus:border-yellow-400 transition" min="0" step="1" required autoComplete="off" />
+                            <label className="block text-sm font-semibold text-gray-700">Monthly Interest (₹)</label>
+                            <input type="number" name="monthlyPayment" value={formData.monthlyPayment} onChange={handleInputChange} placeholder="Monthly Interest" className="w-full p-3 border rounded-lg focus:ring-2 focus:ring-yellow-300 focus:border-yellow-400 transition" min="0" step="1" required autoComplete="off" />
                             {formData.monthlyPayment > 0 && (
                               <div className="mt-2 p-2 bg-green-50 border border-green-200 rounded-lg">
-                                <div className="text-sm text-green-800">
-                                  <div className="flex justify-between">
-                                    <span>Monthly Interest:</span>
-                                    <span className="font-semibold">₹{Math.round((formData.totalAmount - formData.loanAmount) / (formData.duration || 1)).toLocaleString()}</span>
-                                  </div>
-                                  <div className="flex justify-between">
-                                    <span>Monthly Principal:</span>
-                                    <span className="font-semibold">₹{Math.round(formData.monthlyPayment - (formData.totalAmount - formData.loanAmount) / (formData.duration || 1)).toLocaleString()}</span>
-                                  </div>
-                                </div>
+                                <div className="text-sm text-green-800 font-semibold">₹{Math.round(formData.monthlyPayment).toLocaleString()} monthly interest</div>
+                                <div className="text-xs text-green-700 mt-1">Total interest over term: ₹{Math.round((formData.totalAmount - formData.loanAmount)).toLocaleString()}</div>
                               </div>
                             )}
                           </div>

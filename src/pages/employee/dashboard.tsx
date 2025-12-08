@@ -270,7 +270,7 @@ const RepaymentModal: React.FC<RepaymentModalProps> = ({ loan: _loan, onClose, o
               max={calc?.totalDue || _loan.totalPayment || 0}
             />
             {calc && (
-              <div className="mt-2 flex gap-2">
+              <div className="mt-2 flex gap-2 flex-wrap">
                 <button
                   type="button"
                   onClick={() => {
@@ -290,6 +290,29 @@ const RepaymentModal: React.FC<RepaymentModalProps> = ({ loan: _loan, onClose, o
                   className="px-3 py-1 text-xs bg-green-500 text-white rounded hover:bg-green-600"
                 >
                   Set Full Balance (₹{Math.round(calc.totalDue || 0).toLocaleString()})
+                </button>
+                {calc.interest && (
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setAmount(Math.round(calc.interest || 0));
+                      setUserHasManuallySetAmount(true);
+                    }}
+                    className="px-3 py-1 text-xs bg-yellow-500 text-white rounded hover:bg-yellow-600"
+                  >
+                    Set Interest Only (₹{Math.round(calc.interest || 0).toLocaleString()})
+                  </button>
+                )}
+                <button
+                  type="button"
+                  onClick={() => {
+                    const remainingPrincipal = _loan.amount - (_loan.totalPaid || 0);
+                    setAmount(Math.max(remainingPrincipal, 0));
+                    setUserHasManuallySetAmount(true);
+                  }}
+                  className="px-3 py-1 text-xs bg-purple-500 text-white rounded hover:bg-purple-600"
+                >
+                  Set Principal Only (₹{Math.max(_loan.amount - (_loan.totalPaid || 0), 0).toLocaleString()})
                 </button>
               </div>
             )}
@@ -538,7 +561,7 @@ const EmployeeDashboard = () => {
     if (principal > 0 && yearlyRate > 0 && months > 0) {
       const result = calculateDailyInterest(principal, yearlyRate, months);
       return {
-        monthlyPayment: result.monthlyPayment,
+        monthlyPayment: result.monthlyInterest ?? result.monthlyPayment,
         totalAmount: result.totalAmount
       };
     }
@@ -655,7 +678,7 @@ const EmployeeDashboard = () => {
           if (!res.ok) throw new Error(data.message || 'Calculation failed');
           setFormData(prev => ({
             ...prev,
-            monthlyPayment: data.monthlyPayment,
+            monthlyPayment: data.monthlyInterest,
             totalAmount: data.totalAmount
           }));
         } catch {
@@ -663,11 +686,11 @@ const EmployeeDashboard = () => {
           const timeInYears = months / 12;
           const totalInterest = (principal * yearlyRate * timeInYears) / 100;
           const totalAmount = principal + totalInterest;
-          const monthlyPayment = totalAmount / months;
+          const monthlyInterest = totalInterest / months;
           
           setFormData(prev => ({
             ...prev,
-            monthlyPayment: Math.round(monthlyPayment),
+            monthlyPayment: Math.round(monthlyInterest),
             totalAmount: Math.round(totalAmount)
           }));
         }
@@ -731,7 +754,8 @@ const EmployeeDashboard = () => {
           secondaryMobile: formData.secondaryMobile,
           presentAddress: formData.presentAddress,
           permanentAddress: formData.permanentAddress,
-          emergencyContact: formData.emergencyContact
+          emergencyContact: formData.emergencyContact,
+          purpose: 'loan_creation'
         })
       });
       const data = await response.json();
@@ -807,7 +831,7 @@ const EmployeeDashboard = () => {
       const amount = Number(formData.loanAmount);
       const term = Number(formData.duration);
       const interestRate = Number(formData.interestRate);
-      const monthlyPayment = Number(formData.monthlyPayment);
+      const monthlyInterest = Number(formData.monthlyPayment);
       const totalPayment = Number(formData.totalAmount);
 
       // Validate numeric values
@@ -820,8 +844,8 @@ const EmployeeDashboard = () => {
       if (isNaN(interestRate) || interestRate < 0) {
         throw new Error('Interest rate cannot be negative');
       }
-      if (isNaN(monthlyPayment) || monthlyPayment <= 0) {
-        throw new Error('Invalid monthly payment amount');
+      if (isNaN(monthlyInterest) || monthlyInterest <= 0) {
+        throw new Error('Invalid monthly interest amount');
       }
       if (isNaN(totalPayment) || totalPayment <= 0) {
         throw new Error('Invalid total payment amount');
@@ -843,7 +867,7 @@ const EmployeeDashboard = () => {
         interestRate,
         amount,
         term,
-        monthlyPayment,
+        monthlyPayment: monthlyInterest,
         totalPayment,
         // Add createdBy field
         createdBy: user.id

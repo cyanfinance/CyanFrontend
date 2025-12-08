@@ -705,7 +705,7 @@ const LoanForm: React.FC<LoanFormProps> = ({ apiPrefix, token, user, onSuccess }
       const amount = Number(formData.loanAmount);
       const term = Number(formData.duration);
       const interestRate = Number(formData.interestRate);
-      const monthlyPayment = Number(formData.monthlyPayment);
+      const monthlyPayment = Number(formData.monthlyPayment); // represents monthly interest
       const totalPayment = Number(formData.totalAmount);
       // Validate numeric values
       if (isNaN(amount) || amount < 100) {
@@ -718,7 +718,7 @@ const LoanForm: React.FC<LoanFormProps> = ({ apiPrefix, token, user, onSuccess }
         throw new Error('Interest rate cannot be negative');
       }
       if (isNaN(monthlyPayment) || monthlyPayment <= 0) {
-        throw new Error('Invalid monthly payment amount');
+        throw new Error('Invalid monthly interest amount');
       }
       if (isNaN(totalPayment) || totalPayment <= 0) {
         throw new Error('Invalid total payment amount');
@@ -812,7 +812,7 @@ const LoanForm: React.FC<LoanFormProps> = ({ apiPrefix, token, user, onSuccess }
           if (!res.ok) throw new Error(data.message || 'Calculation failed');
           setFormData(prev => ({
             ...prev,
-            monthlyPayment: data.monthlyPayment ? data.monthlyPayment.toString() : '',
+            monthlyPayment: data.monthlyInterest ? data.monthlyInterest.toString() : '',
             totalAmount: data.totalAmount ? data.totalAmount.toString() : ''
           }));
         } catch {
@@ -820,11 +820,11 @@ const LoanForm: React.FC<LoanFormProps> = ({ apiPrefix, token, user, onSuccess }
           const timeInYears = months / 12;
           const totalInterest = (principal * yearlyRate * timeInYears) / 100;
           const totalAmount = principal + totalInterest;
-          const monthlyPayment = totalAmount / months;
+          const monthlyInterest = totalInterest / months;
           
           setFormData(prev => ({
             ...prev,
-            monthlyPayment: monthlyPayment.toString(),
+            monthlyPayment: monthlyInterest.toString(),
             totalAmount: totalAmount.toString()
           }));
         }
@@ -1131,14 +1131,25 @@ const LoanForm: React.FC<LoanFormProps> = ({ apiPrefix, token, user, onSuccess }
               <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
                 <div>
                   <label className="block text-sm font-semibold text-gray-700">Interest Rate (%)</label>
-              <select name="interestRate" value={formData.interestRate} onChange={handleInputChange} className="input-with-cursor w-full p-3 border rounded-xl focus:ring-2 focus:ring-yellow-300 focus:border-yellow-400 transition-all duration-200 bg-white/80" required>
+              {/* <select name="interestRate" value={formData.interestRate} onChange={handleInputChange} className="input-with-cursor w-full p-3 border rounded-xl focus:ring-2 focus:ring-yellow-300 focus:border-yellow-400 transition-all duration-200 bg-white/80" required>
                 <option value="">Select Interest Rate</option>
                 <option value="12">12% per annum</option>
                 <option value="18">18% per annum</option>
                 <option value="24">24% per annum</option>
                 <option value="30">30% per annum</option>
                 <option value="36">36% per annum</option>
-              </select>
+              </select> */}
+              <input
+                  type="number"
+                  name="interestRate"
+                  value={formData.interestRate}
+                  onChange={handleInputChange}
+                  placeholder="Enter interest rate (e.g. 18)"
+                  className="input-with-cursor w-full p-3 border rounded-xl focus:ring-2 focus:ring-yellow-300 focus:border-yellow-400 transition-all duration-200 bg-white/80"
+                  // min="0"
+                  step="0.01"
+                  required
+                />
                 </div>
                 <div>
                   <label className="block text-sm font-semibold text-gray-700">Loan Amount (₹)</label>
@@ -1188,11 +1199,11 @@ const LoanForm: React.FC<LoanFormProps> = ({ apiPrefix, token, user, onSuccess }
               </div>
               <div className="space-y-4 mt-8">
                 <div>
-                  <label className="block text-sm font-semibold text-gray-700">Monthly Payment (₹)</label>
-                  <input type="number" name="monthlyPayment" value={formData.monthlyPayment} onChange={handleInputChange} placeholder="Monthly Payment" className="input-with-cursor w-full p-3 border rounded-xl focus:ring-2 focus:ring-yellow-300 focus:border-yellow-400 transition-all duration-200 bg-white/80" min="0" step="1" required />
+                  <label className="block text-sm font-semibold text-gray-700">Monthly Interest (₹)</label>
+                  <input type="number" name="monthlyPayment" value={formData.monthlyPayment} onChange={handleInputChange} placeholder="Monthly Interest" className="input-with-cursor w-full p-3 border rounded-xl focus:ring-2 focus:ring-yellow-300 focus:border-yellow-400 transition-all duration-200 bg-white/80" min="0" step="1" required />
                 </div>
                 <div>
-                  <label className="block text-sm font-semibold text-gray-700">Total Amount to be Paid (₹)</label>
+                  <label className="block text-sm font-semibold text-gray-700">Total Principle Amount to be Paid (₹)</label>
                   <input type="number" name="totalAmount" value={formData.totalAmount} onChange={handleInputChange} placeholder="Total Amount" className="input-with-cursor w-full p-3 border rounded-xl focus:ring-2 focus:ring-yellow-300 focus:border-yellow-400 transition-all duration-200 bg-white/80" min="0" step="1" required />
                 </div>
               </div>
