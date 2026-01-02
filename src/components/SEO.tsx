@@ -7,6 +7,7 @@ interface SEOProps {
   ogImage?: string;
   ogUrl?: string;
   type?: string;
+  structuredData?: object;
 }
 
 const SEO: React.FC<SEOProps> = ({
@@ -18,7 +19,8 @@ const SEO: React.FC<SEOProps> = ({
   type = 'website',
   structuredData
 }) => {
-  const siteUrl = typeof window !== 'undefined' ? window.location.origin : 'https://cyanfinance.in';
+  // Use the correct domain - cyangold.in based on the SEO report
+  const siteUrl = typeof window !== 'undefined' ? window.location.origin : 'https://www.cyangold.in';
   const fullUrl = ogUrl ? `${siteUrl}${ogUrl}` : siteUrl;
   const fullOgImage = ogImage.startsWith('http') ? ogImage : `${siteUrl}${ogImage}`;
 

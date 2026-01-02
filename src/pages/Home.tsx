@@ -16,9 +16,9 @@ function Home() {
           "@type": "FinancialService",
           "name": "Cyan Finance",
           "description": "Gold Loan Services in Vizag and Visakhapatnam",
-          "url": typeof window !== 'undefined' ? window.location.origin : "https://cyanfinance.in",
-          "logo": typeof window !== 'undefined' ? `${window.location.origin}/cyanlogo.png` : "https://cyanfinance.in/cyanlogo.png",
-          "image": typeof window !== 'undefined' ? `${window.location.origin}/cyanlogo.png` : "https://cyanfinance.in/cyanlogo.png",
+          "url": typeof window !== 'undefined' ? window.location.origin : "https://www.cyangold.in",
+          "logo": typeof window !== 'undefined' ? `${window.location.origin}/cyanlogo.png` : "https://www.cyangold.in/cyanlogo.png",
+          "image": typeof window !== 'undefined' ? `${window.location.origin}/cyanlogo.png` : "https://www.cyangold.in/cyanlogo.png",
           "telephone": "+91-XXXXXXXXXX",
           "address": {
             "@type": "PostalAddress",

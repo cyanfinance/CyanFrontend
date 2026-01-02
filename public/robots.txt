@@ -1,0 +1,27 @@
+User-agent: *
+Allow: /
+
+# Sitemap
+Sitemap: https://www.cyangold.in/sitemap.xml
+
+# Disallow admin and private routes
+Disallow: /admin/
+Disallow: /employee/
+Disallow: /customer/
+Disallow: /login
+Disallow: /register
+Disallow: /forgot-password
+Disallow: /reset-password
+
+# Allow public pages
+Allow: /
+Allow: /about
+Allow: /services
+Allow: /gold-loan
+Allow: /gold-purchase
+Allow: /bank-buy-back
+Allow: /other-loans
+Allow: /interest-rates
+Allow: /payments
+Allow: /location
+Allow: /contact
