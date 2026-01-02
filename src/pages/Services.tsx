@@ -1,5 +1,6 @@
 import { Coins, ShoppingBag, Ban as Bank, Percent, Home, Smartphone } from "lucide-react";
 import { useNavigate } from "react-router-dom";
+import SEO from "../components/SEO";
  
 function Services() {
   const navigate = useNavigate();
@@ -51,6 +52,12 @@ function Services() {
  
   return (
     <div>
+      <SEO
+        title="Gold Loan Services in Vizag | Cyan Finance - Gold Loan, Purchase & More"
+        description="Cyan Finance offers comprehensive gold loan services in Vizag and Visakhapatnam including gold loans, gold purchase, bank buy back, and other financial services. Trusted since 2011."
+        keywords="gold loan services vizag, cyan finance services, gold loan visakhapatnam, gold purchase vizag, bank buy back vizag, cyan gold services, financial services vizag"
+        ogUrl="/services"
+      />
     <div className="max-w-7xl mx-auto px-4 py-12 sm:px-6 lg:px-8">
       <h1 className="text-4xl font-bold text-center text-gray-900 mb-12">Our Services</h1>
  

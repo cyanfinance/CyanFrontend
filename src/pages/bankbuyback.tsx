@@ -1,5 +1,6 @@
 import { Scale, TrendingUp, BadgeCheck, Banknote } from 'lucide-react';
 import { Link } from 'react-router-dom';
+import SEO from '../components/SEO';
 
 export default function BankBuyback() {
   const features = [
@@ -46,6 +47,12 @@ export default function BankBuyback() {
 
   return (
     <div className="bg-white">
+      <SEO
+        title="Bank Buy Back Gold Loan in Vizag | Transfer Gold Loan | Cyan Finance"
+        description="Transfer your gold loan from any bank to Cyan Finance in Vizag and Visakhapatnam. No extra charges, fair valuation, instant payment. Best bank buy back service in Vizag."
+        keywords="bank buy back vizag, gold loan transfer vizag, bank gold loan takeover visakhapatnam, cyan finance bank buy back, transfer gold loan vizag"
+        ogUrl="/bank-buy-back"
+      />
       {/* Hero Section */}
       <div className="relative bg-blue-100 min-h-screen items-center justify-center px-12 py-12">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-24">

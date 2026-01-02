@@ -1,8 +1,15 @@
 import { Shield, Award, Clock } from 'lucide-react';
+import SEO from '../components/SEO';
  
 function About() {
   return (
     <div>
+      <SEO
+        title="About Cyan Finance - Trusted Gold Loan Partner in Vizag Since 2011"
+        description="Learn about Cyan Finance, the most trusted gold loan partner in Vizag and Visakhapatnam since 2011. Over 13 years of experience, 1463+ loans disbursed, 231+ happy customers. Secure, transparent, and reliable gold loan services."
+        keywords="cyan finance about, cyan gold loan history, gold loan company vizag, trusted gold loan visakhapatnam, cyan finance experience, gold loan partner vizag"
+        ogUrl="/about"
+      />
     <div className="max-w-7xl mx-auto px-4 py-12">
       <div className="text-center mb-12">
         <h1 className="text-4xl font-bold text-gray-900 mb-4">About Cyan Finance</h1>

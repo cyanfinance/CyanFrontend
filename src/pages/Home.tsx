@@ -1,18 +1,64 @@
 import { Info, Shield, Percent } from 'lucide-react';
 import GoldCalculator from '../components/GoldCalculator';
+import SEO from '../components/SEO';
 
  
 function Home() {
   return (
     <div>
+      <SEO
+        title="Cyan Finance - Gold Loan in Vizag | Gold Loan in Visakhapatnam | Trusted Since 2011"
+        description="Cyan Finance offers the best gold loan services in Vizag and Visakhapatnam. Get instant gold loans at competitive rates of ₹7,000 per gram. Most trusted gold loan partner since 2011. Quick approval, secure storage, flexible repayment options."
+        keywords="gold loan in vizag, gold loan in visakhapatnam, gold loan vizag, cyan gold, cyan gold loan, cyan finance, gold loan visakhapatnam, best gold loan vizag, instant gold loan, gold loan rates vizag, cyan finance vizag, cyan gold loan vizag"
+        ogUrl="/"
+        structuredData={{
+          "@context": "https://schema.org",
+          "@type": "FinancialService",
+          "name": "Cyan Finance",
+          "description": "Gold Loan Services in Vizag and Visakhapatnam",
+          "url": typeof window !== 'undefined' ? window.location.origin : "https://cyanfinance.in",
+          "logo": typeof window !== 'undefined' ? `${window.location.origin}/cyanlogo.png` : "https://cyanfinance.in/cyanlogo.png",
+          "image": typeof window !== 'undefined' ? `${window.location.origin}/cyanlogo.png` : "https://cyanfinance.in/cyanlogo.png",
+          "telephone": "+91-XXXXXXXXXX",
+          "address": {
+            "@type": "PostalAddress",
+            "addressLocality": "Visakhapatnam",
+            "addressRegion": "Andhra Pradesh",
+            "addressCountry": "IN"
+          },
+          "geo": {
+            "@type": "GeoCoordinates",
+            "latitude": "17.6868",
+            "longitude": "83.2185"
+          },
+          "areaServed": [
+            {
+              "@type": "City",
+              "name": "Visakhapatnam"
+            },
+            {
+              "@type": "City",
+              "name": "Vizag"
+            }
+          ],
+          "serviceType": "Gold Loan",
+          "priceRange": "₹25,000 - ₹5,00,00,000",
+          "foundingDate": "2011",
+          "aggregateRating": {
+            "@type": "AggregateRating",
+            "ratingValue": "4.8",
+            "reviewCount": "231"
+          }
+        }}
+      />
       <div className=" bg-blue-400 h-400px overflow-hidden items-center justify-center ">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-24">
           <div className="text-center pt-1">
-        <p className="text-2xl font-bold text-gray-900 sm:text-5xl md:text-5xl">
-          Welcome to Cyan Finance
-        </p>
+        <h1 className="text-2xl font-bold text-gray-900 sm:text-5xl md:text-5xl">
+          Gold Loan in Vizag | Cyan Finance - Most Trusted Since 2011
+        </h1>
         <p className="mt-2 max-w-2xl mx-auto text-xl text-black">
-          Most Trusted GOLD LOAN Partner since 2011.
+          Most Trusted Gold Loan Partner in Visakhapatnam since 2011. Get instant gold loans at best rates.
         </p>
           </div>
         </div>
@@ -31,9 +77,9 @@ function Home() {
     <div className="max-w-7xl mt-10 mb-10 mx-auto px-4 py-8">
       <div className="grid md:grid-cols-2 gap-8 mb-12">
         <div>
-          <h1 className="text-4xl font-bold text-gray-900 mb-4">
-            Secure Gold Loans at Best Rates
-          </h1>
+          <h2 className="text-4xl font-bold text-gray-900 mb-4">
+            Secure Gold Loans at Best Rates in Vizag
+          </h2>
           <p className="text-lg text-gray-600 mb-6">
             Transform your gold into opportunity with our competitive loan rates and transparent process.
           </p>

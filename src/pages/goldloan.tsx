@@ -1,5 +1,6 @@
 import { Shield, Clock, Calculator, CheckCircle } from 'lucide-react';
 import { Link } from 'react-router-dom';
+import SEO from '../components/SEO';
  
 export default function goldloan() {
   const features = [
@@ -51,12 +52,18 @@ export default function goldloan() {
  
   return (
     <div className="bg-white">
+      <SEO
+        title="Gold Loan in Vizag | Gold Loan in Visakhapatnam | Cyan Gold Loan - Apply Now"
+        description="Get instant gold loans in Vizag and Visakhapatnam with Cyan Finance. Competitive rates at ₹7,000 per gram, quick approval within 30 minutes, secure bank-grade vaults. Best gold loan rates in Vizag. Apply now!"
+        keywords="gold loan in vizag, gold loan in visakhapatnam, gold loan vizag, cyan gold loan, cyan finance gold loan, best gold loan vizag, instant gold loan vizag, gold loan rates visakhapatnam, cyan gold loan vizag, gold loan visakhapatnam"
+        ogUrl="/gold-loan"
+      />
       {/* Hero Section */}
       <div className="relative bg-blue-100 min-h-screen items-center justify-center px-12 py-12">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-24">
           <div className="text-center">
             <h1 className="text-4xl font-bold text-gray-900 sm:text-5xl md:text-6xl">
-              Gold Loans Made <span className="text-yellow-600">Simple</span>
+              Gold Loan in Vizag & Visakhapatnam - <span className="text-yellow-600">Cyan Finance</span>
             </h1>
             <p className="mt-6 max-w-2xl mx-auto text-xl text-gray-500">
               Get instant loans against your gold with competitive interest rates and flexible repayment options

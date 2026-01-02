@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { Container, TextField, Button, Typography, Box, Alert } from '@mui/material';
+import SEO from '../components/SEO';
 
 const Contact = () => {
   const [formData, setFormData] = useState({
@@ -52,6 +53,12 @@ const Contact = () => {
 
   return (
     <Container maxWidth="md" sx={{ py: 8 }}>
+      <SEO
+        title="Contact Cyan Finance - Gold Loan in Vizag | Get in Touch"
+        description="Contact Cyan Finance for gold loan services in Vizag and Visakhapatnam. Get instant quotes, loan information, and expert advice. Reach out to the most trusted gold loan partner in Vizag."
+        keywords="contact cyan finance, gold loan contact vizag, cyan finance phone number, gold loan enquiry visakhapatnam, cyan finance address vizag"
+        ogUrl="/contact"
+      />
       <Typography variant="h4" component="h1" gutterBottom align="center">
         Contact Us
       </Typography>

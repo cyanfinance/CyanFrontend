@@ -1,5 +1,6 @@
 import { Star, ShieldCheck, Truck, RefreshCw } from 'lucide-react';
 import { Link } from 'react-router-dom';
+import SEO from '../components/SEO';
 
 export default function GoldPurchase() {
   const products = [
@@ -54,6 +55,12 @@ export default function GoldPurchase() {
 
   return (
     <div className="bg-white">
+      <SEO
+        title="Gold Purchase in Vizag | Buy Gold Coins & Bars | Cyan Finance"
+        description="Buy certified gold coins and bars in Vizag and Visakhapatnam from Cyan Finance. BIS hallmarked gold, secure purchase, insured delivery. Best gold rates in Vizag. Trusted since 2011."
+        keywords="gold purchase vizag, buy gold visakhapatnam, gold coins vizag, cyan finance gold purchase, buy gold bars vizag, certified gold vizag"
+        ogUrl="/gold-purchase"
+      />
       {/* Hero Section */}
       <div className="relative bg-blue-100 min-h-screen items-center justify-center px-12 py-12">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-24">
