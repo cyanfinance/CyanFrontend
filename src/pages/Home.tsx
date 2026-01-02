@@ -54,11 +54,11 @@ function Home() {
       <div className=" bg-blue-400 h-400px overflow-hidden items-center justify-center ">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-24">
           <div className="text-center pt-1">
-        <h1 className="text-2xl font-bold text-gray-900 sm:text-5xl md:text-5xl">
-          Gold Loan in Vizag | Cyan Finance - Most Trusted Since 2011
-        </h1>
+        <p className="text-2xl font-bold text-gray-900 sm:text-5xl md:text-5xl">
+          Welcome to Cyan Finance
+        </p>
         <p className="mt-2 max-w-2xl mx-auto text-xl text-black">
-          Most Trusted Gold Loan Partner in Visakhapatnam since 2011. Get instant gold loans at best rates.
+          Most Trusted GOLD LOAN Partner since 2011.
         </p>
           </div>
         </div>
@@ -77,9 +77,9 @@ function Home() {
     <div className="max-w-7xl mt-10 mb-10 mx-auto px-4 py-8">
       <div className="grid md:grid-cols-2 gap-8 mb-12">
         <div>
-          <h2 className="text-4xl font-bold text-gray-900 mb-4">
-            Secure Gold Loans at Best Rates in Vizag
-          </h2>
+          <h1 className="text-4xl font-bold text-gray-900 mb-4">
+            Secure Gold Loans at Best Rates
+          </h1>
           <p className="text-lg text-gray-600 mb-6">
             Transform your gold into opportunity with our competitive loan rates and transparent process.
           </p>
