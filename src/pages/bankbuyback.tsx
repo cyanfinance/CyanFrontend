@@ -1,6 +1,5 @@
 import { Scale, TrendingUp, BadgeCheck, Banknote } from 'lucide-react';
 import { Link } from 'react-router-dom';
-import SEO from '../components/SEO';
 
 export default function BankBuyback() {
   const features = [
@@ -47,12 +46,6 @@ export default function BankBuyback() {
 
   return (
     <div className="bg-white">
-      <SEO
-        title="Bank Buy Back - Transfer Gold Loans from Any Bank | Cyan Finance"
-        description="Transfer your gold loans from any Private and Public Sector Banks to Cyan Finance with no extra charges. Fair valuation, transparent pricing, and instant verification."
-        keywords="gold loan, gold loan vizag, gold loan visakhapatnam, cyan gold, cyan finance, best gold loan provider, bank buy back, gold loan transfer, bank loan takeover, cyan finance bank buy back"
-        url="/bank-buy-back"
-      />
       {/* Hero Section */}
       <div className="relative bg-blue-100 min-h-screen items-center justify-center px-12 py-12">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-24">

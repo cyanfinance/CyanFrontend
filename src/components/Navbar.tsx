@@ -72,7 +72,7 @@ const Navbar: React.FC<NavbarProps> = ({ isSidebarPage, sidebarOpen, toggleSideb
             <Link to="/services" className={`${isActive('/services')} transition-colors duration-200`}><strong>Services</strong></Link>
             <Link to="/location" className={`${isActive('/location')} transition-colors duration-200`}><strong>Location</strong></Link>
             <Link to="/contact" className={`${isActive('/contact')} transition-colors duration-200`}><strong>Contact Us</strong></Link>
-            {user ? (
+            {/*{user ? (
               <div className="flex items-center space-x-4">
                 <NotificationBell 
                   token={localStorage.getItem('token') || ''} 
@@ -102,7 +102,7 @@ const Navbar: React.FC<NavbarProps> = ({ isSidebarPage, sidebarOpen, toggleSideb
               <Link to="/login" className="bg-[#0e1353] text-white px-4 py-2 rounded-md hover:bg-yellow-700 transition-colors duration-200">
                 <strong>Login</strong>
               </Link>
-            )}
+            )}*/}
           </div>
 
           {/* Mobile Menu Button for public pages */}

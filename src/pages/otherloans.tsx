@@ -1,6 +1,5 @@
 import { Home, Briefcase, User, Car } from 'lucide-react';
 import { Link } from 'react-router-dom';
-import SEO from '../components/SEO';
  
 export default function OtherLoans() {
   const loanTypes = [
@@ -59,12 +58,6 @@ export default function OtherLoans() {
  
   return (
     <div className="bg-white">
-      <SEO
-        title="Other Loans - Home, Business & Personal Loans | Cyan Finance"
-        description="Get loans for houses, construction, business, and personal needs with flexible terms and competitive interest rates. Collateral-based loans available."
-        keywords="gold loan, gold loan vizag, gold loan visakhapatnam, cyan gold, cyan finance, best gold loan provider, home loan, business loan, personal loan, construction loan, other loans, cyan finance loans"
-        url="/other-loans"
-      />
       {/* Hero Section */}
       <div className="relative bg-blue-100 min-h-screen items-center justify-center px-12 py-12">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-24">

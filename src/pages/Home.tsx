@@ -1,56 +1,10 @@
 import { Info, Shield, Percent } from 'lucide-react';
 import GoldCalculator from '../components/GoldCalculator';
-import SEO from '../components/SEO';
 
  
 function Home() {
-  const structuredData = {
-    "@context": "https://schema.org",
-    "@type": "FinancialService",
-    "name": "Cyan Finance",
-    "alternateName": "Cyan Gold",
-    "description": "Most Trusted Gold Loan Partner Since 2011. Get secure gold loans at best rates in Visakhapatnam, Vizag.",
-    "url": "https://cyangold.in",
-    "logo": "https://cyangold.in/golditems.png",
-    "foundingDate": "2011",
-    "address": {
-      "@type": "PostalAddress",
-      "streetAddress": "BK Towers, Akkayyapalem",
-      "addressLocality": "Visakhapatnam",
-      "addressRegion": "Andhra Pradesh",
-      "postalCode": "530016",
-      "addressCountry": "IN"
-    },
-    "serviceType": "Gold Loan",
-    "areaServed": {
-      "@type": "City",
-      "name": "Visakhapatnam"
-    },
-    "hasOfferCatalog": {
-      "@type": "OfferCatalog",
-      "name": "Gold Loan Services",
-      "itemListElement": [
-        {
-          "@type": "Offer",
-          "itemOffered": {
-            "@type": "Service",
-            "name": "Gold Loan Vizag",
-            "description": "Best gold loan provider in Visakhapatnam"
-          }
-        }
-      ]
-    }
-  };
-
   return (
     <div>
-      <SEO
-        title="Cyan Finance - Best Gold Loan Provider in Visakhapatnam | Vizag Gold Loan"
-        description="Cyan Finance - Best gold loan provider in Visakhapatnam (Vizag). Get secure gold loans at best rates since 2011. Transform your gold into opportunity with competitive loan rates and transparent process."
-        keywords="gold loan, gold loan vizag, gold loan visakhapatnam, cyan gold, cyan finance, best gold loan provider, gold loan near me, gold loan rates, secure gold loan, gold loan calculator, best gold loan rates, gold loan partner"
-        url="/"
-        structuredData={structuredData}
-      />
       <div className=" bg-blue-400 h-400px overflow-hidden items-center justify-center ">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-24">
           <div className="text-center pt-1">

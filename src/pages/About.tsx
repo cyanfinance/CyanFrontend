@@ -1,30 +1,8 @@
 import { Shield, Award, Clock } from 'lucide-react';
-import SEO from '../components/SEO';
  
 function About() {
-  const structuredData = {
-    "@context": "https://schema.org",
-    "@type": "AboutPage",
-    "name": "About Cyan Finance",
-    "description": "Founded in 2011, Cyan Finance is India's most trusted gold loan partner with over 13 years of experience, helping thousands of customers unlock the value of their gold assets.",
-    "mainEntity": {
-      "@type": "Organization",
-      "name": "Cyan Finance",
-      "foundingDate": "2011",
-      "numberOfEmployees": "50+",
-      "description": "Most trusted gold loan partner since 2011"
-    }
-  };
-
   return (
     <div>
-      <SEO
-        title="About Us - Cyan Finance | Most Trusted Gold Loan Partner Since 2011"
-        description="Founded in 2011, Cyan Finance is India's most trusted gold loan partner with over 13 years of experience. We've helped thousands of customers unlock the value of their gold assets with transparency and trust."
-        keywords="gold loan, gold loan vizag, gold loan visakhapatnam, cyan gold, cyan finance, best gold loan provider, about cyan finance, gold loan company, trusted gold loan partner, gold finance company, cyan finance history"
-        url="/about"
-        structuredData={structuredData}
-      />
     <div className="max-w-7xl mx-auto px-4 py-12">
       <div className="text-center mb-12">
         <h1 className="text-4xl font-bold text-gray-900 mb-4">About Cyan Finance</h1>

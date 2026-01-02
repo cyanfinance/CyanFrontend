@@ -1,6 +1,5 @@
 import React, { useState } from 'react';
 import { Container, TextField, Button, Typography, Box, Alert } from '@mui/material';
-import SEO from '../components/SEO';
 
 const Contact = () => {
   const [formData, setFormData] = useState({
@@ -51,27 +50,8 @@ const Contact = () => {
     }));
   };
 
-  const structuredData = {
-    "@context": "https://schema.org",
-    "@type": "ContactPage",
-    "name": "Contact Cyan Finance",
-    "description": "Get in touch with Cyan Finance for gold loan inquiries, gold purchase, bank buy back services, and more. We're here to help you with all your financial needs.",
-    "mainEntity": {
-      "@type": "Organization",
-      "name": "Cyan Finance",
-      "url": "https://cyangold.in"
-    }
-  };
-
   return (
     <Container maxWidth="md" sx={{ py: 8 }}>
-      <SEO
-        title="Contact Us - Cyan Finance | Get in Touch"
-        description="Get in touch with Cyan Finance for gold loan inquiries, gold purchase, bank buy back services, and more. We're here to help you with all your financial needs."
-        keywords="gold loan, gold loan vizag, gold loan visakhapatnam, cyan gold, cyan finance, best gold loan provider, contact cyan finance, gold loan contact, cyan finance phone number, gold loan inquiry"
-        url="/contact"
-        structuredData={structuredData}
-      />
       <Typography variant="h4" component="h1" gutterBottom align="center">
         Contact Us
       </Typography>
